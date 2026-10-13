@@ -200,7 +200,7 @@ export class Workbench {
         this.bottomTab("console");
         await ctx.compile();
         ctx.persist();
-        $("upload").click();
+        await ctx.upload();
       });
     $("compile").title = "Compile and run";
     $("compile").setAttribute("aria-label", "Compile and run");

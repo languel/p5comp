@@ -51,9 +51,9 @@ export async function flashUno(port, hex, onProgress = () => {}) {
     }
     return rx.splice(0, count);
   };
-  const packet = async (data, count = 0) => {
+  const packet = async (data, count = 0, timeout = 2000) => {
     await writer.write(Uint8Array.from([...data, 0x20]));
-    const reply = await waitBytes(count + 2);
+    const reply = await waitBytes(count + 2, timeout);
     if (reply[0] !== 0x14 || reply.at(-1) !== 0x10)
       throw new Error("Unexpected bootloader reply. Try resetting the board.");
     return reply.slice(1, -1);
@@ -77,13 +77,13 @@ export async function flashUno(port, hex, onProgress = () => {}) {
     onProgress("Resetting Uno…");
     await port.setSignals({ dataTerminalReady: false, requestToSend: false });
     await sleep(250);
-    await port.setSignals({ dataTerminalReady: true, requestToSend: true });
+    await port.setSignals({ dataTerminalReady: true, requestToSend: false });
     await sleep(50);
     let synced = false;
     for (let i = 0; i < 8 && !synced; i++) {
       rx = [];
       try {
-        await packet([0x30]);
+        await packet([0x30], 0, 200);
         synced = true;
       } catch (e) {
         if (i === 7) throw e;

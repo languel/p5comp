@@ -983,13 +983,17 @@ $("usb").onclick = async () => {
       return;
     }
     stop();
-    await serial.connect({ baudRate: 9600 });
+    const grantedPorts = await navigator.serial.getPorts();
+    await serial.connect({
+      baudRate: 9600,
+      port: grantedPorts.length === 1 ? grantedPorts[0] : null,
+    });
     $("usb").textContent = "Disconnect USB Arduino";
   } catch (e) {
     notice(e.message);
   }
 };
-$("upload").onclick = async () => {
+async function uploadFirmware() {
   if (!serial.connected || !artifact) return;
   $("upload").disabled = true;
   try {
@@ -1006,10 +1010,12 @@ $("upload").onclick = async () => {
     log("Uploaded and verified · physical Uno");
   } catch (e) {
     notice(e.message);
+    log("Upload failed: " + e.message);
   } finally {
     updateConnection();
   }
-};
+}
+$("upload").onclick = uploadFirmware;
 document.addEventListener("keydown", (e) => {
   if (e.target.closest("input,select,textarea,.cm-editor") || e.repeat) return;
   const id =
@@ -1087,6 +1093,7 @@ workbench = new Workbench({
   arduinoEditor,
   p5Editor,
   compile: getFirmware,
+  upload: uploadFirmware,
   setCode,
   stop,
   runP5,

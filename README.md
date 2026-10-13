@@ -350,3 +350,8 @@ p5.webserial libraries and project source files are not loaded twice. HTML style
 CSS source and imported CSS image URLs apply to the preview. Browser security
 restrictions still apply to external URLs. Project storage inspection concerns
 this project's key rather than unrelated browser storage.
+
+Upload reset uses a DTR pulse with RTS released and short bootloader sync retries.
+The compile/upload action calls the uploader directly rather than relying on the
+legacy hidden upload button's enabled state. If one USB port is already granted,
+Connect reuses it; multiple granted ports still open the browser chooser.
