@@ -1,0 +1,476 @@
+body.unified {
+  height: 100dvh;
+  overflow: hidden;
+}
+.unified main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  grid-template-rows: minmax(0, 1fr) auto;
+  height: calc(100dvh - 42px);
+  padding: 0;
+  gap: 0;
+}
+.unified .bar {
+  height: 42px;
+  box-sizing: border-box;
+  gap: 8px;
+  padding: 4px 12px;
+}
+.unified .workspace {
+  grid-column: 1;
+  grid-row: 1;
+  min-height: 0;
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 0.65fr);
+  gap: 0;
+  padding: 0;
+}
+.unified .workspace.canvas-expanded {
+  grid-template-columns: 1fr;
+}
+.unified .circuit-panel {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+.unified #stage {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+  border-radius: 0;
+}
+.unified .canvas-tools {
+  padding: 4px 10px;
+  min-height: 36px;
+}
+.unified .canvas-inspector {
+  min-height: 30px;
+  padding: 0 10px;
+}
+.unified .preview-panel {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--ui-border);
+  padding: 0;
+}
+.unified .preview-panel[hidden] {
+  display: none;
+}
+.unified .preview {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+}
+.unified #p5Frame {
+  height: 360px;
+  width: 500px;
+  min-height: 0;
+}
+.unified .preview-panel .section-bar {
+  padding: 6px;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+.unified #wireInspector {
+  max-height: 180px;
+  overflow: auto;
+}
+.wb-right {
+  grid-column: 2;
+  grid-row: 1;
+  border-left: 1px solid var(--ui-border);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  resize: horizontal;
+}
+.wb-right[hidden] {
+  display: none;
+}
+.unified main:has(.wb-right[hidden]) {
+  grid-template-columns: 1fr;
+}
+.wb-right [data-pane] {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.wb-right [data-pane][hidden],
+.wb-bottom [data-tool][hidden] {
+  display: none;
+}
+.wb-right [data-pane] > section {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.wb-right .section-bar {
+  padding: 6px;
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+.wb-right #arduinoEditor,
+.wb-right #p5Editor,
+.wb-right .extra-editor,
+.wb-right #propertyEditor {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.wb-right .cm-editor {
+  height: 100%;
+  font-size: 12px;
+}
+.wb-right .cm-scroller {
+  overflow: auto;
+}
+.wb-right .part-docs {
+  position: static;
+  inset: auto;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  border: 0;
+  box-shadow: none;
+  border-radius: 0;
+}
+.wb-right .part-docs[hidden] {
+  display: none;
+}
+.wb-tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--ui-border);
+  padding: 4px;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.wb-tabs button,
+.file-tabs button {
+  border: 0;
+  border-radius: 3px;
+  padding: 5px 7px;
+  background: transparent;
+  white-space: nowrap;
+}
+.wb-tabs [aria-selected="true"],
+.file-tabs [aria-selected="true"] {
+  background: var(--ui-hover);
+  color: var(--ui-text);
+}
+.file-tabs {
+  display: flex;
+  gap: 2px;
+  overflow: auto;
+  border-bottom: 1px solid var(--ui-border);
+  padding: 3px;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+#closeInspector,
+#collapseBottom {
+  margin-left: auto;
+}
+.wb-bottom {
+  grid-column: 1/-1;
+  grid-row: 2;
+  border-top: 1px solid var(--ui-border);
+  min-height: 36px;
+  max-height: 240px;
+  overflow: hidden;
+  background: var(--ui-surface);
+}
+.wb-bottom [data-tool] {
+  max-height: 180px;
+  overflow: auto;
+  min-height: 60px;
+  padding: 8px 12px;
+}
+.wb-bottom.collapsed [data-tool] {
+  display: none;
+}
+.wb-bottom pre {
+  max-height: 140px;
+  overflow: auto;
+  margin: 0;
+  font-size: 11px;
+  white-space: pre-wrap;
+}
+.wb-bottom .controls {
+  padding: 0;
+  gap: 8px;
+}
+.wb-bottom .section-foot {
+  padding: 6px 0 0;
+}
+.wb-bottom .log-tools {
+  display: flex;
+  gap: 8px;
+  padding-bottom: 4px;
+}
+.wb-menu {
+  position: relative;
+  font-size: 12px;
+}
+.wb-menu summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 6px;
+}
+.wb-menu > div {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 100;
+  min-width: 220px;
+  max-height: 70vh;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  box-shadow: 0 6px 22px #0003;
+  border-radius: 5px;
+}
+.wb-menu:not([open]) > div {
+  display: none;
+}
+.wb-menu button {
+  text-align: left;
+  padding: 7px 10px;
+  border: 0;
+}
+.wb-menu label {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px;
+  align-items: center;
+}
+.wb-menu input:not([type="color"]) {
+  width: 180px;
+}
+.project-name {
+  max-width: 180px;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--ui-muted);
+  padding: 3px;
+}
+.output-overlay {
+  position: absolute;
+  right: 400px;
+  top: 100px;
+  width: 400px;
+  height: 360px;
+  z-index: 8;
+  box-shadow: 0 8px 40px #0005;
+  background: var(--ui-surface);
+  resize: both;
+  overflow: auto;
+  border: 1px solid var(--ui-border);
+}
+#referenceLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.reference-image {
+  position: absolute;
+  pointer-events: auto;
+  cursor: move;
+  max-width: none;
+}
+.reference-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 6px;
+  border-top: 1px solid var(--ui-border);
+  font-size: 11px;
+}
+.reference-row input[type="number"] {
+  width: 65px;
+}
+#helpHome {
+  font-size: 12px;
+  color: var(--ui-muted);
+  padding: 12px;
+}
+.unified.ui-hidden main {
+  height: 100dvh;
+  grid-template-columns: 1fr;
+}
+.unified.ui-hidden .wb-right,
+.unified.ui-hidden .wb-bottom {
+  display: none;
+}
+.unified .bar .app-menu {
+  display: block;
+}
+.unified .bar .app-menu summary {
+  font-size: 11px;
+}
+@media (max-width: 1000px) {
+  .unified main {
+    grid-template-columns: minmax(0, 1fr) 320px;
+  }
+  .unified .workspace {
+    grid-template-columns: 1fr;
+  }
+  .unified .preview-panel {
+    position: absolute;
+    right: 330px;
+    bottom: 190px;
+    width: 300px;
+    height: 280px;
+    z-index: 4;
+    background: var(--ui-surface);
+  }
+  .output-overlay {
+    right: 330px;
+  }
+  .project-name {
+    max-width: 100px;
+  }
+}
+@media (max-width: 700px) {
+  .unified main {
+    grid-template-columns: 1fr;
+  }
+  .wb-right {
+    position: absolute;
+    right: 0;
+    top: 42px;
+    bottom: 120px;
+    width: min(380px, 90vw);
+    z-index: 15;
+    background: var(--ui-surface);
+  }
+  .unified .preview-panel {
+    right: 10px;
+    bottom: 150px;
+    width: 240px;
+    height: 220px;
+  }
+  .project-name {
+    display: none;
+  }
+}
+.unified [hidden] {
+  display: none !important;
+}
+.unified .circuit-panel,
+.unified .preview-panel {
+  height: 100%;
+  align-self: stretch;
+  box-sizing: border-box;
+}
+.unified .workspace {
+  align-items: stretch;
+}
+.unified .bar .brand {
+  flex-shrink: 0;
+}
+.unified .bar .app-menu {
+  margin-right: auto;
+}
+.unified #status {
+  font-size: 11px;
+  max-width: 200px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.unified .wb-bottom > .section-foot {
+  padding: 4px 12px;
+  font-size: 11px;
+  border-top: 1px solid var(--ui-border);
+}
+.unified .bar .wb-menu button {
+  width: auto;
+  height: auto;
+  min-height: 30px;
+  display: block;
+  line-height: 1.4;
+  white-space: nowrap;
+  text-align: left;
+}
+.unified .bar .wb-menu input[type="color"] {
+  width: 36px;
+  height: 25px;
+}
+.wb-right {
+  position: relative;
+  resize: none;
+}
+.inspector-resize {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  z-index: 20;
+  cursor: col-resize;
+}
+.wb-right:has(.part-docs:not([hidden])) #helpHome {
+  display: none;
+}
+.output-overlay .section-bar {
+  cursor: move;
+}
+.unified .bar {
+  display: flex !important;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  grid-template-columns: none;
+  min-width: 0;
+}
+.unified .bar > * {
+  flex-shrink: 0;
+}
+.unified .bar .wb-menu {
+  position: static;
+}
+.unified .bar .wb-menu > div {
+  top: 38px;
+  left: 12px;
+  position: fixed;
+}
+.unified .canvas-tools {
+  display: flex !important;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  max-height: 40px;
+}
+@media (max-width: 700px) {
+  .unified main {
+    width: 100%;
+  }
+  .unified .wb-right {
+    right: 0;
+  }
+  .unified .preview-panel {
+    display: none;
+  }
+  .unified .wb-bottom [data-tool] {
+    max-height: 100px;
+  }
+  .unified .wb-bottom .controls {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .unified .wb-bottom .section-foot {
+    display: flex;
+    overflow: hidden;
+  }
+  .unified #status {
+    display: none;
+  }
+}

@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f3f3ef" />
+    <title>p5comp — code</title>
+    <link rel="stylesheet" href="/shared/ui/app.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/sim/">p5comp</a>
+      <nav class="product-nav" aria-label="Sections">
+        <a href="/sim/">circuit</a
+        ><a href="/ide" class="active" aria-current="page">code</a
+        ><a href="/firmata/">firmata</a>
+      </nav>
+      <div class="device-controls">
+        <label for="boardSelect">BOARD</label>
+        <select id="boardSelect" aria-label="Board">
+          <option value="uno">Arduino Uno R3</option>
+          <option value="mega">Arduino Mega 2560</option>
+        </select>
+        <label for="baudSelect">BAUD</label>
+        <select id="baudSelect" aria-label="Serial baud rate">
+          <option>9600</option>
+          <option>19200</option>
+          <option>38400</option>
+          <option>57600</option>
+          <option>115200</option>
+        </select>
+        <button id="connectBtn" class="button button-light">Connect</button>
+        <button id="disconnectBtn" class="button button-quiet" disabled>
+          Disconnect
+        </button>
+        <button
+          id="themeToggle"
+          class="button button-light theme-toggle"
+          type="button"
+          aria-label="Switch to dark mode"
+          aria-pressed="false"
+        >
+          Dark mode
+        </button>
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <section class="toolbar">
+        <div></div>
+        <div class="toolbar-actions">
+          <span id="statusDot" class="status-dot"></span>
+          <span id="status" role="status">Disconnected</span>
+          <button id="runBtn" class="button button-dark">
+            <span class="play-icon">▶</span> Run p5
+          </button>
+          <button id="uploadBtn" class="button button-accent">
+            Compile + Upload
+          </button>
+        </div>
+      </section>
+
+      <section class="workbench" aria-label="Code workspace">
+        <section class="editor-panel panel">
+          <header class="panel-heading editor-heading">
+            <div class="tabs" role="tablist" aria-label="Editor">
+              <button
+                class="tab active"
+                data-editor-tab="arduino"
+                role="tab"
+                aria-selected="true"
+              >
+                Arduino <span>.ino</span>
+              </button>
+              <button
+                class="tab"
+                data-editor-tab="p5"
+                role="tab"
+                aria-selected="false"
+              >
+                p5.js <span>↗</span>
+              </button>
+            </div>
+            <label class="select-wrap" for="exampleSelect">
+              <span class="sr-only">Example</span>
+              <select id="exampleSelect" aria-label="Load example">
+                <option value="input">Input Lab</option>
+                <option value="lissajous">Lissajous</option>
+                <option value="drawing">Sensor Drawing</option>
+                <option value="browser">Mouse to LED</option>
+              </select>
+            </label>
+            <button
+              id="resetExampleBtn"
+              class="icon-button"
+              title="Reset the selected example"
+            >
+              Reset
+            </button>
+          </header>
+          <div id="arduinoEditor" class="editor-host" role="tabpanel"></div>
+          <div id="p5Editor" class="editor-host hidden" role="tabpanel"></div>
+          <footer class="editor-footer">
+            <span id="editorLanguage">Arduino / C++</span>
+            <span><kbd>⌘</kbd>/<kbd>Ctrl</kbd> + <kbd>Enter</kbd> to run</span>
+          </footer>
+        </section>
+
+        <section class="canvas-panel panel" aria-label="p5 canvas">
+          <header class="panel-heading">
+            <div>
+              <span class="live-badge"><i></i> p5</span>
+            </div>
+            <span class="canvas-size">600 × 600</span>
+          </header>
+          <div class="canvas-frame">
+            <iframe
+              id="p5Frame"
+              title="Isolated p5 sketch"
+              sandbox="allow-scripts"
+              referrerpolicy="no-referrer"
+            ></iframe>
+          </div>
+          <footer class="canvas-footer">
+            <span>Sensor → serial → browser → image</span>
+            <span id="serialIndicator">Waiting for board</span>
+          </footer>
+        </section>
+
+        <aside class="monitor-panel panel">
+          <header class="panel-heading">
+            <div>
+              <p class="eyebrow">LIVE DATA</p>
+              <h2>Signal monitor</h2>
+            </div>
+            <span id="signalCount" class="count-badge">0</span>
+          </header>
+          <div id="signals" class="signal-list">
+            <p class="empty-state">Connect a board to see incoming values.</p>
+          </div>
+          <section class="send-controls">
+            <p class="eyebrow">SEND TO ARDUINO</p>
+            <div class="send-row">
+              <input
+                id="sendName"
+                value="LED"
+                aria-label="Message name"
+                maxlength="32"
+              />
+              <input
+                id="sendValue"
+                value="1"
+                aria-label="Message value"
+                inputmode="decimal"
+              />
+              <button id="sendBtn" class="button button-dark" disabled>
+                Send
+              </button>
+            </div>
+            <div class="send-row">
+              <button id="ledBtn" class="button button-light" disabled>
+                LED 13: OFF
+              </button>
+              <label class="range-control"
+                >PWM 11
+                <input
+                  id="pwmSlider"
+                  type="range"
+                  min="0"
+                  max="255"
+                  value="0"
+                  disabled
+              /></label>
+            </div>
+            <button id="autoBtn" class="text-button" disabled>
+              Send raw AUTO command ↗
+            </button>
+          </section>
+          <section class="api-note">
+            <p class="eyebrow">P5 API</p>
+            <code>signals.A0</code><code>send("LED", 1)</code>
+            <small>Arduino prints named values, one line at a time.</small>
+          </section>
+        </aside>
+      </section>
+
+      <section class="output-panel panel">
+        <header class="panel-heading output-heading">
+          <div class="tabs" role="tablist" aria-label="Output panels">
+            <button
+              class="tab active"
+              data-output-tab="serial"
+              role="tab"
+              aria-selected="true"
+            >
+              Serial <span id="serialBadge">0</span>
+            </button>
+            <button
+              class="tab"
+              data-output-tab="console"
+              role="tab"
+              aria-selected="false"
+            >
+              p5 Console
+            </button>
+            <button
+              class="tab"
+              data-output-tab="build"
+              role="tab"
+              aria-selected="false"
+            >
+              Build
+            </button>
+          </div>
+          <button id="clearOutputBtn" class="text-button">Clear</button>
+        </header>
+        <div id="serialOutput" class="output-view serial-view">
+          <p class="output-hint">
+            Serial output will appear here when the board is connected.
+          </p>
+        </div>
+        <div id="consoleOutput" class="output-view hidden" aria-live="polite">
+          <p class="output-hint">
+            Run the p5 sketch to see console messages and errors.
+          </p>
+        </div>
+        <div id="buildOutput" class="output-view hidden" aria-live="polite">
+          <p class="output-hint">
+            Compile and upload diagnostics will appear here.
+          </p>
+        </div>
+      </section>
+      <footer class="page-footer">
+        <span
+          >Runs in desktop Chrome or Edge · Web Serial requires HTTPS or
+          localhost</span
+        ><span>Local sketches are saved in this browser</span>
+      </footer>
+    </main>
+    <script type="module" src="/ide/main.js"></script>
+  </body>
+</html>

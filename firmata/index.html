@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f3f3ef" />
+    <title>p5comp — firmata</title>
+    <link rel="stylesheet" href="/shared/ui/app.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/sim/">p5comp</a>
+      <nav class="product-nav" aria-label="Sections">
+        <a href="/sim/">circuit</a><a href="/ide">code</a
+        ><a href="/firmata/" class="active" aria-current="page">firmata</a>
+      </nav>
+      <div class="device-controls">
+        <label for="boardSelect">BOARD</label>
+        <select id="boardSelect" aria-label="Board">
+          <option value="uno">Arduino Uno R3</option>
+          <option value="mega">Arduino Mega 2560</option>
+        </select>
+        <button id="flashBtn" class="button button-accent" disabled>
+          Flash Firmata
+        </button>
+        <button id="connectBtn" class="button button-light">
+          Connect Firmata
+        </button>
+        <button id="disconnectBtn" class="button button-quiet" disabled>
+          Disconnect
+        </button>
+        <button
+          id="themeToggle"
+          class="button button-light theme-toggle"
+          type="button"
+          aria-label="Switch to dark mode"
+          aria-pressed="false"
+        >
+          Dark mode
+        </button>
+      </div>
+    </header>
+    <main class="app-shell">
+      <section class="toolbar">
+        <div></div>
+        <div class="toolbar-actions">
+          <span id="statusDot" class="status-dot"></span
+          ><span id="status" role="status">Disconnected</span
+          ><button id="runBtn" class="button button-dark">▶ Run p5</button>
+        </div>
+      </section>
+      <section class="workbench firmata-workbench">
+        <section class="editor-panel panel">
+          <header class="panel-heading editor-heading">
+            <div class="tabs">
+              <button class="tab active">p5.js <span>↗</span></button>
+            </div>
+            <label class="select-wrap"
+              ><span class="sr-only">Example</span
+              ><select id="exampleSelect" aria-label="Load example">
+                <option value="light">Light to circle</option>
+                <option value="pwm">Mouse to LED PWM</option>
+                <option value="both">Bidirectional</option>
+              </select></label
+            >
+            <button id="resetExampleBtn" class="icon-button">Reset</button>
+          </header>
+          <div id="p5Editor" class="editor-host"></div>
+          <footer class="editor-footer">
+            <span>JavaScript / p5.js</span
+            ><span><kbd>⌘</kbd>/<kbd>Ctrl</kbd> + <kbd>Enter</kbd> to run</span>
+          </footer>
+        </section>
+        <section class="canvas-panel panel" aria-label="p5 canvas">
+          <header class="panel-heading">
+            <span class="live-badge"><i></i> p5</span
+            ><span class="canvas-size">600 × 600</span>
+          </header>
+          <div class="canvas-frame">
+            <iframe
+              id="p5Frame"
+              title="Isolated p5 sketch"
+              sandbox="allow-scripts"
+              referrerpolicy="no-referrer"
+            ></iframe>
+          </div>
+          <footer class="canvas-footer">
+            <span>Pin → Firmata → browser → p5</span
+            ><span id="serialIndicator">Waiting for board</span>
+          </footer>
+        </section>
+        <aside class="monitor-panel panel">
+          <header class="panel-heading">
+            <div>
+              <p class="eyebrow">BOARD I/O</p>
+              <h2>Pin configuration</h2>
+            </div>
+            <span id="pinCount" class="count-badge">0</span>
+          </header>
+          <div class="sampling-control">
+            <label for="samplingSelect">INPUT SAMPLING</label
+            ><select id="samplingSelect">
+              <option value="10">10 ms</option>
+              <option value="20" selected>20 ms</option>
+              <option value="33">33 ms</option>
+              <option value="50">50 ms</option>
+              <option value="100">100 ms</option>
+              <option value="250">250 ms</option>
+              <option value="500">500 ms</option>
+              <option value="1000">1000 ms</option></select
+            ><label class="unlock-option"
+              ><input id="unlockSerialPins" type="checkbox" /> Unlock D0 /
+              D1</label
+            >
+          </div>
+          <div id="pinList" class="pin-list">
+            <p class="empty-state">
+              Connect a board running StandardFirmata to discover its pins.
+            </p>
+          </div>
+          <div class="firmata-note">
+            <code>pins.light.value</code><code>pins.led.write(180)</code
+            ><small
+              >Aliases are optional. Physical names such as D11 and A0 always
+              work.</small
+            >
+          </div>
+        </aside>
+      </section>
+      <section class="output-panel panel">
+        <header class="panel-heading output-heading">
+          <div class="tabs">
+            <button class="tab active">Firmata diagnostics</button
+            ><button class="tab" id="consoleTab">p5 Console</button>
+          </div>
+          <button id="clearOutputBtn" class="text-button">Clear</button>
+        </header>
+        <div id="firmataOutput" class="output-view serial-view">
+          <p class="output-hint">
+            Connect a StandardFirmata-enabled Uno or Mega to query its
+            capabilities.
+          </p>
+        </div>
+        <div id="consoleOutput" class="output-view hidden">
+          <p class="output-hint">
+            Run the p5 sketch to see console messages and errors.
+          </p>
+        </div>
+      </section>
+      <footer class="page-footer">
+        <span
+          >Use StandardFirmata on an Uno R3 or Mega 2560 · Web Serial requires
+          Chrome / Edge</span
+        ><span id="firmwareInfo">Firmware not detected</span>
+      </footer>
+    </main>
+    <script type="module" src="/firmata/main.js"></script>
+  </body>
+</html>

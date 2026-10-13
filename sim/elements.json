@@ -1,0 +1,1006 @@
+[
+  {
+    "type": "wokwi-biaxial-stepper",
+    "name": "Biaxial Stepper",
+    "group": "Actuators",
+    "modeled": false,
+    "docs": "wokwi-biaxial-stepper",
+    "pins": [
+      "A1-",
+      "A1+",
+      "B1+",
+      "B1-",
+      "A2-",
+      "A2+",
+      "B2+",
+      "B2-"
+    ],
+    "source": "biaxial-stepper-element.js"
+  },
+  {
+    "type": "wokwi-buzzer",
+    "name": "Buzzer",
+    "group": "Actuators",
+    "modeled": false,
+    "docs": "wokwi-buzzer",
+    "pins": [
+      "1",
+      "2"
+    ],
+    "source": "buzzer-element.js"
+  },
+  {
+    "type": "wokwi-ks2e-m-dc5",
+    "name": "Relay (KS2E-M-DC5)",
+    "group": "Actuators",
+    "modeled": false,
+    "docs": "wokwi-ks2e-m-dc5",
+    "pins": [
+      "NO2",
+      "NC2",
+      "P2",
+      "COIL2",
+      "NO1",
+      "NC1",
+      "P1",
+      "COIL1"
+    ],
+    "source": "ks2e-m-dc5-element.js"
+  },
+  {
+    "type": "wokwi-servo",
+    "name": "Servo",
+    "group": "Actuators",
+    "modeled": false,
+    "docs": "wokwi-servo",
+    "pins": [
+      "GND",
+      "V+",
+      "PWM"
+    ],
+    "source": "servo-element.js"
+  },
+  {
+    "type": "wokwi-stepper-motor",
+    "name": "Stepper Motor",
+    "group": "Actuators",
+    "modeled": false,
+    "docs": "wokwi-stepper-motor",
+    "pins": [
+      "A-",
+      "A+",
+      "B+",
+      "B-"
+    ],
+    "source": "stepper-motor-element.js"
+  },
+  {
+    "type": "wokwi-breadboard",
+    "name": "Breadboard",
+    "group": "Basic",
+    "modeled": true,
+    "docs": null,
+    "pins": [],
+    "source": null
+  },
+  {
+    "type": "wokwi-ds1307",
+    "name": "DS1307 real-time clock",
+    "group": "Basic",
+    "modeled": false,
+    "docs": "wokwi-ds1307",
+    "pins": [
+      "GND",
+      "5V",
+      "SDA",
+      "SCL",
+      "SQW"
+    ],
+    "source": "ds1307-element.js"
+  },
+  {
+    "type": "wokwi-ir-receiver",
+    "name": "IR receiver",
+    "group": "Basic",
+    "modeled": false,
+    "docs": "wokwi-ir-receiver",
+    "pins": [
+      "GND",
+      "VCC",
+      "DAT"
+    ],
+    "source": "ir-receiver-element.js"
+  },
+  {
+    "type": "wokwi-microsd-card",
+    "name": "Microsd Card",
+    "group": "Basic",
+    "modeled": false,
+    "docs": "wokwi-microsd-card",
+    "pins": [
+      "CD",
+      "DO",
+      "GND",
+      "SCK",
+      "VCC",
+      "DI",
+      "CS"
+    ],
+    "source": "microsd-card-element.js"
+  },
+  {
+    "type": "wokwi-resistor",
+    "name": "Resistor",
+    "group": "Basic",
+    "modeled": false,
+    "docs": "wokwi-resistor",
+    "pins": [
+      "1",
+      "2"
+    ],
+    "source": "resistor-element.js"
+  },
+  {
+    "type": "wokwi-arduino-mega",
+    "name": "Arduino Mega",
+    "group": "Boards",
+    "modeled": false,
+    "docs": "wokwi-arduino-mega",
+    "pins": [
+      "SCL",
+      "SDA",
+      "AREF",
+      "GND.1",
+      "13",
+      "12",
+      "11",
+      "10",
+      "9",
+      "8",
+      "7",
+      "6",
+      "5",
+      "4",
+      "3",
+      "2",
+      "1",
+      "0",
+      "14",
+      "15",
+      "16",
+      "17",
+      "18",
+      "19",
+      "20",
+      "21",
+      "5V.1",
+      "5V.2",
+      "22",
+      "23",
+      "24",
+      "25",
+      "26",
+      "27",
+      "28",
+      "29",
+      "30",
+      "31",
+      "32",
+      "33",
+      "34",
+      "35",
+      "36",
+      "37",
+      "38",
+      "39",
+      "40",
+      "41",
+      "42",
+      "43",
+      "44",
+      "45",
+      "46",
+      "47",
+      "48",
+      "49",
+      "50",
+      "51",
+      "52",
+      "53",
+      "GND.4",
+      "GND.5",
+      "IOREF",
+      "RESET",
+      "3.3V",
+      "5V",
+      "GND.2",
+      "GND.3",
+      "VIN",
+      "A0",
+      "A1",
+      "A2",
+      "A3",
+      "A4",
+      "A5",
+      "A6",
+      "A7",
+      "A8",
+      "A9",
+      "A10",
+      "A11",
+      "A12",
+      "A13",
+      "A14",
+      "A15"
+    ],
+    "source": "arduino-mega-element.js"
+  },
+  {
+    "type": "wokwi-arduino-nano",
+    "name": "Arduino Nano",
+    "group": "Boards",
+    "modeled": false,
+    "docs": "wokwi-arduino-nano",
+    "pins": [
+      "12",
+      "11",
+      "10",
+      "9",
+      "8",
+      "7",
+      "6",
+      "5",
+      "4",
+      "3",
+      "2",
+      "GND.2",
+      "RESET.2",
+      "0",
+      "1",
+      "13",
+      "3.3V",
+      "AREF",
+      "A0",
+      "A1",
+      "A2",
+      "A3",
+      "A4",
+      "A5",
+      "A6",
+      "A7",
+      "5V",
+      "RESET",
+      "GND.1",
+      "VIN",
+      "12.2",
+      "5V.2",
+      "13.2",
+      "11.2",
+      "RESET.3",
+      "GND.3"
+    ],
+    "source": "arduino-nano-element.js"
+  },
+  {
+    "type": "wokwi-nano-rp2040-connect",
+    "name": "Arduino Nano RP2040 Connect",
+    "group": "Boards",
+    "modeled": false,
+    "docs": null,
+    "pins": [
+      "D12",
+      "D11",
+      "D10",
+      "D9",
+      "D8",
+      "D7",
+      "D6",
+      "D5",
+      "D4",
+      "D3",
+      "D2",
+      "GND.1",
+      "RESET",
+      "RX",
+      "TX",
+      "D13",
+      "3.3V",
+      "AREF",
+      "A0",
+      "A1",
+      "A2",
+      "A3",
+      "A4",
+      "A5",
+      "A6",
+      "A7",
+      "5V",
+      "RESET.2",
+      "GND.2",
+      "VIN"
+    ],
+    "source": "nano-rp2040-connect-element.js"
+  },
+  {
+    "type": "wokwi-arduino-uno",
+    "name": "Arduino Uno R3",
+    "group": "Boards",
+    "modeled": true,
+    "docs": "wokwi-arduino-uno",
+    "pins": [
+      "A5.2",
+      "A4.2",
+      "AREF",
+      "GND.1",
+      "13",
+      "12",
+      "11",
+      "10",
+      "9",
+      "8",
+      "7",
+      "6",
+      "5",
+      "4",
+      "3",
+      "2",
+      "1",
+      "0",
+      "IOREF",
+      "RESET",
+      "3.3V",
+      "5V",
+      "GND.2",
+      "GND.3",
+      "VIN",
+      "A0",
+      "A1",
+      "A2",
+      "A3",
+      "A4",
+      "A5"
+    ],
+    "source": "arduino-uno-element.js"
+  },
+  {
+    "type": "wokwi-esp32-devkit-v1",
+    "name": "ESP32 DevKit V1",
+    "group": "Boards",
+    "modeled": false,
+    "docs": null,
+    "pins": [
+      "VIN",
+      "GND.2",
+      "D13",
+      "D12",
+      "D14",
+      "D27",
+      "D26",
+      "D25",
+      "D33",
+      "D32",
+      "D35",
+      "D34",
+      "VN",
+      "VP",
+      "EN",
+      "3V3",
+      "GND.1",
+      "D15",
+      "D2",
+      "D4",
+      "RX2",
+      "TX2",
+      "D5",
+      "D18",
+      "D19",
+      "D21",
+      "RX0",
+      "TX0",
+      "D22",
+      "D23"
+    ],
+    "source": "esp32-devkit-v1-element.js"
+  },
+  {
+    "type": "wokwi-franzininho",
+    "name": "Franzininho",
+    "group": "Boards",
+    "modeled": false,
+    "docs": "wokwi-franzininho",
+    "pins": [
+      "GND.1",
+      "VCC.1",
+      "PB4",
+      "PB5",
+      "PB3",
+      "PB2",
+      "PB1",
+      "PB0",
+      "VIN",
+      "GND.2",
+      "VCC.2"
+    ],
+    "source": "franzininho-element.js"
+  },
+  {
+    "type": "wokwi-7segment",
+    "name": "7-segment display",
+    "group": "Displays",
+    "modeled": false,
+    "docs": "wokwi-7segment",
+    "pins": [
+      "COM.1",
+      "COM.2",
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "DP"
+    ],
+    "source": "7segment-element.js"
+  },
+  {
+    "type": "wokwi-ili9341",
+    "name": "ILI9341 TFT display",
+    "group": "Displays",
+    "modeled": false,
+    "docs": "wokwi-ili9341",
+    "pins": [
+      "VCC",
+      "GND",
+      "CS",
+      "RST",
+      "D/C",
+      "MOSI",
+      "SCK",
+      "LED",
+      "MISO"
+    ],
+    "source": "ili9341-element.js"
+  },
+  {
+    "type": "wokwi-lcd1602",
+    "name": "LCD 16×2",
+    "group": "Displays",
+    "modeled": false,
+    "docs": "wokwi-lcd1602",
+    "pins": [
+      "VSS",
+      "VDD",
+      "V0",
+      "RS",
+      "RW",
+      "E",
+      "D0",
+      "D1",
+      "D2",
+      "D3",
+      "D4",
+      "D5",
+      "D6",
+      "D7",
+      "A",
+      "K"
+    ],
+    "source": "lcd1602-element.js",
+    "variants": [
+      {
+        "name": "I2C",
+        "attrs": {
+          "pins": "i2c"
+        },
+        "pins": [
+          "GND",
+          "VCC",
+          "SDA",
+          "SCL"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "wokwi-lcd2004",
+    "name": "LCD 20×4",
+    "group": "Displays",
+    "modeled": false,
+    "docs": "wokwi-lcd2004",
+    "pins": [
+      "VSS",
+      "VDD",
+      "V0",
+      "RS",
+      "RW",
+      "E",
+      "D0",
+      "D1",
+      "D2",
+      "D3",
+      "D4",
+      "D5",
+      "D6",
+      "D7",
+      "A",
+      "K"
+    ],
+    "source": "lcd2004-element.js",
+    "variants": [
+      {
+        "name": "I2C",
+        "attrs": {
+          "pins": "i2c"
+        },
+        "pins": [
+          "GND",
+          "VCC",
+          "SDA",
+          "SCL"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "wokwi-led",
+    "name": "Led",
+    "group": "Displays",
+    "modeled": false,
+    "docs": "wokwi-led",
+    "pins": [
+      "A",
+      "C"
+    ],
+    "source": "led-element.js"
+  },
+  {
+    "type": "wokwi-led-bar-graph",
+    "name": "Led Bar Graph",
+    "group": "Displays",
+    "modeled": false,
+    "docs": "wokwi-led-bar-graph",
+    "pins": [
+      "A1",
+      "A2",
+      "A3",
+      "A4",
+      "A5",
+      "A6",
+      "A7",
+      "A8",
+      "A9",
+      "A10",
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6",
+      "C7",
+      "C8",
+      "C9",
+      "C10"
+    ],
+    "source": "led-bar-graph-element.js"
+  },
+  {
+    "type": "wokwi-led-ring",
+    "name": "Led Ring",
+    "group": "Displays",
+    "modeled": false,
+    "docs": "wokwi-led-ring",
+    "pins": [
+      "GND",
+      "VCC",
+      "DIN",
+      "DOUT"
+    ],
+    "source": "led-ring-element.js"
+  },
+  {
+    "type": "wokwi-neopixel-matrix",
+    "name": "Neopixel Matrix",
+    "group": "Displays",
+    "modeled": false,
+    "docs": null,
+    "pins": [
+      "GND",
+      "VCC",
+      "DIN",
+      "DOUT"
+    ],
+    "source": "neopixel-matrix-element.js"
+  },
+  {
+    "type": "wokwi-neopixel",
+    "name": "NeoPixel RGB LED",
+    "group": "Displays",
+    "modeled": false,
+    "docs": "wokwi-neopixel",
+    "pins": [
+      "VDD",
+      "DOUT",
+      "VSS",
+      "DIN"
+    ],
+    "source": "neopixel-element.js"
+  },
+  {
+    "type": "wokwi-rgb-led",
+    "name": "RGB LED",
+    "group": "Displays",
+    "modeled": false,
+    "docs": "wokwi-rgb-led",
+    "pins": [
+      "R",
+      "COM",
+      "G",
+      "B"
+    ],
+    "source": "rgb-led-element.js"
+  },
+  {
+    "type": "wokwi-ssd1306",
+    "name": "SSD1306 OLED display",
+    "group": "Displays",
+    "modeled": false,
+    "docs": "board-ssd1306",
+    "pins": [
+      "DATA",
+      "CLK",
+      "DC",
+      "RST",
+      "CS",
+      "3V3",
+      "VIN",
+      "GND"
+    ],
+    "source": "ssd1306-element.js"
+  },
+  {
+    "type": "wokwi-dip-switch-8",
+    "name": "Dip Switch 8",
+    "group": "Inputs",
+    "modeled": false,
+    "docs": "wokwi-dip-switch-8",
+    "pins": [
+      "1a",
+      "2a",
+      "3a",
+      "4a",
+      "5a",
+      "6a",
+      "7a",
+      "8a",
+      "8b",
+      "7b",
+      "6b",
+      "5b",
+      "4b",
+      "3b",
+      "2b",
+      "1b"
+    ],
+    "source": "dip-switch-8-element.js"
+  },
+  {
+    "type": "wokwi-ir-remote",
+    "name": "IR remote",
+    "group": "Inputs",
+    "modeled": false,
+    "docs": "wokwi-ir-remote",
+    "pins": [],
+    "source": "ir-remote-element.js"
+  },
+  {
+    "type": "wokwi-membrane-keypad",
+    "name": "Membrane Keypad",
+    "group": "Inputs",
+    "modeled": false,
+    "docs": "wokwi-membrane-keypad",
+    "pins": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "C1",
+      "C2",
+      "C3",
+      "C4"
+    ],
+    "source": "membrane-keypad-element.js"
+  },
+  {
+    "type": "wokwi-potentiometer",
+    "name": "Potentiometer",
+    "group": "Inputs",
+    "modeled": true,
+    "docs": "wokwi-potentiometer",
+    "pins": [
+      "GND",
+      "SIG",
+      "VCC"
+    ],
+    "source": "potentiometer-element.js"
+  },
+  {
+    "type": "wokwi-pushbutton",
+    "name": "Pushbutton",
+    "group": "Inputs",
+    "modeled": true,
+    "docs": "wokwi-pushbutton",
+    "pins": [
+      "1.l",
+      "2.l",
+      "1.r",
+      "2.r"
+    ],
+    "source": "pushbutton-element.js"
+  },
+  {
+    "type": "wokwi-pushbutton-6mm",
+    "name": "Pushbutton 6mm",
+    "group": "Inputs",
+    "modeled": false,
+    "docs": "wokwi-pushbutton-6mm",
+    "pins": [
+      "1.l",
+      "2.l",
+      "1.r",
+      "2.r"
+    ],
+    "source": "pushbutton-6mm-element.js"
+  },
+  {
+    "type": "wokwi-rotary-dialer",
+    "name": "Rotary Dialer",
+    "group": "Inputs",
+    "modeled": false,
+    "docs": null,
+    "pins": [
+      "GND",
+      "DIAL",
+      "PULSE"
+    ],
+    "source": "rotary-dialer-element.js"
+  },
+  {
+    "type": "wokwi-ky-040",
+    "name": "Rotary encoder (KY-040)",
+    "group": "Inputs",
+    "modeled": false,
+    "docs": "wokwi-ky-040",
+    "pins": [
+      "CLK",
+      "DT",
+      "SW",
+      "VCC",
+      "GND"
+    ],
+    "source": "ky-040-element.js"
+  },
+  {
+    "type": "wokwi-slide-potentiometer",
+    "name": "Slide Potentiometer",
+    "group": "Inputs",
+    "modeled": false,
+    "docs": "wokwi-slide-potentiometer",
+    "pins": [
+      "VCC",
+      "SIG",
+      "GND"
+    ],
+    "source": "slide-potentiometer-element.js"
+  },
+  {
+    "type": "wokwi-slide-switch",
+    "name": "Slide Switch",
+    "group": "Inputs",
+    "modeled": false,
+    "docs": "wokwi-slide-switch",
+    "pins": [
+      "1",
+      "2",
+      "3"
+    ],
+    "source": "slide-switch-element.js"
+  },
+  {
+    "type": "wokwi-tilt-switch",
+    "name": "Tilt Switch",
+    "group": "Inputs",
+    "modeled": false,
+    "docs": null,
+    "pins": [
+      "GND",
+      "VCC",
+      "OUT"
+    ],
+    "source": "tilt-switch-element.js"
+  },
+  {
+    "type": "wokwi-analog-joystick",
+    "name": "Analog Joystick",
+    "group": "Sensors",
+    "modeled": false,
+    "docs": "wokwi-analog-joystick",
+    "pins": [
+      "VCC",
+      "VERT",
+      "HORZ",
+      "SEL",
+      "GND"
+    ],
+    "source": "analog-joystick-element.js"
+  },
+  {
+    "type": "wokwi-big-sound-sensor",
+    "name": "Big Sound Sensor",
+    "group": "Sensors",
+    "modeled": false,
+    "docs": null,
+    "pins": [
+      "AOUT",
+      "GND",
+      "VCC",
+      "DOUT"
+    ],
+    "source": "big-sound-sensor-element.js"
+  },
+  {
+    "type": "wokwi-dht22",
+    "name": "DHT22 temperature / humidity",
+    "group": "Sensors",
+    "modeled": false,
+    "docs": "wokwi-dht22",
+    "pins": [
+      "VCC",
+      "SDA",
+      "NC",
+      "GND"
+    ],
+    "source": "dht22-element.js"
+  },
+  {
+    "type": "wokwi-flame-sensor",
+    "name": "Flame Sensor",
+    "group": "Sensors",
+    "modeled": false,
+    "docs": null,
+    "pins": [
+      "VCC",
+      "GND",
+      "DOUT",
+      "AOUT"
+    ],
+    "source": "flame-sensor-element.js"
+  },
+  {
+    "type": "wokwi-gas-sensor",
+    "name": "Gas Sensor",
+    "group": "Sensors",
+    "modeled": false,
+    "docs": "wokwi-gas-sensor",
+    "pins": [
+      "AOUT",
+      "DOUT",
+      "GND",
+      "VCC"
+    ],
+    "source": "gas-sensor-element.js"
+  },
+  {
+    "type": "wokwi-hc-sr04",
+    "name": "HC-SR04 distance sensor",
+    "group": "Sensors",
+    "modeled": true,
+    "docs": "wokwi-hc-sr04",
+    "pins": [
+      "VCC",
+      "TRIG",
+      "ECHO",
+      "GND"
+    ],
+    "source": "hc-sr04-element.js"
+  },
+  {
+    "type": "wokwi-heart-beat-sensor",
+    "name": "Heart Beat Sensor",
+    "group": "Sensors",
+    "modeled": false,
+    "docs": null,
+    "pins": [
+      "GND",
+      "VCC",
+      "OUT"
+    ],
+    "source": "heart-beat-sensor-element.js"
+  },
+  {
+    "type": "wokwi-hx711",
+    "name": "HX711 load-cell amplifier",
+    "group": "Sensors",
+    "modeled": false,
+    "docs": "wokwi-hx711",
+    "pins": [
+      "VCC",
+      "DT",
+      "SCK",
+      "GND"
+    ],
+    "source": "hx711-element.js"
+  },
+  {
+    "type": "wokwi-mpu6050",
+    "name": "MPU6050 accelerometer",
+    "group": "Sensors",
+    "modeled": false,
+    "docs": "wokwi-mpu6050",
+    "pins": [
+      "INT",
+      "AD0",
+      "XCL",
+      "XDA",
+      "SDA",
+      "SCL",
+      "GND",
+      "VCC"
+    ],
+    "source": "mpu6050-element.js"
+  },
+  {
+    "type": "wokwi-ntc-temperature-sensor",
+    "name": "NTC temperature sensor",
+    "group": "Sensors",
+    "modeled": false,
+    "docs": "wokwi-ntc-temperature-sensor",
+    "pins": [
+      "GND",
+      "VCC",
+      "OUT"
+    ],
+    "source": "ntc-temperature-sensor-element.js"
+  },
+  {
+    "type": "wokwi-photoresistor-sensor",
+    "name": "Photoresistor Sensor",
+    "group": "Sensors",
+    "modeled": false,
+    "docs": "wokwi-photoresistor-sensor",
+    "pins": [
+      "VCC",
+      "GND",
+      "DO",
+      "AO"
+    ],
+    "source": "photoresistor-sensor-element.js"
+  },
+  {
+    "type": "wokwi-pir-motion-sensor",
+    "name": "Pir Motion Sensor",
+    "group": "Sensors",
+    "modeled": false,
+    "docs": "wokwi-pir-motion-sensor",
+    "pins": [
+      "VCC",
+      "OUT",
+      "GND"
+    ],
+    "source": "pir-motion-sensor-element.js"
+  },
+  {
+    "type": "wokwi-small-sound-sensor",
+    "name": "Small Sound Sensor",
+    "group": "Sensors",
+    "modeled": false,
+    "docs": null,
+    "pins": [
+      "AOUT",
+      "GND",
+      "VCC",
+      "DOUT"
+    ],
+    "source": "small-sound-sensor-element.js"
+  }
+]

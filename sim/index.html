@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#fafafa" />
+    <title>p5comp — circuit</title>
+  </head>
+  <body>
+    <header class="bar">
+      <a class="brand" href="/sim/">p5comp</a>
+      <nav class="section-nav" aria-label="Sections">
+        <a href="/sim/" class="active" aria-current="page">circuit</a
+        ><a href="/ide">code</a><a href="/firmata/">firmata</a>
+      </nav>
+      <details class="app-menu">
+        <summary title="Other labs" aria-label="Other labs">◫</summary>
+        <nav aria-label="Sections">
+          <a href="/sim/" aria-current="page">circuit</a><a href="/ide">code</a
+          ><a href="/firmata/">firmata</a>
+        </nav>
+      </details>
+      <button id="save">Save project</button
+      ><button id="open">Open project</button
+      ><input id="projectFile" type="file" accept=".json" hidden /><button
+        id="lesson"
+      >
+        Reset circuit
+      </button>
+      <span id="status" role="status">Ready · simulated Uno</span>
+      <button id="run" class="primary">Run Arduino + p5</button
+      ><button id="pause" disabled>Pause</button
+      ><button id="reset">Reset</button>
+      <button id="toggleCode">Code editors</button
+      ><button id="toggleControls" aria-pressed="true">Input controls</button
+      ><button id="hideUI">Hide interface</button>
+      <button
+        id="themeToggle"
+        aria-label="Switch to dark mode"
+        aria-pressed="false"
+      >
+        Dark mode
+      </button>
+    </header>
+    <button
+      id="showUI"
+      title="Show interface (Tab)"
+      aria-label="Show interface"
+      hidden
+    >
+      ◫
+    </button>
+    <main>
+      <section class="workspace">
+        <section class="circuit-panel" aria-label="Circuit builder">
+          <div class="canvas-tools" aria-label="Canvas tools">
+            <button id="addElement">Add element</button
+            ><button id="wireMode" aria-pressed="false">Connect pins</button
+            ><button id="selectTool" aria-pressed="false">Box selection</button>
+            <button id="zoomOut" aria-label="Zoom out">−</button
+            ><output id="zoomLabel">100%</output
+            ><button id="zoomIn" aria-label="Zoom in">+</button
+            ><button id="fit">Fit circuit</button>
+            <button
+              id="undoCanvas"
+              aria-label="Undo circuit edit"
+              title="⌘/Ctrl Z"
+            >
+              ↶</button
+            ><button
+              id="redoCanvas"
+              aria-label="Redo circuit edit"
+              title="⌘/Ctrl Shift Z"
+            >
+              ↷
+            </button>
+
+            <details class="canvas-settings">
+              <summary title="Circuit settings" aria-label="Circuit settings">
+                ⚙
+              </summary>
+              <div>
+                <label
+                  ><input id="labels" type="checkbox" checked />Labels</label
+                ><label><input id="snap" type="checkbox" checked />Snap</label
+                ><label
+                  ><input
+                    id="orthogonal"
+                    type="checkbox"
+                    checked
+                  />Orthogonal</label
+                >
+                <label title="Grid reference"
+                  >Grid<select id="gridReference" aria-label="Grid reference">
+                    <option value="breadboard">Breadboard</option>
+                    <option value="none">None</option>
+                    <option value="arduino">Arduino</option>
+                  </select></label
+                >
+                <label
+                  >Spacing<select
+                    id="gridSpacing"
+                    aria-label="Grid spacing in pin pitches"
+                  >
+                    <option value="0.5">½ pin</option>
+                    <option value="1" selected>1 pin</option>
+                    <option value="2">2 pins</option>
+                  </select></label
+                >
+                <label
+                  >Alignment<select
+                    id="gridAlignment"
+                    aria-label="Grid alignment"
+                  >
+                    <option value="holes">On holes</option>
+                    <option value="between">Between holes</option>
+                  </select></label
+                >
+                <button
+                  id="routeWireSimple"
+                  disabled
+                  title="Allow crossings; avoid overlapping wire segments"
+                >
+                  Autoroute simple</button
+                ><button id="routeWire" disabled>Autoroute selected wire</button
+                ><button id="cleanup">Cleanup wires</button>
+              </div>
+            </details>
+            <button id="expandCanvas" aria-pressed="false">
+              Expand circuit
+            </button>
+          </div>
+          <div
+            id="stage"
+            tabindex="0"
+            role="application"
+            aria-label="Infinite circuit canvas"
+            title="Pan empty space or Space-drag. Ctrl/⌘ scroll zooms. Drag inactive bodies to move parts. Shift-click selects multiple items; Shift-drag empty space box selects. Click or drag between terminals. Alt moves freely; Shift locks an axis. Right-click a wire to autoroute."
+          >
+            <div id="world">
+              <div id="parts"></div>
+              <svg
+                id="wires"
+                viewBox="0 0 850 540"
+                aria-label="Circuit wires and terminals"
+              ></svg>
+            </div>
+          </div>
+          <div class="canvas-inspector">
+            <label title="Wire color"
+              ><input
+                id="wireColor"
+                type="color"
+                value="#788fa5"
+                aria-label="Wire color"
+            /></label>
+            <label title="Part tint"
+              ><input
+                id="partTint"
+                type="color"
+                value="#87918c"
+                aria-label="Part tint"
+                disabled /></label
+            ><button id="grayTint" disabled>Gray tint</button
+            ><button id="originalTint" disabled>Original colors</button>
+            <button id="removePart" disabled>Remove selected objects</button
+            ><small id="selectionCount"></small>
+          </div>
+          <div class="controls" id="controls"></div>
+          <div class="section-foot" aria-label="Circuit status bar">
+            <span id="notice" role="status" hidden></span>
+            <span id="circuitHealth">Checking wiring…</span
+            ><span id="led" data-on="false">LED 13 · off</span
+            ><span id="clock">0.00 s</span>
+          </div>
+        </section>
+        <section class="preview-panel" aria-label="p5 preview">
+          <div class="section-bar">
+            <span>p5 sketch</span
+            ><select id="comms" aria-label="Communication API">
+              <option value="webserial">p5.webserial</option>
+              <option value="native">navigator.serial</option></select
+            ><button id="runP5">Run p5</button>
+          </div>
+          <div class="preview">
+            <iframe
+              id="p5Frame"
+              title="Isolated p5 sketch"
+              sandbox="allow-scripts"
+            ></iframe>
+          </div>
+          <div class="readings" aria-label="Received Arduino values">
+            <span title="Arduino UART output">↳</span
+            ><output id="packet">Waiting for Arduino</output>
+          </div>
+          <details id="wireInspector">
+            <summary>Connections <span id="wireCount"></span></summary>
+            <div id="connectionList"></div>
+            <button id="removeWire" disabled>Remove selected wire</button>
+          </details>
+        </section>
+      </section>
+      <details class="code-panel" id="code">
+        <summary title="Arduino and p5.js editors">⌨ <span>Code</span></summary>
+        <div class="editors">
+          <section>
+            <div class="section-bar">
+              Arduino .ino <button id="compile">Compile + run</button>
+            </div>
+            <div id="arduinoEditor"></div>
+          </section>
+          <section>
+            <div class="section-bar">
+              p5.js <span id="apiLabel">p5.webserial</span
+              ><button id="loadExample">Load API example</button>
+            </div>
+            <div id="p5Editor"></div>
+          </section>
+        </div>
+      </details>
+      <details class="serial-panel" id="monitor">
+        <summary>Console <span title="9600 baud UART">9600</span></summary>
+        <div class="log-tools">
+          <button id="clearLog">Clear</button>
+          <form id="sendForm">
+            <input
+              id="sendText"
+              aria-label="Serial command"
+              value="PING"
+            /><button>Send to Uno</button>
+          </form>
+        </div>
+        <pre id="log"></pre>
+      </details>
+      <footer>
+        <div>
+          <button id="usb">Connect USB Uno</button
+          ><button id="upload" disabled>Upload compiled sketch</button
+          ><span id="firmwareState">Bundled lesson firmware</span>
+        </div>
+      </footer>
+    </main>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
