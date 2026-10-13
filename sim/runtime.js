@@ -1,3 +1,4 @@
+import { passiveStates } from "./passiveStates.js";
 import {
   CPU,
   avrInstruction,
@@ -179,6 +180,18 @@ export class UnoRuntime {
       seconds: this.cpu.cycles / F_CPU,
       led: this.ports.B.pinState(5) === PinState.High,
       baudRate: this.uart.baudRate,
+      parts: passiveStates(
+        this.topology.passive,
+        Array.from({ length: 20 }, (_, n) => {
+          const [port, bit] = this.pin(n),
+            state = port.pinState(bit);
+          return state === PinState.High
+            ? 5
+            : state === PinState.Low
+              ? 0
+              : null;
+        }),
+      ),
     };
   }
 }

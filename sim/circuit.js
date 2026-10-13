@@ -1,3 +1,4 @@
+import { resistance } from "./passiveStates.js";
 import { elementByType, elementPins } from "./elements.js";
 import { freePoint } from "./partGeometry.js";
 export const TYPES = [
@@ -66,7 +67,18 @@ export function validateDiagram(d) {
     if (!/^[a-zA-Z][\w-]{0,30}$/.test(p.id) || ids.has(p.id))
       throw new Error("Part IDs must be unique simple names.");
     ids.add(p.id);
-    if (!elementByType.has(p.type)) throw new Error(`Unsupported part: ${p.type}`);
+    if (
+      p.attrs != null &&
+      (typeof p.attrs !== "object" || Array.isArray(p.attrs))
+    )
+      throw new Error("attrs must be a JSON object.");
+    if (
+      p.label != null &&
+      (typeof p.label !== "string" || p.label.length > 100)
+    )
+      throw new Error("Label must be text under 100 characters.");
+    if (!elementByType.has(p.type))
+      throw new Error(`Unsupported part: ${p.type}`);
     if (
       !Number.isFinite(p.left) ||
       !Number.isFinite(p.top) ||
@@ -216,5 +228,39 @@ export function resolveCircuit(diagram) {
       );
     }
   }
-  return { pots, sonars, buttons, rails, warnings };
+  const netNames = new Map();
+  for (const terminal of [...known].sort()) {
+    const root = find(terminal);
+    if (!netNames.has(root)) netNames.set(root, terminal);
+  }
+  const net = (terminal) => netNames.get(find(terminal)) || terminal;
+  const passive = {
+    sources: [
+      { net: net(`${id}:5V`), volts: 5 },
+      { net: net(`${id}:GND.1`), volts: 0 },
+      ...Array.from({ length: 20 }, (_, pin) => ({
+        net: net(`${id}:${pin < 14 ? pin : "A" + (pin - 14)}`),
+        pin,
+      })),
+    ],
+    resistors: [],
+    leds: [],
+  };
+  for (const p of diagram.parts) {
+    if (p.type === "wokwi-resistor")
+      passive.resistors.push({
+        id: p.id,
+        a: net(p.id + ":1"),
+        b: net(p.id + ":2"),
+        ohms: resistance(p.attrs?.value),
+      });
+    if (p.type === "wokwi-led")
+      passive.leds.push({
+        id: p.id,
+        a: net(p.id + ":A"),
+        c: net(p.id + ":C"),
+        forwardVoltage: Number(p.attrs?.forwardVoltage) || 2,
+      });
+  }
+  return { pots, sonars, buttons, rails, warnings, passive };
 }

@@ -28,6 +28,7 @@
     "avrgirl-arduino": "^5.0.1",
     "codemirror": "^6.0.1",
     "express": "^5.1.0",
+    "fflate": "^0.8.3",
     "jspdf": "^4.2.1",
     "p5": "^1.11.10",
     "prettier": "^3.9.10"

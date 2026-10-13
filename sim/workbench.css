@@ -788,3 +788,63 @@ input[type="checkbox"]:focus-visible {
   text-align: center;
   margin-right: 5px;
 }
+/* Menus must escape the canvas toolbar's scrolling/clipping ancestors. */
+.unified .bar {
+  position: relative;
+  z-index: 200;
+  overflow: visible;
+}
+.unified .app-menu > nav {
+  position: fixed;
+  top: 42px;
+  z-index: 220;
+  max-height: 75vh;
+  overflow: auto;
+}
+.unified .canvas-tools {
+  overflow: visible;
+}
+.unified .canvas-settings > div {
+  position: fixed;
+  z-index: 210;
+  max-height: 75vh;
+  overflow: visible;
+}
+#partAttributes {
+  max-height: 220px;
+  overflow: auto;
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--ui-line);
+}
+.attribute-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+  font-size: 11px;
+}
+.attribute-row input:not([type="checkbox"]) {
+  width: 160px;
+  min-width: 0;
+  font-size: 11px;
+}
+#partState {
+  font:
+    10px ui-monospace,
+    monospace;
+  padding: 4px 10px;
+  color: var(--ui-quiet);
+}
+#partState:empty {
+  display: none;
+}
+.part-label-input {
+  position: absolute;
+  top: -25px;
+  left: 0;
+  width: 140px;
+  height: 23px;
+  z-index: 50;
+  font-size: 12px;
+}

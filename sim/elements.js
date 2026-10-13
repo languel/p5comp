@@ -1,4 +1,9 @@
 import catalog from "./elements.json" with { type: "json" };
+for (const info of catalog)
+  if (["wokwi-led", "wokwi-resistor"].includes(info.type)) {
+    info.modeled = true;
+    info.modelDescription = "Classroom series LED/resistor model";
+  }
 export const ELEMENTS = catalog;
 export const elementByType = new Map(catalog.map((e) => [e.type, e]));
 export function elementPins(part) {

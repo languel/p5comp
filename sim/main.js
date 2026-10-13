@@ -265,6 +265,26 @@ function startWorker(hex) {
       $("led").dataset.on = String(d.led);
       $("led").textContent = "LED 13 · " + (d.led ? "on" : "off");
       document.querySelector("wokwi-arduino-uno").led13 = d.led;
+      for (const [id, state] of Object.entries(d.parts || {})) {
+        const element = partElements.get(id);
+        if (!element) continue;
+        element.dataset.simulation = JSON.stringify(state);
+        if (element.tagName === "WOKWI-LED") {
+          element.value = state.lit;
+          element.brightness =
+            state.brightness *
+            Number(
+              diagram.parts.find((p) => p.id === id)?.attrs?.brightness ?? 1,
+            );
+        }
+        element.title =
+          `${id} · ${(state.current * 1000).toFixed(1)} mA` +
+          (state.power != null
+            ? ` · ${(state.power * 1000).toFixed(1)} mW`
+            : "") +
+          (state.warning ? " · " + state.warning : "");
+      }
+      workbench?.showPartState();
     }
     if (d.type === "error") {
       stop();
@@ -323,6 +343,14 @@ function stop() {
   status("Stopped · simulated Uno");
   const board = document.querySelector("wokwi-arduino-uno");
   if (board) board.ledPower = false;
+  for (const element of partElements.values()) {
+    delete element.dataset.simulation;
+    if (element.tagName === "WOKWI-LED") {
+      element.value = false;
+      element.brightness = 0;
+    }
+  }
+  workbench?.showPartState();
   updateConnection();
 }
 function showHealth() {
@@ -332,7 +360,9 @@ function showHealth() {
       ? topology.warnings.join(" ")
       : "Wiring ready · Uno at 16 MHz";
     const visual = diagram.parts.filter(
-      (p) => !elementByType.get(p.type)?.modeled,
+      (p) =>
+        !elementByType.get(p.type)?.modeled &&
+        !["wokwi-led", "wokwi-resistor"].includes(p.type),
     ).length;
     if (visual) $("circuitHealth").textContent += ` · ${visual} unmodeled`;
     $("circuitHealth").style.color = topology.warnings.length ? "#a76d50" : "";
@@ -380,6 +410,11 @@ const canvas = new CircuitCanvas({
     );
     workbench?.tab("help");
   },
+  onRename: (wrapper) =>
+    workbench?.editLabel(
+      wrapper,
+      diagram.parts.find((p) => p.id === wrapper.dataset.id),
+    ),
   onSelectPart: (id) => {
     selectedPart = id;
     workbench?.selectPart(id);
@@ -546,7 +581,7 @@ function renderParts() {
     wrapper.style.top = p.top + "px";
     const handle = document.createElement("button");
     handle.className = "part-handle";
-    handle.textContent = p.id;
+    handle.textContent = p.label || p.attrs?.label || p.id;
     const help = document.createElement("button");
     help.className = "part-doc-help";
     help.textContent = "?";
@@ -590,9 +625,15 @@ function renderParts() {
           continue;
         if (
           attr in element &&
-          ["string", "number", "boolean"].includes(typeof value)
+          (["string", "number", "boolean"].includes(typeof value) ||
+            Array.isArray(value))
         )
-          element[attr] = value;
+          element[attr] =
+            typeof element[attr] === "number"
+              ? Number(value)
+              : typeof element[attr] === "boolean"
+                ? value === true || value === "true"
+                : value;
       }
       body.append(element);
       if (p.type === TYPES[0]) {
@@ -1098,18 +1139,34 @@ workbench = new Workbench({
   stop,
   runP5,
   selected: () => diagram.parts.find((p) => p.id === selectedPart),
+  element: () => partElements.get(selectedPart),
   updatePart: (next) => {
     const before = canvas.checkpoint();
-    if (!selectedPart || next.id !== selectedPart)
-      throw new Error("Keep the selected component id unchanged.");
+    if (!selectedPart) throw new Error("Select a component first.");
     const candidate = structuredClone(diagram);
     candidate.parts[candidate.parts.findIndex((p) => p.id === selectedPart)] =
       next;
+    if (next.id !== selectedPart)
+      candidate.connections = candidate.connections.map((c) =>
+        c.map((v, i) =>
+          i < 2 && typeof v === "string" && v.startsWith(selectedPart + ":")
+            ? next.id + v.slice(selectedPart.length)
+            : v,
+        ),
+      );
     validateDiagram(candidate);
+    resolveCircuit(candidate);
+    if (next.id !== selectedPart) {
+      controls[next.id] = controls[selectedPart];
+      delete controls[selectedPart];
+      selectedPart = next.id;
+    }
     diagram = candidate;
     renderParts();
     canvas.commit(before, true);
     changed();
+    canvas.selectPart(next.id);
+    workbench?.selectPart();
   },
   lesson: () => ({
     diagram: classroomCircuit(),

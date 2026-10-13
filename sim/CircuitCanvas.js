@@ -44,6 +44,7 @@ export class CircuitCanvas {
     onRestore,
     onViewChange,
     onDocs,
+    onRename,
     saved = {},
   }) {
     Object.assign(this, {
@@ -56,6 +57,7 @@ export class CircuitCanvas {
       onRestore,
       onViewChange,
       onDocs,
+      onRename,
     });
     this.camera = {
       x: Number(saved.camera?.x) || 0,
@@ -758,6 +760,7 @@ export class CircuitCanvas {
       this.stage.focus({ preventScroll: true });
       return;
     }
+    if (target.closest(".part-label-input")) return;
     const part = target.closest(".part");
     if (
       part &&
@@ -1078,6 +1081,18 @@ export class CircuitCanvas {
     this.commit(before);
   }
   doubleClick(e) {
+    const hit = this.stage.ownerDocument.elementFromPoint(e.clientX, e.clientY),
+      part = hit?.closest(".part");
+    if (
+      part &&
+      !this.activeBody(e, part) &&
+      !hit.closest(".part-doc-help,.part-rotate")
+    ) {
+      e.preventDefault();
+      this.selectPart(part.dataset.id);
+      this.onRename?.(part);
+      return;
+    }
     const wire = e.target.closest("[data-wire]");
     if (wire && !e.target.closest("[data-bend],[data-midpoint]")) {
       e.preventDefault();

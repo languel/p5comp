@@ -355,3 +355,27 @@ Upload reset uses a DTR pulse with RTS released and short bootloader sync retrie
 The compile/upload action calls the uploader directly rather than relying on the
 legacy hidden upload button's enabled state. If one USB port is already granted,
 Connect reuses it; multiple granted ports still open the browser chooser.
+
+### ZIP, component properties and passive simulation
+
+File → Download project ZIP includes the full `p5comp.json` manifest,
+`circuit/diagram.json`, `ino/<sketch>/<sketch>.ino` with Arduino helpers, and
+`p5/` with JS, HTML, CSS, assets and bundled p5/p5.webserial libraries. Extract it
+and use Open folder to restore the full project; the Arduino sketch folder can
+also be opened directly in Arduino IDE.
+
+Double-click a component body or its label to edit its display label. Properties
+has Name / ID and Label fields plus the component's declared Wokwi attributes.
+Press Enter or leave a field to apply it. Changing the ID updates attached wire
+endpoints. JSON can edit `attrs` directly; the play glyph or ⌘/Ctrl Enter applies
+it as an undoable edit. Arduino and p5 editors retain ⌘/Ctrl Enter to run.
+
+LEDs follow actual simulated Uno digital output states, including correct polarity
+and disconnected wiring. Series resistors affect current and LED brightness;
+resistor values update their color bands. Properties and component hover show
+current/power readings. This is a **classroom series-path model**, with a default
+2 V LED forward voltage (`attrs.forwardVoltage` can override it), rather than a
+full analog/SPICE solver for parallel networks or transistor circuits. Unmodeled
+components remain marked as visual-only in the picker. No-resistor/overcurrent
+warnings appear in the LED hover tip. These states come from simulation, not
+measurement of a connected physical board.

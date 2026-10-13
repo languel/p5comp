@@ -67,7 +67,7 @@ export class ElementPicker {
         button.className = "element-option";
         button.setAttribute("aria-label", "Add " + info.name);
         button.title = info.modeled
-          ? "Emulated"
+          ? info.modelDescription || "Emulated"
           : "Place and wire; behavior not emulated";
         const thumb = document.createElement("span");
         thumb.className = "element-thumb";
@@ -126,7 +126,7 @@ export class PartDocs {
       ? "●"
       : "○";
     this.panel.querySelector(".doc-model").title = info.modeled
-      ? "Emulated"
+      ? info.modelDescription || "Emulated"
       : "Place and wire; behavior not emulated";
     const pins = this.panel.querySelector(".doc-pinout div");
     pins.replaceChildren();

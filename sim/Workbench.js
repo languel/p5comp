@@ -1,3 +1,4 @@
+import { projectArchive } from "./projectArchive.js";
 import { glyphSelect } from "./GlyphSelect.js";
 import {
   editorPreferences,
@@ -51,7 +52,7 @@ export class Workbench {
     const fileMenu = node(
       "details",
       "wb-menu",
-      '<summary>File</summary><div><button id="newProject">New project</button><button id="saveProject">Save project…</button><button id="openProject">Open project…</button><button id="openFolder">Open folder…</button><button id="saveFolder">Save to folder…</button><hr><button id="addReference">Add reference image…</button><button id="exportPNG">Export PNG</button><button id="exportSVG">Export SVG</button><button id="exportPDF">Export PDF with code</button></div>',
+      '<summary>File</summary><div><button id="newProject">New project</button><button id="saveProject">Save project…</button><button id="saveZIP">Download project ZIP</button><button id="openProject">Open project…</button><button id="openFolder">Open folder…</button><button id="saveFolder">Save to folder…</button><hr><button id="addReference">Add reference image…</button><button id="exportPNG">Export PNG</button><button id="exportSVG">Export SVG</button><button id="exportPDF">Export PDF with code</button></div>',
     );
     toolbar.querySelector(".brand").after(fileMenu);
     ["save", "open", "lesson"].forEach((id) => ($(id).hidden = true));
@@ -132,7 +133,7 @@ export class Workbench {
     this.editorPanel = node(
       "aside",
       "wb-right",
-      '<nav class="wb-tabs" role="tablist" aria-label="Inspector"><button role="tab" data-tab="arduino" title="Arduino code" aria-label="Arduino code">∞</button><button role="tab" data-tab="p5" title="p5.js code" aria-label="p5.js code">p5.js</button><button role="tab" data-tab="properties" title="Properties" aria-label="Properties">☷</button><button role="tab" data-tab="help" title="Help" aria-label="Help">?</button><button id="closeInspector" title="Hide inspector">×</button></nav><section data-pane="arduino"></section><section data-pane="p5"></section><section data-pane="properties"><div class="section-bar"><span id="propertyTitle">Selection</span><button id="applyProperties">Apply JSON</button></div><div id="propertyEditor"></div><div id="referenceProperties"></div></section><section data-pane="help"><div id="helpHome"><p>Select an element and press ? for documentation.</p><p>⌘/Ctrl Enter: run · Shift-click wire: bend · Space-drag: pan</p></div></section>',
+      '<nav class="wb-tabs" role="tablist" aria-label="Inspector"><button role="tab" data-tab="arduino" title="Arduino code" aria-label="Arduino code">∞</button><button role="tab" data-tab="p5" title="p5.js code" aria-label="p5.js code">p5.js</button><button role="tab" data-tab="properties" title="Properties" aria-label="Properties">☷</button><button role="tab" data-tab="help" title="Help" aria-label="Help">?</button><button id="closeInspector" title="Hide inspector">×</button></nav><section data-pane="arduino"></section><section data-pane="p5"></section><section data-pane="properties"><div class="section-bar"><span id="propertyTitle">Selection</span><button id="applyProperties" title="Apply properties (⌘/Ctrl Enter)" aria-label="Apply properties">▷</button></div><div id="partAttributes"></div><output id="partState"></output><div id="propertyEditor"></div><div id="referenceProperties"></div></section><section data-pane="help"><div id="helpHome"><p>Select an element and press ? for documentation.</p><p>⌘/Ctrl Enter: run · Shift-click wire: bend · Space-drag: pan</p></div></section>',
     );
     const editors = document.querySelectorAll("#code .editors > section");
     this.editorPanel.querySelector('[data-pane="arduino"]').append(editors[0]);
@@ -366,6 +367,33 @@ export class Workbench {
         this.name + ".p5comp.json",
         JSON.stringify(ctx.project(), null, 2),
       );
+    $("saveZIP").onclick = () =>
+      this.action(async () => {
+        const libraries = {};
+        for (const [file, url] of [
+          ["p5.js", "libraries/p5.min.js"],
+          ["p5.webserial.js", "libraries/p5.webserial.js"],
+          ["LICENSE-p5.txt", "licenses/p5-LGPL.txt"],
+          ["LICENSE-p5-webserial.txt", "licenses/LGPL-2.1.txt"],
+        ]) {
+          const response = await fetch(basePath(url));
+          if (!response.ok)
+            throw new Error("Bundled library could not load for ZIP.");
+          libraries[file] = await response.text();
+        }
+        const project = structuredClone(ctx.project());
+        const html = project.workbench.files["index.html"];
+        if (html && !/src=["'](?:\.\/)?p5\.webserial\.js/.test(html))
+          project.workbench.files["index.html"] = html.replace(
+            /<\/head>/i,
+            '<script src="p5.webserial.js"></script></head>',
+          );
+        await download(
+          this.name + ".zip",
+          projectArchive(project, libraries),
+          "application/zip",
+        );
+      });
     $("openProject").onclick = () => $("projectFile").click();
     this.folder = node("input", "");
     this.folder.type = "file";
@@ -456,6 +484,7 @@ export class Workbench {
     const rowGlyphs = {
       newProject: "+",
       saveProject: "↓",
+      saveZIP: "⇩",
       openProject: "▱",
       openFolder: "▰",
       saveFolder: "⇩",
@@ -527,6 +556,24 @@ export class Workbench {
       summary.setAttribute("aria-label", caption);
     });
     document.querySelectorAll("select:not([hidden])").forEach(glyphSelect);
+    const circuitSettings = document.querySelector(".canvas-settings");
+    circuitSettings.addEventListener("toggle", () => {
+      if (!circuitSettings.open) return;
+      const box = circuitSettings
+          .querySelector("summary")
+          .getBoundingClientRect(),
+        panel = circuitSettings.querySelector("div");
+      panel.style.top = box.bottom + 5 + "px";
+      panel.style.right = "auto";
+      panel.style.left =
+        Math.max(
+          8,
+          Math.min(
+            box.right - panel.offsetWidth,
+            innerWidth - panel.offsetWidth - 8,
+          ),
+        ) + "px";
+    });
     this.renderExamples();
     this.action(async () => {
       const response = await fetch(basePath("examples/index.json"));
@@ -832,7 +879,122 @@ export class Workbench {
   selectPart() {
     const part = this.ctx.selected();
     this.ctx.setCode(this.propertyEditor, JSON.stringify(part || {}, null, 2));
-    $("propertyTitle").textContent = part?.id || "Selection";
+    $("propertyTitle").textContent = part?.label || part?.id || "Selection";
+    this.renderAttributes(part);
+    this.showPartState();
+  }
+  editLabel(wrapper, part) {
+    const handle = wrapper.querySelector(".part-handle");
+    const input = node("input", "part-label-input");
+    input.value = part.label || part.attrs?.label || part.id;
+    input.setAttribute("aria-label", "Part label");
+    handle.hidden = true;
+    wrapper.append(input);
+    input.focus();
+    input.select();
+    let done = false;
+    const finish = (save) => {
+      if (done) return;
+      done = true;
+      const label = input.value.trim();
+      input.remove();
+      handle.hidden = false;
+      if (save) this.action(() => this.ctx.updatePart({ ...part, label }));
+    };
+    input.onkeydown = (e) => {
+      e.stopPropagation();
+      if (e.key === "Enter") finish(true);
+      if (e.key === "Escape") finish(false);
+    };
+    input.onblur = () => finish(true);
+  }
+  renderAttributes(part) {
+    const panel = $("partAttributes");
+    panel.replaceChildren();
+    if (!part) return;
+    const field = (caption, value, change, type = "text") => {
+      const row = node("label", "attribute-row");
+      const label = node("span", "");
+      label.textContent = caption;
+      const input = node("input", "");
+      input.type = type;
+      input.setAttribute("aria-label", caption);
+      if (type === "checkbox") input.checked = !!value;
+      else input.value = value;
+      input.onchange = () =>
+        this.action(() =>
+          change(type === "checkbox" ? input.checked : input.value),
+        );
+      input.onkeydown = (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          input.onchange();
+        }
+      };
+      row.append(label, input);
+      panel.append(row);
+    };
+    field("Name / ID", part.id, (value) =>
+      this.ctx.updatePart({ ...part, id: value }),
+    );
+    field("Label", part.label || part.attrs?.label || "", (value) =>
+      this.ctx.updatePart({ ...part, label: value }),
+    );
+    const element = this.ctx.element(),
+      properties = element?.constructor.elementProperties || new Map();
+    for (const [name] of properties) {
+      if (
+        /^(on|innerHTML|outerHTML|style|src|href)/i.test(name) ||
+        ["pinInfo", "label", "ledPower", "led13", "ledTX", "ledRX"].includes(
+          name,
+        )
+      )
+        continue;
+      if (part.type === "wokwi-led" && name === "value") continue;
+      const current =
+        part.attrs?.[name] ??
+        (part.type === "wokwi-led" && name === "brightness"
+          ? 1
+          : element[name]);
+      if (
+        !["string", "number", "boolean"].includes(typeof current) &&
+        !Array.isArray(current)
+      )
+        continue;
+      field(
+        name,
+        Array.isArray(current) ? JSON.stringify(current) : current,
+        (value) => {
+          const parsed = Array.isArray(current)
+            ? JSON.parse(value)
+            : typeof current === "number"
+              ? Number(value)
+              : value;
+          this.ctx.updatePart({
+            ...part,
+            attrs: { ...part.attrs, [name]: parsed },
+          });
+        },
+        typeof current === "boolean"
+          ? "checkbox"
+          : typeof current === "number"
+            ? "number"
+            : "text",
+      );
+    }
+  }
+  showPartState() {
+    const state = this.ctx.element()?.dataset.simulation;
+    const output = $("partState");
+    if (!output) return;
+    output.textContent = state
+      ? Object.entries(JSON.parse(state))
+          .map(
+            ([k, v]) =>
+              k + ": " + (typeof v === "number" ? Number(v.toFixed(5)) : v),
+          )
+          .join(" · ")
+      : "";
   }
   applyProperties() {
     this.action(() => {
