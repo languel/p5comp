@@ -191,6 +191,7 @@ export class Workbench {
     $("upload").hidden = true;
     const uploadCode = node("button", "", "⇧");
     uploadCode.id = "compileUpload";
+    uploadCode.disabled = true;
     uploadCode.title = "Compile + upload (⌘/Ctrl Shift Enter)";
     uploadCode.setAttribute("aria-label", "Compile and upload");
     transport.prepend(uploadCode);
