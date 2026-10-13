@@ -19,9 +19,10 @@ function saveTheme(theme) {
 }
 
 export function initializeTheme() {
-  document
-    .querySelectorAll('a[href^="/"]')
-    .forEach((a) => (a.href = basePath(a.getAttribute("href"))));
+  document.querySelectorAll('a[href^="/"]').forEach((a) => {
+    const href = a.getAttribute("href");
+    a.href = basePath(href === "/ide" ? "miniide.html" : href);
+  });
   const toggle = document.querySelector("#themeToggle");
   if (!toggle) throw new Error("Theme toggle is missing from the page.");
 

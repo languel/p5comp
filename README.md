@@ -304,3 +304,8 @@ C++ needs a compiler URL in Settings (local helper or a configured service).
 GitHub Pages itself cannot execute Arduino CLI. The local helper accepts only
 validated source filenames; physical upload still requires a Web Serial browser
 and a connected Uno. The compiler helper is bound to localhost by default.
+
+To publish a class example, place its project JSON in `public/examples/` and add
+`{"name":"Class demo", "project":"examples/class-demo.json"}` to
+`public/examples/index.json`. The Examples menu loads this manifest on both the
+local app and GitHub Pages. Keep image references embedded in that project JSON.

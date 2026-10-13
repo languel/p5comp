@@ -306,6 +306,28 @@ export class Workbench {
       }),
     );
     this.renderExamples();
+    this.action(async () => {
+      const response = await fetch(basePath("examples/index.json"));
+      if (!response.ok) return;
+      const entries = await response.json();
+      for (const entry of entries) {
+        if (
+          !entry.name ||
+          !/^[\w/-]+\.json$/.test(entry.project) ||
+          entry.project.includes("..")
+        )
+          continue;
+        const button = node("button", "repository-example");
+        button.textContent = entry.name;
+        button.onclick = () =>
+          this.action(async () => {
+            const response = await fetch(basePath(entry.project));
+            if (!response.ok) throw new Error("Example could not load.");
+            ctx.openProject(await response.json());
+          });
+        $("exampleLibrary").append(button);
+      }
+    });
   }
   action(fn) {
     return Promise.resolve()
