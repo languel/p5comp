@@ -2,6 +2,7 @@ const glyphs = {
   tabs: "▣",
   horizontal: "◫",
   vertical: "⬒",
+  firmata: "⌁",
   native: "⌁",
   webserial: "∞",
   0.5: "½",
@@ -38,7 +39,11 @@ export function glyphSelect(select) {
   wrapper.append(list);
   const refresh = () => {
     const option = select.selectedOptions[0];
-    trigger.textContent = glyphs[select.value] || option?.textContent || "⋯";
+    trigger.textContent =
+      select.dataset.glyph ||
+      glyphs[select.value] ||
+      option?.textContent ||
+      "⋯";
     trigger.title =
       (select.getAttribute("aria-label") || "") + ": " + option?.textContent;
     trigger.setAttribute("aria-label", trigger.title);

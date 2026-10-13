@@ -1,3 +1,4 @@
+import { componentColor } from "./componentColor.js";
 import { WIRE_COLORS } from "./colors.js";
 import {
   CONNECTION_DOT_RADIUS,
@@ -447,12 +448,20 @@ export class CircuitCanvas {
     const before = this.checkpoint();
     for (const p of this.diagram.parts.filter((p) =>
       this.selectedParts.has(p.id),
-    ))
-      p.attrs = {
-        ...p.attrs,
-        tint: value ? color(value) : null,
-        appearance: original ? "original" : "gray",
-      };
+    )) {
+      const element = this.elements.get(p.id),
+        native = element?.constructor.elementProperties?.has("color");
+      p.attrs = componentColor(
+        p.attrs,
+        value ? color(value) : null,
+        native,
+        original,
+      );
+      if (native && (value || original))
+        element.color = value
+          ? color(value)
+          : document.createElement(p.type).color;
+    }
     this.applyTints();
     this.commit(before);
   }
@@ -1191,7 +1200,7 @@ export class CircuitCanvas {
     } else {
       this.selectPart(part.dataset.id);
       this.palette(
-        "Part tint",
+        "Component color",
         (c) => this.setTint(c),
         () => this.setTint(null, true),
       );
@@ -1267,7 +1276,10 @@ export class CircuitCanvas {
         label === "Wire color"
           ? this.diagram.connections[this.selectedWire]?.[2] || this.newColor
           : this.diagram.parts.find((p) => p.id === this.selectedPart)?.attrs
-              ?.tint || "#87918c";
+              ?.color ||
+            this.diagram.parts.find((p) => p.id === this.selectedPart)?.attrs
+              ?.tint ||
+            "#87918c";
       this.customColor(row, current, fn);
     };
     row.append(custom);

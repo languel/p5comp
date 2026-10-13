@@ -848,3 +848,18 @@ input[type="checkbox"]:focus-visible {
   z-index: 50;
   font-size: 12px;
 }
+.wb-right .section-bar .arduino-transport {
+  padding: 0;
+}
+.wb-right .section-bar {
+  gap: 6px;
+  justify-content: flex-start;
+}
+.arduino-transport #firmwareState {
+  max-width: 130px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.wb-right .section-bar { flex-wrap: nowrap; gap: 4px; }
+.wb-right .glyph-select-options { left: 0; right: auto; }

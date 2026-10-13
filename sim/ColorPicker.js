@@ -114,9 +114,13 @@ export class ColorPicker {
   open(anchor, value, fn) {
     this.anchor = anchor;
     this.fn = fn;
+    const context = document.createElement("canvas").getContext("2d");
+    context.fillStyle = "#788fa5";
+    context.fillStyle = value || "#788fa5";
+    const normalized = context.fillStyle;
     Object.assign(
       this,
-      fromHex(/^#[0-9a-f]{6}$/i.test(value) ? value : "#788fa5"),
+      fromHex(/^#[0-9a-f]{6}$/i.test(normalized) ? normalized : "#788fa5"),
     );
     this.paint();
     this.panel.hidden = false;

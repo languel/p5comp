@@ -150,7 +150,7 @@ can require manual adjustment. Routes use world-coordinate waypoints in the
 connection's fourth array entry; Wokwi's string route commands remain unsupported.
 
 The inspector accepts arbitrary wire colors and per-part tints. Right-click a
-part for tint presets, **Gray tint**, or **Original colors**. Original colors are the default; gray and custom tints remain explicit overrides. The part context menu also rotates the selection in 45° steps and flips
+part for color presets or **ø** to restore original colors (the default). Colors update native component attributes where supported; other parts use a tint. The part context menu also rotates the selection in 45° steps and flips
 it horizontally or vertically; terminals transform with the body. **Simulate**
 beside a distance sensor opens a draggable target, numeric distance entry and
 no-echo control. Its changes feed the actual emulated sonar timing and UART. Circuit undo/
@@ -294,7 +294,7 @@ positions, rotation and attrs follow the same canvas validation. Image reference
 are draggable and retain opacity, width and blend. File exports use native SVG
 geometry, with optional code below PNG/SVG and paginated code in PDF.
 
-Examples includes classroom sensors, HelloLED, StandardFirmata (hardware only),
+Examples includes classroom sensors, HelloLED, StandardFirmata,
 and a browser-local shelf for saved class demos. Export those projects to share
 with students; browser-local shelf entries are not published automatically.
 
@@ -383,3 +383,14 @@ measurement of a connected physical board.
 Double-click empty canvas space to open the element picker. The selected part's
 origin is placed at that world coordinate, respecting the current pan and zoom;
 the toolbar's + button continues to add at the viewport center.
+
+The component palette writes `attrs.color` for elements with a declared native
+color property, clearing legacy whole-element tint. Components without native
+color retain tint as a fallback. Original colors resets the native color to its
+component default. Wire palettes continue to set wire stroke colors directly.
+The interface toggle stays at its screen position when hiding the UI, changing
+from an eye to a panel glyph that restores the interface.
+
+Arduino controls share one toolbar row; the p5 toolbar uses a **↔** communications selector with **None**, **p5.webserial**, **navigator.serial**, and **Firmata**. Switching replaces a marked adapter block in the sketch, keeping its drawing code. The classroom example's stock serial code is migrated to that adapter. Custom serial code is preserved; if it already owns a port, use either your own code or the generated adapter to avoid competing reader locks. The webserial script is listed in `index.html` and included in ZIP exports.
+
+Generated adapters expose `arduinoComms.connect()`, `poll()`, and newline `sendLine()` for CSV sketches. Inside p5comp they connect to the host's simulation/USB transport; exported sketches should call `connect()` from a user button click. **None** disables the host serial bridge. Firmata instead exposes `arduinoComms.board` with `setPinMode()`, `write()` and `pins`, and requires **StandardFirmata at 57600 baud**. The StandardFirmata example compiles the actual firmware and reads simulated A0 through its binary UART protocol. Simulation was verified; this new Firmata adapter has not been tested on physical hardware.

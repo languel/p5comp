@@ -1,3 +1,6 @@
+import firmataParserSource from "../firmata/FirmataParser.js?raw";
+import firmataClientSource from "../firmata/FirmataClient.js?raw";
+import { embedComms, commsExample } from "./commsCode.js";
 import { resistance } from "./passiveStates.js";
 import { Workbench } from "./Workbench.js";
 import { basePath } from "../shared/basePath.js";
@@ -48,7 +51,7 @@ try {
 
     diagram = d.diagram;
     controls = d.controls || controls;
-    api = d.api === "native" ? "native" : "webserial";
+    api = ["native", "none", "firmata"].includes(d.api) ? d.api : "webserial";
     savedP5 = Object.fromEntries(
       Object.entries(d.p5 || {}).map(([api, source]) => [
         api,
@@ -162,7 +165,11 @@ function setCode(editor, text) {
 }
 function updateConnection() {
   workbench?.uploadState(serial.connected);
-  bridge.updateState({}, running || (mode === "usb" && serial.connected), mode);
+  bridge.updateState(
+    {},
+    api !== "none" && (running || (mode === "usb" && serial.connected)),
+    mode,
+  );
   $("upload").disabled =
     !artifact ||
     artifact.source !== sourceValue(arduinoEditor) ||
@@ -178,7 +185,7 @@ function runP5() {
 }
 
 function receive(bytes) {
-  bridge.serialBytes(bytes);
+  if (api !== "none") bridge.serialBytes(bytes);
   serialBuffer += new TextDecoder().decode(Uint8Array.from(bytes));
   const chunks = serialBuffer.split("\n");
   serialBuffer = chunks.pop();
@@ -401,6 +408,7 @@ const canvas = new CircuitCanvas({
     } else {
       persist();
       renderWires();
+      workbench?.selectPart();
     }
   },
   onSelectWire: selectWire,
@@ -858,20 +866,40 @@ $("pause").onclick = () => {
   $("pause").textContent = paused ? "Resume" : "Pause";
   status(paused ? "Paused · simulated Uno" : "Running · simulated Uno");
 };
-$("comms").onchange = () => {
-  savedP5[api] = sourceValue(p5Editor);
+$("comms").onchange = async () => {
+  const oldBaud = api === "firmata" ? 57600 : 9600;
   api = $("comms").value;
   setCode(
     p5Editor,
-    savedP5[api] || (api === "native" ? nativeSketch : webserialSketch),
+    embedComms(sourceValue(p5Editor), api, {
+      parser: firmataParserSource,
+      client: firmataClientSource,
+    }),
   );
-  $("apiLabel").textContent =
-    api === "native" ? "navigator.serial" : "p5.webserial";
+  workbench?.syncCommsLibrary(api);
   persist();
+  if (api === "firmata")
+    notice("Firmata requires StandardFirmata Arduino firmware (Examples).");
+  if (serial.connected && oldBaud !== (api === "firmata" ? 57600 : 9600)) {
+    try {
+      const port = await serial.releasePort();
+      await serial.reconnect(port, api === "firmata" ? 57600 : 9600);
+    } catch (e) {
+      notice(e.message);
+      log(e.message);
+    }
+  }
   if (running || serial.connected) runP5();
 };
 $("loadExample").onclick = () => {
-  setCode(p5Editor, api === "native" ? nativeSketch : webserialSketch);
+  setCode(
+    p5Editor,
+    commsExample(api, {
+      parser: firmataParserSource,
+      client: firmataClientSource,
+    }),
+  );
+  workbench?.syncCommsLibrary(api);
   persist();
   if (running || serial.connected) runP5();
 };
@@ -955,7 +983,7 @@ function openProject(d) {
         upgradeClassSketchTheme(source),
       ]),
     );
-    api = d.api === "native" ? "native" : "webserial";
+    api = ["native", "none", "firmata"].includes(d.api) ? d.api : "webserial";
     $("comms").value = api;
     setCode(
       p5Editor,
@@ -1034,7 +1062,7 @@ $("usb").onclick = async () => {
     stop();
     const grantedPorts = await navigator.serial.getPorts();
     await serial.connect({
-      baudRate: 9600,
+      baudRate: api === "firmata" ? 57600 : 9600,
       port: grantedPorts.length === 1 ? grantedPorts[0] : null,
     });
     $("usb").textContent = "Disconnect USB Arduino";
@@ -1053,7 +1081,7 @@ async function uploadFirmware() {
         log(p);
       });
     } finally {
-      await serial.reconnect(port, 9600);
+      await serial.reconnect(port, api === "firmata" ? 57600 : 9600);
     }
     status("Uploaded and verified · physical Uno");
     log("Uploaded and verified · physical Uno");
@@ -1146,6 +1174,11 @@ workbench = new Workbench({
   setCode,
   stop,
   runP5,
+  commsExample: (api) =>
+    commsExample(api, {
+      parser: firmataParserSource,
+      client: firmataClientSource,
+    }),
   selected: () => diagram.parts.find((p) => p.id === selectedPart),
   element: () => partElements.get(selectedPart),
   updatePart: (next) => {

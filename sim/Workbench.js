@@ -186,7 +186,10 @@ export class Workbench {
     this.bottom.append(document.querySelector(".section-foot"));
     const transport = node("div", "arduino-transport");
     transport.append(document.querySelector("footer > div"));
-    this.arduinoPane.querySelector(".section-bar").after(transport);
+    const arduinoTools = this.arduinoPane.querySelector(".section-bar");
+    for (const child of [...arduinoTools.childNodes])
+      if (child.nodeType === Node.TEXT_NODE) child.remove();
+    arduinoTools.append(transport);
     $("usb").title = "Connect USB Arduino";
     $("usb").setAttribute("aria-label", "Connect USB Arduino");
     $("upload").hidden = true;
@@ -206,6 +209,17 @@ export class Workbench {
     $("compile").title = "Compile and run";
     $("compile").setAttribute("aria-label", "Compile and run");
     const p5Tools = this.p5Pane.querySelector(".section-bar");
+    for (const child of [...p5Tools.childNodes])
+      if (child.nodeType === Node.TEXT_NODE) child.remove();
+    $("apiLabel").hidden = true;
+    const comms = $("comms");
+    const previousComms = comms.value;
+    comms.innerHTML =
+      '<option value="none">None</option><option value="webserial">p5.webserial</option><option value="native">navigator.serial</option><option value="firmata">Firmata (StandardFirmata required)</option>';
+    comms.value = previousComms;
+    comms.setAttribute("aria-label", "Arduino ↔ p5 communications");
+    comms.dataset.glyph = "↔";
+    p5Tools.prepend(comms);
     const run = node("button", "", "▷");
     run.title = "Run p5 (⌘/Ctrl Enter)";
     run.setAttribute("aria-label", "Run p5 sketch");
@@ -441,11 +455,12 @@ export class Workbench {
         ctx.openProject({
           ...ctx.lesson(),
           arduino: await r.text(),
-          p5: { webserial: blankP5 },
+          api: "firmata",
+          p5: { firmata: ctx.commsExample("firmata") },
           workbench: { name: "StandardFirmata" },
         });
         ctx.notice(
-          "Firmata is a hardware example; its protocol is not modeled by the circuit simulator.",
+          "Run to compile StandardFirmata and simulate A0, or upload it to your Arduino.",
         );
       });
     $("saveExample").onclick = () => {
@@ -740,6 +755,18 @@ export class Workbench {
       this.ctx.p5Editor.state.doc.toString()
     );
   }
+  syncCommsLibrary(api) {
+    const html = this.files["index.html"] || "";
+    if (api === "webserial" && !/p5\.webserial(?:\.min)?\.js/.test(html))
+      this.files["index.html"] = html.includes("</head>")
+        ? html.replace(
+            "</head>",
+            '<script src="p5.webserial.js"></script></head>',
+          )
+        : '<script src="p5.webserial.js"></script>\n' + html;
+    const editor = this.extra.get("index.html");
+    if (editor) this.ctx.setCode(editor, this.files["index.html"]);
+  }
   p5Project() {
     return {
       html: this.files["index.html"],
@@ -859,6 +886,7 @@ export class Workbench {
     this.files["style.css"] ??= "body { margin: 0; }\n";
     this.references = d.references || [];
     this.settings = d.settings || {};
+    this.syncCommsLibrary($("comms").value);
     this.renderFiles();
     this.renderAssets();
     this.applySettings();

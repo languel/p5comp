@@ -12,7 +12,8 @@ const paths = {
   expand: "M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5",
   code: "m8 6-6 6 6 6m8-12 6 6-6 6M14 3l-4 18",
   controls: "M5 3v18M12 3v18M19 3v18M2 8h6M9 15h6M16 6h6",
-  hide: "M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12ZM3 3l18 18",
+  hide: "M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12ZM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z",
+  panels: "M3 4h18v16H3ZM9 4v16",
   trash: "M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7",
   original:
     "M12 3a9 9 0 1 0 9 9c0-2-2-3-4-3h-2c-2 0-3-1-3-3V3ZM6 12h.01M8 7h.01M8 17h.01",
@@ -140,9 +141,24 @@ export function initializeCompactUI({ canvas, key }) {
     code.open = !code.open;
     if (code.open) code.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+  const interfaceToggle = document.getElementById("hideUI"),
+    interfaceAnchor = document.createComment("interface-toggle");
+  interfaceToggle.before(interfaceAnchor);
+  const originalToggleStyle = interfaceToggle.getAttribute("style") || "";
   const hideUI = (hidden) => {
+    const rect = interfaceToggle.getBoundingClientRect();
     document.body.classList.toggle("ui-hidden", hidden);
-    document.getElementById("showUI").hidden = !hidden;
+    document.getElementById("showUI").hidden = true;
+    if (hidden) {
+      document.body.append(interfaceToggle);
+      interfaceToggle.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;z-index:1000`;
+    } else {
+      interfaceAnchor.after(interfaceToggle);
+      interfaceToggle.style.cssText = originalToggleStyle;
+    }
+    interfaceToggle.replaceChildren(svg(hidden ? "panels" : "hide"));
+    interfaceToggle.title = hidden ? "Show interface" : "Hide interface";
+    interfaceToggle.setAttribute("aria-label", interfaceToggle.title);
     document
       .getElementById("hideUI")
       .setAttribute("aria-pressed", String(hidden));
