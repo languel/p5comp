@@ -168,3 +168,11 @@ Project v2 retains v1 fields and stores additional sources/settings/references.
 Examples has built-in demos and a local classroom shelf. p5 output supports split,
 overlay and a separate window. Multi-file compilation remains a local service;
 GitHub Pages supports the cached classroom firmware and frontend only.
+
+Unified-workspace validation: 36 tests pass. Browser checks cover New/save/open,
+Arduino+p5 folder import with class/helper tabs, JSON property changes, reference
+images, PNG/SVG/PDF downloads, Arduino completion, dock/overlay/redock and native
+UART in both directions while p5 is detached. The detached sketch received
+`99.5,512,0,0` and sent `LED:1`, turning on the emulated Uno LED. Public Pages
+loaded and ran the classroom demo without console errors. The static deploy
+uses `/p5comp/` asset paths; the Reference code view links to `miniide.html`.

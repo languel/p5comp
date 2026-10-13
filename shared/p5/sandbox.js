@@ -2,16 +2,19 @@ import { basePath } from "../basePath.js";
 import p5 from "p5";
 import { installSerialProxy } from "./serialProxy.js";
 
+let host = parent;
+const detached = new URLSearchParams(location.search).get("detached") === "1";
+const appOrigin = new URL(import.meta.url).origin;
 const serialProxy = installSerialProxy((bytes) =>
-  parent.postMessage({ type: "serialWrite", bytes }, "*"),
+  host.postMessage({ type: "serialWrite", bytes }, "*"),
 );
 window.p5 = p5;
 // The real p5.webserial library, scoped to this frame's host-managed transport.
 const webserialScript = document.createElement("script");
 webserialScript.src = basePath("libraries/p5.webserial.js");
-webserialScript.onload = () => parent.postMessage({ type: "loaded" }, "*");
+webserialScript.onload = () => host.postMessage({ type: "loaded" }, "*");
 webserialScript.onerror = () =>
-  parent.postMessage(
+  host.postMessage(
     {
       type: "runtimeError",
       message: "The local p5.webserial library could not load.",
@@ -36,12 +39,12 @@ window.send = (name, value) => {
   if (!Number.isFinite(Number(value))) {
     throw new TypeError("send(name, value) requires a numeric value.");
   }
-  parent.postMessage({ type: "send", name, value: Number(value) }, "*");
+  host.postMessage({ type: "send", name, value: Number(value) }, "*");
 };
 window.sendLine = (text) => {
   if (typeof text !== "string")
     throw new TypeError("sendLine(text) requires a string.");
-  parent.postMessage({ type: "sendLine", text }, "*");
+  host.postMessage({ type: "sendLine", text }, "*");
 };
 
 const safeValue = (value) => {
@@ -57,7 +60,7 @@ for (const level of ["log", "warn", "error", "info", "debug"]) {
   const original = console[level].bind(console);
   console[level] = (...args) => {
     original(...args);
-    parent.postMessage(
+    host.postMessage(
       {
         type: "console",
         level,
@@ -69,7 +72,7 @@ for (const level of ["log", "warn", "error", "info", "debug"]) {
 }
 
 window.addEventListener("error", (event) => {
-  parent.postMessage(
+  host.postMessage(
     {
       type: "runtimeError",
       message: event.message,
@@ -80,14 +83,19 @@ window.addEventListener("error", (event) => {
   );
 });
 window.addEventListener("unhandledrejection", (event) => {
-  parent.postMessage(
+  host.postMessage(
     { type: "runtimeError", message: String(event.reason) },
     "*",
   );
 });
 
 window.addEventListener("message", (event) => {
-  if (event.source !== parent || !event.data) return;
+  if (!event.data) return;
+  // A detached iframe has a new parent. Its original workbench establishes the
+  // transport host with a same-origin state message before sending sketch code.
+  if (detached && event.data.type === "state" && event.origin === appOrigin)
+    host = event.source;
+  if (event.source !== host) return;
   const message = event.data;
   if (message.theme) {
     window.theme = message.theme;
@@ -131,7 +139,7 @@ window.addEventListener("message", (event) => {
       current.value = pin.value;
       current.mode = pin.mode;
       current.write = (value) =>
-        parent.postMessage(
+        host.postMessage(
           {
             type: "pinWrite",
             name: pin.id,
@@ -151,9 +159,9 @@ window.addEventListener("message", (event) => {
     window.eval(`${message.source}\n//# sourceURL=student-sketch.js`);
     p5Instance = new p5(undefined, document.getElementById("canvas"));
     sketchReady = true;
-    parent.postMessage({ type: "ready" }, "*");
+    host.postMessage({ type: "ready" }, "*");
   } catch (error) {
-    parent.postMessage(
+    host.postMessage(
       {
         type: "runtimeError",
         message: error.message,

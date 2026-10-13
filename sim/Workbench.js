@@ -543,6 +543,7 @@ export class Workbench {
           .classList.remove("canvas-expanded");
       } else {
         this.pop = pop;
+        pop.addEventListener("message", this.ctx.bridge.listener);
         pop.document.title = "p5comp — output";
         pop.document.body.style.cssText =
           "margin:0;background:#242728;height:100vh";
@@ -550,6 +551,7 @@ export class Workbench {
         pop.document.body.append(this.ctx.bridge.frame);
         this.ctx.runP5();
         pop.addEventListener("beforeunload", () => {
+          pop.removeEventListener("message", this.ctx.bridge.listener);
           this.outputHome.append(this.ctx.bridge.frame);
           $("outputDock").value = "split";
           this.preview.hidden = false;

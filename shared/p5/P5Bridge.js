@@ -21,7 +21,9 @@ export class P5Bridge extends EventTarget {
   run(source) {
     this.source = source;
     this.loaded = false;
-    this.frame.src = basePath(`shared/p5/sandbox.html?run=${Date.now()}`);
+    this.frame.src = basePath(
+      `shared/p5/sandbox.html?run=${Date.now()}&detached=${this.frame.ownerDocument !== document ? 1 : 0}`,
+    );
   }
 
   updateState(signals, serialConnected, transportMode = "simulation") {
