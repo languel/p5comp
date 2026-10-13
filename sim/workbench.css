@@ -53,7 +53,7 @@ body.unified {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  border-left: 1px solid var(--ui-border);
+  border-left: 1px solid var(--ui-line);
   padding: 0;
 }
 .unified .preview-panel[hidden] {
@@ -81,7 +81,7 @@ body.unified {
 .wb-right {
   grid-column: 2;
   grid-row: 1;
-  border-left: 1px solid var(--ui-border);
+  border-left: 1px solid var(--ui-line);
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -145,7 +145,7 @@ body.unified {
 .wb-tabs {
   display: flex;
   gap: 2px;
-  border-bottom: 1px solid var(--ui-border);
+  border-bottom: 1px solid var(--ui-line);
   padding: 4px;
   font-size: 12px;
   flex-shrink: 0;
@@ -167,7 +167,7 @@ body.unified {
   display: flex;
   gap: 2px;
   overflow: auto;
-  border-bottom: 1px solid var(--ui-border);
+  border-bottom: 1px solid var(--ui-line);
   padding: 3px;
   font-size: 11px;
   flex-shrink: 0;
@@ -179,11 +179,11 @@ body.unified {
 .wb-bottom {
   grid-column: 1/-1;
   grid-row: 2;
-  border-top: 1px solid var(--ui-border);
+  border-top: 1px solid var(--ui-line);
   min-height: 36px;
   max-height: 240px;
   overflow: hidden;
-  background: var(--ui-surface);
+  background: var(--ui-panel);
 }
 .wb-bottom [data-tool] {
   max-height: 180px;
@@ -233,8 +233,8 @@ body.unified {
   display: flex;
   flex-direction: column;
   padding: 6px;
-  background: var(--ui-surface);
-  border: 1px solid var(--ui-border);
+  background: var(--ui-panel);
+  border: 1px solid var(--ui-line);
   box-shadow: 0 6px 22px #0003;
   border-radius: 5px;
 }
@@ -261,7 +261,7 @@ body.unified {
   overflow: hidden;
   white-space: nowrap;
   font-size: 12px;
-  color: var(--ui-muted);
+  color: var(--ui-quiet);
   padding: 3px;
 }
 .output-overlay {
@@ -272,10 +272,10 @@ body.unified {
   height: 360px;
   z-index: 8;
   box-shadow: 0 8px 40px #0005;
-  background: var(--ui-surface);
+  background: var(--ui-panel);
   resize: both;
   overflow: auto;
-  border: 1px solid var(--ui-border);
+  border: 1px solid var(--ui-line);
 }
 #referenceLayer {
   position: absolute;
@@ -293,7 +293,7 @@ body.unified {
   flex-wrap: wrap;
   gap: 5px;
   padding: 6px;
-  border-top: 1px solid var(--ui-border);
+  border-top: 1px solid var(--ui-line);
   font-size: 11px;
 }
 .reference-row input[type="number"] {
@@ -301,7 +301,7 @@ body.unified {
 }
 #helpHome {
   font-size: 12px;
-  color: var(--ui-muted);
+  color: var(--ui-quiet);
   padding: 12px;
 }
 .unified.ui-hidden main {
@@ -332,7 +332,7 @@ body.unified {
     width: 300px;
     height: 280px;
     z-index: 4;
-    background: var(--ui-surface);
+    background: var(--ui-panel);
   }
   .output-overlay {
     right: 330px;
@@ -352,7 +352,7 @@ body.unified {
     bottom: 120px;
     width: min(380px, 90vw);
     z-index: 15;
-    background: var(--ui-surface);
+    background: var(--ui-panel);
   }
   .unified .preview-panel {
     right: 10px;
@@ -391,7 +391,7 @@ body.unified {
 .unified .wb-bottom > .section-foot {
   padding: 4px 12px;
   font-size: 11px;
-  border-top: 1px solid var(--ui-border);
+  border-top: 1px solid var(--ui-line);
 }
 .unified .bar .wb-menu button {
   width: auto;
@@ -472,5 +472,83 @@ body.unified {
   }
   .unified #status {
     display: none;
+  }
+}
+
+/* Toolbar glyphs and opaque, theme-owned menus. */
+.unified .bar {
+  position: relative;
+}
+.unified .bar .brand {
+  font-family: ui-monospace, monospace;
+  font-size: 20px;
+  width: 42px;
+  text-align: center;
+}
+.unified .bar .project-name {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(26vw, 260px);
+  max-width: none;
+  text-align: center;
+  color: var(--ui-text);
+  font-size: 12px;
+  z-index: 1;
+}
+.unified .bar summary {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: 18px;
+  border-radius: 4px;
+}
+.unified .bar summary:hover {
+  background: var(--ui-hover);
+}
+.unified .bar summary::before {
+  display: none;
+}
+.unified .bar .app-menu summary {
+  font-size: 18px;
+}
+.unified .wb-menu > div,
+.unified .app-menu > nav,
+.unified .canvas-settings > div {
+  background-color: var(--ui-panel);
+  color: var(--ui-text);
+  border: 1px solid var(--ui-line);
+  opacity: 1;
+}
+.unified select,
+.unified select option {
+  background-color: var(--ui-panel);
+  color: var(--ui-text);
+}
+.unified.ui-hidden .bar,
+.unified.ui-hidden .canvas-tools,
+.unified.ui-hidden .canvas-inspector,
+.unified.ui-hidden .wb-right,
+.unified.ui-hidden .wb-bottom,
+.unified.ui-hidden .preview-panel .section-bar,
+.unified.ui-hidden .readings,
+.unified.ui-hidden #wireInspector {
+  display: none !important;
+}
+.unified.ui-hidden main {
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: minmax(0, 1fr);
+  padding: 0;
+}
+.unified.ui-hidden #stage {
+  height: auto !important;
+}
+@media (max-width: 700px) {
+  .unified .bar .project-name {
+    display: block;
+    width: 90px;
+    font-size: 11px;
   }
 }

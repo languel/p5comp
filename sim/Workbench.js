@@ -300,11 +300,47 @@ export class Workbench {
       this.name = this.title.textContent.trim() || "Untitled";
       ctx.persist();
     };
-    document.querySelectorAll(".wb-menu").forEach((d) =>
+    const menus = [...toolbar.querySelectorAll(".wb-menu,.app-menu")];
+    menus.forEach((d) => {
       d.addEventListener("click", (e) => {
         if (e.target.tagName === "BUTTON") d.open = false;
-      }),
-    );
+      });
+      d.addEventListener("toggle", () => {
+        if (!d.open) return;
+        menus
+          .filter((other) => other !== d)
+          .forEach((other) => (other.open = false));
+        const panel = d.querySelector("div,nav");
+        const left = d.querySelector("summary").getBoundingClientRect().left;
+        panel.style.left =
+          Math.max(8, Math.min(left, innerWidth - panel.offsetWidth - 8)) +
+          "px";
+      });
+    });
+    document.addEventListener("pointerdown", (e) => {
+      menus
+        .filter((d) => !d.contains(e.target))
+        .forEach((d) => (d.open = false));
+    });
+    const brand = toolbar.querySelector(".brand");
+    brand.textContent = "〈±〉";
+    brand.setAttribute("aria-label", "p5comp");
+    brand.title = "p5comp";
+    const menuGlyphs = {
+      File: "▱",
+      Examples: "▦",
+      Settings: "⚙",
+      View: "◫",
+      Reference: "⋯",
+    };
+    toolbar.querySelectorAll("summary").forEach((summary) => {
+      const caption = summary.textContent.trim();
+      if (!menuGlyphs[caption]) return;
+      summary.dataset.caption = caption;
+      summary.textContent = menuGlyphs[caption];
+      summary.title = caption;
+      summary.setAttribute("aria-label", caption);
+    });
     this.renderExamples();
     this.action(async () => {
       const response = await fetch(basePath("examples/index.json"));

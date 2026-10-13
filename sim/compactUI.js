@@ -98,7 +98,9 @@ export function initializeCompactUI({ canvas, key }) {
       if (mobile.matches) nav.append(button);
       else anchor.after(button);
     }
-    menuSummary.title = mobile.matches ? "Project and sections" : "Sections";
+    menuSummary.title =
+      menuSummary.dataset.caption ||
+      (mobile.matches ? "Project and sections" : "Sections");
     menuSummary.setAttribute("aria-label", menuSummary.title);
   };
   mobile.addEventListener("change", responsive);
@@ -141,8 +143,17 @@ export function initializeCompactUI({ canvas, key }) {
   const hideUI = (hidden) => {
     document.body.classList.toggle("ui-hidden", hidden);
     document.getElementById("showUI").hidden = !hidden;
+    document
+      .getElementById("hideUI")
+      .setAttribute("aria-pressed", String(hidden));
+    if (hidden)
+      document
+        .querySelectorAll("details[open]")
+        .forEach((d) => (d.open = false));
+    canvas.render();
   };
-  document.getElementById("hideUI").onclick = () => hideUI(true);
+  document.getElementById("hideUI").onclick = () =>
+    hideUI(!document.body.classList.contains("ui-hidden"));
   document.getElementById("showUI").onclick = () => hideUI(false);
   document.addEventListener("keydown", (e) => {
     if (

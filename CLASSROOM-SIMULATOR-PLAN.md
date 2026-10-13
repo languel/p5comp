@@ -176,3 +176,9 @@ UART in both directions while p5 is detached. The detached sketch received
 `99.5,512,0,0` and sent `LED:1`, turning on the emulated Uno LED. Public Pages
 loaded and ran the classroom demo without console errors. The static deploy
 uses `/p5comp/` asset paths; the Reference code view links to `miniide.html`.
+
+Toolbar/theme fixes: matched `〈±〉` logo, glyph-only menu triggers with hover
+labels, centered editable project name, opaque dropdowns using defined palette
+tokens, and theme-matched select backgrounds. Unified CSS no longer overrides
+interface hiding. Repeated hide/restore and light/dark menus were browser-tested
+without console errors. Menus close outside and when another menu opens.
