@@ -1155,7 +1155,6 @@ workbench = new Workbench({
         ),
       );
     validateDiagram(candidate);
-    resolveCircuit(candidate);
     if (next.id !== selectedPart) {
       controls[next.id] = controls[selectedPart];
       delete controls[selectedPart];
