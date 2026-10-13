@@ -18,7 +18,8 @@ export class P5Bridge extends EventTarget {
     window.addEventListener("message", this.listener);
   }
 
-  run(source) {
+  run(source, project = {}) {
+    this.project = project;
     this.source = source;
     this.loaded = false;
     this.frame.src = basePath(
@@ -26,6 +27,10 @@ export class P5Bridge extends EventTarget {
     );
   }
 
+  stop() {
+    this.loaded = false;
+    this.frame.src = "about:blank";
+  }
   mirror(enabled) {
     this.mirroring = enabled;
     this.#post({ type: "mirror", enabled });
@@ -74,7 +79,7 @@ export class P5Bridge extends EventTarget {
         theme: document.documentElement.dataset.theme || "light",
       });
       this.#post({ type: "pins", values: this.pins });
-      this.#post({ type: "run", source: this.source });
+      this.#post({ type: "run", source: this.source, project: this.project });
       this.#post({ type: "mirror", enabled: !!this.mirroring });
       return;
     }

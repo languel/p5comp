@@ -20,3 +20,6 @@ The StandardFirmata example in `public/examples/StandardFirmata.ino` is from
 Firmata/Arduino, under LGPL 2.1 or later. Copyright notices and the licensing
 header are retained in that file; LGPL text is in `public/licenses/LGPL-2.1.txt`.
 jsPDF is MIT-licensed and provides PDF document export.
+
+- Prettier 3.9.10: MIT. Browser JavaScript/HTML/CSS formatting; notice in `public/licenses/prettier-MIT.txt`.
+- @wasm-fmt/clang-format 23.1.1: package declares MIT. Browser C++ formatting; package notice in `public/licenses/clang-format-wrapper-MIT.txt`. Its bundled clang-format derives from LLVM.

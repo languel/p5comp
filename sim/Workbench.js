@@ -1,3 +1,8 @@
+import { glyphSelect } from "./GlyphSelect.js";
+import {
+  editorPreferences,
+  setEditorPreferences,
+} from "../shared/editor/editorPreferences.js";
 import { ProjectionWindows } from "./ProjectionWindows.js";
 import { createEditor } from "../shared/editor/createEditor.js";
 import { circuitSVG, svgPNG } from "./exportCircuit.js";
@@ -8,6 +13,7 @@ import {
   blankP5,
   validSourceName,
   projectFromFolder,
+  assetDataURL,
 } from "./projectFiles.js";
 import "./workbench.css";
 const $ = (id) => document.getElementById(id);
@@ -77,12 +83,56 @@ export class Workbench {
       '<summary>Settings</summary><div id="globalSettings"><label>Include code in PNG/SVG <input id="exportCode" type="checkbox"></label><label>Workbench <input id="workbenchColor" type="color"></label><label>p5 background <input id="outputColor" type="color"></label><label>Compiler URL <input id="compilerURL" placeholder="http://127.0.0.1:8771/api/compile"></label></div>',
     );
     examples.after(settingsMenu);
-    settingsMenu.querySelector("div").prepend($("themeToggle"));
+    $("themeToggle").hidden = true;
+    settingsMenu
+      .querySelector("div")
+      .prepend(
+        node(
+          "label",
+          "",
+          'Theme <select id="appTheme" aria-label="Theme"><option value="light">Light</option><option value="dark">Dark</option></select>',
+        ),
+      );
+    settingsMenu
+      .querySelector("div")
+      .append(
+        node(
+          "label",
+          "",
+          'Editor theme <select id="editorTheme" aria-label="Editor theme"><option value="subdued">Follow theme</option><option value="subdued-light">Subdued light</option><option value="subdued-dark">Subdued dark</option><option value="github-light">GitHub light</option><option value="github-dark">GitHub dark</option></select>',
+        ),
+        node(
+          "label",
+          "",
+          'Font size <input id="editorFontSize" type="number" min="8" max="32" aria-label="Editor font size">',
+        ),
+      );
+    const syncPreferences = () => {
+      $("appTheme").value = document.documentElement.dataset.theme || "light";
+      $("editorTheme").value = editorPreferences().theme;
+      $("editorFontSize").value = editorPreferences().fontSize;
+      document.dispatchEvent(new Event("p5comp:refresh-selects"));
+    };
+    $("appTheme").onchange = () => {
+      if ($("appTheme").value !== document.documentElement.dataset.theme)
+        $("themeToggle").click();
+      syncPreferences();
+    };
+    $("editorTheme").onchange = () =>
+      setEditorPreferences({ theme: $("editorTheme").value });
+    $("editorFontSize").onchange = () =>
+      setEditorPreferences({ fontSize: $("editorFontSize").value });
+    document.addEventListener("p5comp:editor-settings", syncPreferences);
+    document.addEventListener("physical-p5:themechange", syncPreferences);
+    syncPreferences();
+    document.addEventListener("p5comp:editor-error", (e) =>
+      ctx.notice(e.detail),
+    );
     const main = document.querySelector("main");
     this.editorPanel = node(
       "aside",
       "wb-right",
-      '<nav class="wb-tabs" role="tablist" aria-label="Inspector"><button role="tab" data-tab="arduino">Arduino</button><button role="tab" data-tab="p5">p5</button><button role="tab" data-tab="properties">Properties</button><button role="tab" data-tab="help">Help</button><button id="closeInspector" title="Hide inspector">×</button></nav><section data-pane="arduino"></section><section data-pane="p5"></section><section data-pane="properties"><div class="section-bar"><span id="propertyTitle">Selection</span><button id="applyProperties">Apply JSON</button></div><div id="propertyEditor"></div><div id="referenceProperties"></div></section><section data-pane="help"><div id="helpHome"><p>Select an element and press ? for documentation.</p><p>⌘/Ctrl Enter: run · Shift-click wire: bend · Space-drag: pan</p></div></section>',
+      '<nav class="wb-tabs" role="tablist" aria-label="Inspector"><button role="tab" data-tab="arduino" title="Arduino code" aria-label="Arduino code">∞</button><button role="tab" data-tab="p5" title="p5.js code" aria-label="p5.js code">p5.js</button><button role="tab" data-tab="properties" title="Properties" aria-label="Properties">☷</button><button role="tab" data-tab="help" title="Help" aria-label="Help">?</button><button id="closeInspector" title="Hide inspector">×</button></nav><section data-pane="arduino"></section><section data-pane="p5"></section><section data-pane="properties"><div class="section-bar"><span id="propertyTitle">Selection</span><button id="applyProperties">Apply JSON</button></div><div id="propertyEditor"></div><div id="referenceProperties"></div></section><section data-pane="help"><div id="helpHome"><p>Select an element and press ? for documentation.</p><p>⌘/Ctrl Enter: run · Shift-click wire: bend · Space-drag: pan</p></div></section>',
     );
     const editors = document.querySelectorAll("#code .editors > section");
     this.editorPanel.querySelector('[data-pane="arduino"]').append(editors[0]);
@@ -128,22 +178,96 @@ export class Workbench {
     this.bottom = node(
       "section",
       "wb-bottom",
-      '<nav class="wb-tabs" role="tablist" aria-label="Tools"><button role="tab" data-bottom="simulation">Simulation</button><button role="tab" data-bottom="upload">Upload</button><button role="tab" data-bottom="serial">Serial</button><button role="tab" data-bottom="console">Console</button><button id="collapseBottom" title="Collapse tools">⌄</button></nav><div data-tool="simulation"></div><div data-tool="upload"></div><div data-tool="serial"></div><div data-tool="console"><pre id="p5Console"></pre></div>',
+      '<nav class="wb-tabs" role="tablist" aria-label="Tools"><button role="tab" data-bottom="simulation">Simulation</button><button role="tab" data-bottom="serial">Serial</button><button role="tab" data-bottom="console">Console</button><button id="collapseBottom" title="Collapse tools">⌄</button></nav><div data-tool="simulation"></div><div data-tool="serial"></div><div data-tool="console"><pre id="buildConsole"></pre><pre id="p5Console"></pre></div>',
     );
     main.append(this.bottom);
     this.bottom.querySelector('[data-tool="simulation"]').append($("controls"));
     this.bottom.append(document.querySelector(".section-foot"));
-    this.bottom
-      .querySelector('[data-tool="upload"]')
-      .append(document.querySelector("footer > div"));
-    const uploadCode = node("button", "", "Compile + upload");
+    const transport = node("div", "arduino-transport");
+    transport.append(document.querySelector("footer > div"));
+    this.arduinoPane.querySelector(".section-bar").after(transport);
+    $("usb").title = "Connect USB Arduino";
+    $("usb").setAttribute("aria-label", "Connect USB Arduino");
+    $("upload").hidden = true;
+    const uploadCode = node("button", "", "⇧");
     uploadCode.id = "compileUpload";
-    this.bottom.querySelector('[data-tool="upload"]').prepend(uploadCode);
+    uploadCode.title = "Compile + upload (⌘/Ctrl Shift Enter)";
+    uploadCode.setAttribute("aria-label", "Compile and upload");
+    transport.prepend(uploadCode);
     uploadCode.onclick = () =>
       this.action(async () => {
+        this.bottomTab("console");
         await ctx.compile();
         ctx.persist();
         $("upload").click();
+      });
+    $("compile").title = "Compile and run";
+    $("compile").setAttribute("aria-label", "Compile and run");
+    const p5Tools = this.p5Pane.querySelector(".section-bar");
+    const run = node("button", "", "▷");
+    run.title = "Run p5 (⌘/Ctrl Enter)";
+    run.setAttribute("aria-label", "Run p5 sketch");
+    run.onclick = () => ctx.runP5();
+    p5Tools.append(run);
+    const stop = node("button", "", "□");
+    stop.title = "Stop p5";
+    stop.setAttribute("aria-label", "Stop p5");
+    stop.onclick = () => {
+      ctx.bridge.stop();
+      this.disableAutorun();
+    };
+    p5Tools.append(stop);
+    const auto = node(
+      "label",
+      "autorun",
+      'Auto-run <input id="p5Autorun" type="checkbox" aria-label="p5 auto-run">',
+    );
+    p5Tools.append(auto);
+    $("p5Autorun").onchange = () => {
+      this.autorun = $("p5Autorun").checked;
+    };
+    for (const kind of ["arduino", "p5"]) {
+      const tidy = node("button", "", "≡");
+      tidy.title = "Tidy code (⌘/Ctrl Shift F)";
+      tidy.setAttribute("aria-label", "Tidy " + kind + " code");
+      tidy.onclick = () => {
+        const selected = this[kind + "Bar"].querySelector(
+          '[aria-selected="true"]',
+        )?.dataset.file;
+        (this.extra.get(selected) || ctx[kind + "Editor"]).tidy();
+      };
+      this[kind + "Pane"].querySelector(".section-bar").append(tidy);
+    }
+    const assets = node("button", "", "▧");
+    assets.title = "Libraries, assets and project storage";
+    assets.setAttribute("aria-label", "Project assets");
+    assets.onclick = () => {
+      this.assetPanel.hidden = !this.assetPanel.hidden;
+      this.renderAssets();
+    };
+    p5Tools.append(assets);
+    this.assetPanel = node("div", "asset-panel");
+    this.assetPanel.hidden = true;
+    this.p5Pane.append(this.assetPanel);
+    this.assetInput = node("input", "");
+    this.assetInput.type = "file";
+    this.assetInput.multiple = true;
+    this.assetInput.hidden = true;
+    document.body.append(this.assetInput);
+    this.assetInput.onchange = () =>
+      this.action(async () => {
+        for (const file of this.assetInput.files) {
+          if (file.size > 4000000)
+            throw new Error("Assets must be under 4 MB.");
+          this.assets[file.name] = {
+            src: await assetDataURL(file),
+            type: file.type,
+            size: file.size,
+          };
+        }
+        ctx.persist();
+        this.renderAssets();
+        this.scheduleP5();
       });
     this.bottom
       .querySelector('[data-tool="serial"]')
@@ -195,7 +319,7 @@ export class Workbench {
     const mainViews = node(
       "div",
       "main-view-tools",
-      '<nav class="wb-tabs" role="tablist" aria-label="Main views"><button role="tab" data-main-view="circuit">Circuit</button><button role="tab" data-main-view="p5">p5 render</button></nav><select id="mainLayout" aria-label="Main layout"><option value="tabs">Tabs</option><option value="horizontal">Horizontal split</option><option value="vertical">Vertical split</option></select><button id="projectCircuit" title="Mirror circuit to projection window" aria-label="Circuit projection window">↗</button><button id="projectP5" title="Mirror p5 to projection window" aria-label="p5 projection window">↗</button>',
+      '<nav class="wb-tabs" role="tablist" aria-label="Main views"><button role="tab" data-main-view="circuit" title="Circuit" aria-label="Circuit"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="5" width="14" height="14" rx="1"/><path d="M8 1v4m4-4v4m4-4v4M8 19v4m4-4v4m4-4v4M1 8h4m-4 4h4m-4 4h4m14-8h4m-4 4h4m-4 4h4"/></svg></button><button role="tab" data-main-view="p5" title="p5 render" aria-label="p5 render">p5⋆</button></nav><select id="mainLayout" aria-label="Main layout"><option value="tabs">Tabs</option><option value="horizontal">Horizontal split</option><option value="vertical">Vertical split</option></select><button id="projectCircuit" title="Mirror circuit to projection window" aria-label="Circuit projection window">↗</button><button id="projectP5" title="Mirror p5 to projection window" aria-label="p5 projection window">↗</button>',
     );
     document.querySelector(".workspace").prepend(mainViews);
     mainViews.querySelectorAll("[data-main-view]").forEach(
@@ -328,10 +452,42 @@ export class Workbench {
       this.name = this.title.textContent.trim() || "Untitled";
       ctx.persist();
     };
+    const rowGlyphs = {
+      newProject: "+",
+      saveProject: "↓",
+      openProject: "▱",
+      openFolder: "▰",
+      saveFolder: "⇩",
+      addReference: "▧",
+      exportPNG: "▧",
+      exportSVG: "◇",
+      exportPDF: "▤",
+      classExample: "⌁",
+      blinkExample: "☼",
+      firmataExample: "∞",
+      saveExample: "+",
+      mirrorP5: "↗",
+      mirrorCircuit: "↗",
+      showInspector: "☷",
+    };
+    for (const button of toolbar.querySelectorAll(".wb-menu button")) {
+      if (button.closest(".glyph-select")) continue;
+      const label = button.textContent.trim();
+      button.setAttribute("aria-label", label);
+      const icon = node("span", "menu-row-glyph", rowGlyphs[button.id] || "◫");
+      icon.setAttribute("aria-hidden", "true");
+      button.prepend(icon);
+    }
     const menus = [...toolbar.querySelectorAll(".wb-menu,.app-menu")];
     menus.forEach((d) => {
       d.addEventListener("click", (e) => {
-        if (e.target.tagName === "BUTTON") d.open = false;
+        if (
+          e.target.tagName === "BUTTON" &&
+          !e
+            .composedPath()
+            .some((node) => node.classList?.contains("glyph-select"))
+        )
+          d.open = false;
       });
       d.addEventListener("toggle", () => {
         if (!d.open) return;
@@ -369,6 +525,7 @@ export class Workbench {
       summary.title = caption;
       summary.setAttribute("aria-label", caption);
     });
+    document.querySelectorAll("select:not([hidden])").forEach(glyphSelect);
     this.renderExamples();
     this.action(async () => {
       const response = await fetch(basePath("examples/index.json"));
@@ -382,7 +539,7 @@ export class Workbench {
         )
           continue;
         const button = node("button", "repository-example");
-        button.textContent = entry.name;
+        button.textContent = "▦  " + entry.name;
         button.onclick = () =>
           this.action(async () => {
             const response = await fetch(basePath(entry.project));
@@ -396,7 +553,10 @@ export class Workbench {
   action(fn) {
     return Promise.resolve()
       .then(fn)
-      .catch((e) => this.ctx.notice(e.message));
+      .catch((e) => {
+        this.buildLog(e.message);
+        this.ctx.notice(e.message);
+      });
   }
   tab(name) {
     this.editorPanel.hidden = false;
@@ -438,7 +598,7 @@ export class Workbench {
         [this.arduinoName, this.p5Name].includes(name)
       )
         return this.ctx.notice(
-          "Use a unique .ino, .h, .cpp, .c, or .js filename.",
+          "Use a unique .ino, .h, .cpp, .c, .js, .html or .css filename.",
         );
       this.files[name] = "";
       this.renderFiles();
@@ -457,7 +617,9 @@ export class Workbench {
       const names = [
         mainName,
         ...Object.keys(this.files).filter((n) =>
-          kind === "p5" ? n.endsWith(".js") : !n.endsWith(".js"),
+          kind === "p5"
+            ? /\.(js|html|css)$/.test(n)
+            : /\.(ino|h|hpp|cpp|c)$/.test(n),
         ),
       ];
       for (const name of names) {
@@ -476,13 +638,22 @@ export class Workbench {
             createEditor({
               parent,
               value: this.files[name],
-              language: kind === "arduino" ? "cpp" : "javascript",
+              language:
+                kind === "arduino"
+                  ? "cpp"
+                  : name.endsWith(".html")
+                    ? "html"
+                    : name.endsWith(".css")
+                      ? "css"
+                      : "javascript",
               onChange: (text) => {
                 this.files[name] = text;
                 this.ctx.persist();
+                if (kind === "p5") this.scheduleP5();
               },
               onRun: () =>
                 kind === "p5" ? this.ctx.runP5() : $("compile").click(),
+              onUpload: () => kind === "arduino" && $("compileUpload").click(),
             }),
           );
         }
@@ -506,7 +677,9 @@ export class Workbench {
   }
   arduinoFiles() {
     return Object.fromEntries(
-      Object.entries(this.files).filter(([n]) => !n.endsWith(".js")),
+      Object.entries(this.files).filter(([n]) =>
+        /\.(ino|h|hpp|cpp|c)$/.test(n),
+      ),
     );
   }
   p5Source() {
@@ -519,6 +692,93 @@ export class Workbench {
       this.ctx.p5Editor.state.doc.toString()
     );
   }
+  p5Project() {
+    return {
+      html: this.files["index.html"],
+      css: Object.entries(this.files)
+        .filter(([n]) => n.endsWith(".css"))
+        .map(([, s]) => s)
+        .join("\n"),
+      assets: this.assets,
+      mainName: this.p5Name,
+      sourceNames: [
+        this.p5Name,
+        ...Object.keys(this.files).filter((n) => n.endsWith(".js")),
+      ],
+    };
+  }
+  scheduleP5() {
+    clearTimeout(this.autoTimer);
+    if (this.autorun) this.autoTimer = setTimeout(() => this.ctx.runP5(), 500);
+  }
+  disableAutorun() {
+    this.autorun = false;
+    clearTimeout(this.autoTimer);
+    if ($("p5Autorun")) $("p5Autorun").checked = false;
+  }
+  uploadState(connected) {
+    if ($("compileUpload")) $("compileUpload").disabled = !connected;
+  }
+  buildLog(line) {
+    const console = $("buildConsole");
+    if (console)
+      console.textContent = (console.textContent + line + "\n").slice(-20000);
+  }
+  renderAssets() {
+    this.assetPanel.replaceChildren();
+    const heading = node("strong", "", "Libraries & assets");
+    this.assetPanel.append(heading);
+    const parsed = new DOMParser().parseFromString(
+      this.files["index.html"] || "",
+      "text/html",
+    );
+    for (const element of parsed.querySelectorAll("script[src],link[href]")) {
+      const row = node("div", "");
+      row.textContent =
+        element.getAttribute("src") || element.getAttribute("href");
+      this.assetPanel.append(row);
+    }
+    for (const [name, asset] of Object.entries(this.assets || {})) {
+      const row = node("div", "asset-row");
+      const label = node("span", "");
+      label.textContent =
+        name + " · " + (asset.type || "file") + " · " + asset.size + " B";
+      row.append(label);
+      if (asset.type?.startsWith("image/")) {
+        const image = node("img", "");
+        image.src = asset.src;
+        image.alt = name;
+        row.prepend(image);
+      }
+      const remove = node("button", "", "×");
+      remove.title = "Remove " + name;
+      remove.onclick = () => {
+        delete this.assets[name];
+        this.ctx.persist();
+        this.renderAssets();
+      };
+      row.append(remove);
+      this.assetPanel.append(row);
+    }
+    const add = node("button", "", "+ Import assets");
+    add.onclick = () => this.assetInput.click();
+    this.assetPanel.append(add);
+    const storage = node("details", "");
+    storage.append(node("summary", "", "Project storage"));
+    const pre = node("pre", "");
+    pre.textContent = JSON.stringify(
+      {
+        key: this.ctx.key,
+        files: Object.keys(this.files),
+        assets: Object.keys(this.assets || {}),
+        savedBytes: localStorage.getItem(this.ctx.key)?.length || 0,
+      },
+      null,
+      2,
+    );
+    storage.append(pre);
+    this.assetPanel.append(storage);
+  }
   compilerURL() {
     return this.settings.compiler || basePath("api/compile");
   }
@@ -526,6 +786,7 @@ export class Workbench {
     return {
       name: this.name,
       files: this.files,
+      assets: this.assets,
       arduinoName: this.arduinoName,
       p5Name: this.p5Name,
       references: this.references,
@@ -538,12 +799,20 @@ export class Workbench {
   restore(d) {
     this.name = d.name || "Classroom";
     this.title.textContent = this.name;
-    this.files = d.files || {};
+    this.files = { ...(d.files || {}) };
+    this.assets = d.assets || {};
+    this.disableAutorun();
     this.arduinoName = d.arduinoName || "sketch.ino";
     this.p5Name = d.p5Name || "sketch.js";
+    this.files["index.html"] ??=
+      '<!doctype html>\n<html><head><meta charset="utf-8"><script src="p5.js"></script><link rel="stylesheet" href="style.css"></head><body><main id="canvas"></main><script src="' +
+      this.p5Name +
+      '"></script></body></html>\n';
+    this.files["style.css"] ??= "body { margin: 0; }\n";
     this.references = d.references || [];
     this.settings = d.settings || {};
     this.renderFiles();
+    this.renderAssets();
     this.applySettings();
     this.renderReferences();
     this.mainView(
@@ -584,7 +853,7 @@ export class Workbench {
     document.querySelectorAll(".saved-example").forEach((e) => e.remove());
     for (const p of this.examples()) {
       const b = node("button", "saved-example");
-      b.textContent = p.workbench?.name || "Example";
+      b.textContent = "▦  " + (p.workbench?.name || "Example");
       b.onclick = () => this.action(() => this.ctx.openProject(p));
       $("exampleLibrary").append(b);
     }
@@ -629,6 +898,7 @@ export class Workbench {
         ),
       );
     $("mainLayout").value = this.layout;
+    document.dispatchEvent(new Event("p5comp:refresh-selects"));
     this.ctx.canvas.render();
   }
   async writeFolder() {
@@ -651,6 +921,20 @@ export class Workbench {
       const w = await h.createWritable();
       await w.write(text);
       await w.close();
+    }
+    for (const [path, asset] of Object.entries(this.assets)) {
+      const segments = path.split("/");
+      if (segments.some((s) => !s || s === ".." || s === "."))
+        throw new Error("Invalid asset path.");
+      let target = dir;
+      for (const segment of segments.slice(0, -1))
+        target = await target.getDirectoryHandle(segment, { create: true });
+      const handle = await target.getFileHandle(segments.at(-1), {
+        create: true,
+      });
+      const writable = await handle.createWritable();
+      await writable.write(await (await fetch(asset.src)).blob());
+      await writable.close();
     }
     this.ctx.notice("Project folder saved.");
   }

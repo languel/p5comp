@@ -145,7 +145,7 @@ window.addEventListener("unhandledrejection", (event) => {
   );
 });
 
-window.addEventListener("message", (event) => {
+window.addEventListener("message", async (event) => {
   if (!event.data) return;
   // A detached iframe has a new parent. Its original workbench establishes the
   // transport host with a same-origin state message before sending sketch code.
@@ -218,7 +218,107 @@ window.addEventListener("message", (event) => {
     return;
   }
   if (message.type !== "run" || sketchReady) return;
+  sketchReady = true;
   try {
+    const project = message.project || {},
+      assets = project.assets || {};
+    const parsed = new DOMParser().parseFromString(
+      project.html || '<main id="canvas"></main>',
+      "text/html",
+    );
+    const scripts = [...parsed.querySelectorAll("script")];
+    scripts.forEach((s) => s.remove());
+    if (project.html) {
+      document.body.replaceChildren(...parsed.body.childNodes);
+      if (!document.getElementById("canvas")) {
+        const container = document.createElement("main");
+        container.id = "canvas";
+        document.body.append(container);
+      }
+    }
+    for (const element of document.querySelectorAll("[src],[href]"))
+      for (const attribute of ["src", "href"]) {
+        const path = element.getAttribute(attribute)?.replace(/^\.\//, "");
+        if (assets[path]) element.setAttribute(attribute, assets[path].src);
+      }
+    const style = document.createElement("style");
+    style.textContent = (
+      [...parsed.querySelectorAll("style")]
+        .map((s) => s.textContent)
+        .join("\n") +
+      "\n" +
+      (project.css || "")
+    ).replace(/url\(["']?([^"')]+)["']?\)/g, (whole, path) =>
+      assets[path.replace(/^\.\//, "")]
+        ? 'url("' + assets[path.replace(/^\.\//, "")].src + '")'
+        : whole,
+    );
+    document.head.append(style);
+    for (const link of parsed.querySelectorAll('link[rel="stylesheet"]')) {
+      const href = link.getAttribute("href"),
+        name = href?.replace(/^\.\//, "");
+      if (name?.endsWith(".css") && !/^https?:/.test(href) && !assets[name])
+        continue;
+      const stylesheet = document.createElement("link");
+      stylesheet.rel = "stylesheet";
+      stylesheet.href = assets[name]?.src || href;
+      document.head.append(stylesheet);
+    }
+    for (const s of scripts) {
+      const src = s.getAttribute("src");
+      if (!src) continue;
+      const name = src.replace(/^\.\//, "");
+      if (
+        name === "p5.js" ||
+        /p5\.webserial(?:\.min)?\.js$/.test(src) ||
+        /p5(?:\.min)?\.js$/.test(src) ||
+        name === project.mainName ||
+        project.sourceNames?.includes(name)
+      )
+        continue;
+      if (!assets[name] && !/^https?:\/\//.test(src))
+        throw new Error(
+          `Library ${src} is not in the project assets. Import the file or use a full URL.`,
+        );
+      await new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = assets[name]?.src || src;
+        script.onload = resolve;
+        script.onerror = () =>
+          reject(new Error(`Library ${src} could not load.`));
+        document.head.append(script);
+      });
+    }
+    const nativeFetch = window.fetch.bind(window);
+    window.fetch = (input, options) =>
+      nativeFetch(
+        typeof input === "string" && assets[input.replace(/^\.\//, "")]
+          ? assets[input.replace(/^\.\//, "")].src
+          : input,
+        options,
+      );
+    for (const method of [
+      "loadImage",
+      "loadSound",
+      "loadFont",
+      "loadJSON",
+      "loadStrings",
+      "loadTable",
+    ]) {
+      const original = p5.prototype[method];
+      if (original)
+        p5.prototype[method] = function (path, ...args) {
+          return original.call(
+            this,
+            typeof path === "string" && assets[path.replace(/^\.\//, "")]
+              ? assets[path.replace(/^\.\//, "")].src
+              : path,
+            ...args,
+          );
+        };
+    }
+    for (const script of scripts.filter((s) => !s.getAttribute("src")))
+      window.eval(script.textContent);
     window.eval(`${message.source}\n//# sourceURL=student-sketch.js`);
     p5Instance = new p5(undefined, document.getElementById("canvas"));
     sketchReady = true;

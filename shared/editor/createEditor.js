@@ -5,7 +5,15 @@ import { javascriptLanguage, javascript } from "@codemirror/lang-javascript";
 import { Compartment, EditorState } from "@codemirror/state";
 import { keymap } from "@codemirror/view";
 import { indentWithTab } from "@codemirror/commands";
-import { oneDark } from "@codemirror/theme-one-dark";
+import { html } from "@codemirror/lang-html";
+import { css } from "@codemirror/lang-css";
+import { Prec } from "@codemirror/state";
+import {
+  editorPreferences,
+  setEditorPreferences,
+  editorTheme,
+} from "./editorPreferences.js";
+import { formatCode } from "./formatCode.js";
 
 export function createEditor({
   parent,
@@ -37,23 +45,76 @@ export function createEditor({
     doc: value,
     extensions: [
       basicSetup,
-      language === "cpp" ? cpp() : javascript(),
-      language === "cpp" ? cppLanguageData : p5LanguageData,
-      theme.of(
-        document.documentElement.dataset.theme === "dark" ? oneDark : [],
-      ),
-      keymap.of(shortcuts),
+      language === "cpp"
+        ? cpp()
+        : language === "html"
+          ? html()
+          : language === "css"
+            ? css()
+            : javascript(),
+      language === "cpp"
+        ? cppLanguageData
+        : language === "javascript"
+          ? p5LanguageData
+          : [],
+      theme.of(editorTheme(editorPreferences())),
+      Prec.highest(keymap.of(shortcuts)),
       EditorView.updateListener.of((update) => {
         if (update.docChanged) onChange?.(update.state.doc.toString());
       }),
     ],
   });
   const editor = new EditorView({ state, parent });
-  document.addEventListener("physical-p5:themechange", (event) => {
-    editor.dispatch({
-      effects: theme.reconfigure(event.detail === "dark" ? oneDark : []),
-    });
-  });
+  const apply = () => {
+    const prefs = editorPreferences();
+    editor.dom.style.fontSize = prefs.fontSize + "px";
+    editor.dispatch({ effects: theme.reconfigure(editorTheme(prefs)) });
+  };
+  editor.tidy = async () => {
+    const source = editor.state.doc.toString();
+    try {
+      const formatted = await formatCode(source, language);
+      if (editor.state.doc.toString() !== source) return;
+      editor.dispatch({
+        changes: { from: 0, to: editor.state.doc.length, insert: formatted },
+      });
+    } catch (error) {
+      document.dispatchEvent(
+        new CustomEvent("p5comp:editor-error", { detail: error.message }),
+      );
+    }
+  };
+  editor.dom.addEventListener(
+    "keydown",
+    (e) => {
+      if (!(e.metaKey || e.ctrlKey) || !e.shiftKey) return;
+      if (e.key.toLowerCase() === "f") {
+        e.preventDefault();
+        e.stopPropagation();
+        editor.tidy();
+      } else if (
+        ["Equal", "Minus"].includes(e.code) ||
+        ["+", "-", "_", "="].includes(e.key)
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        const up = e.code === "Equal" || ["+", "="].includes(e.key);
+        setEditorPreferences({
+          fontSize: editorPreferences().fontSize + (up ? 1 : -1),
+        });
+      }
+    },
+    true,
+  );
+  document.addEventListener("physical-p5:themechange", apply);
+  document.addEventListener("p5comp:editor-settings", apply);
+  const destroy = editor.destroy.bind(editor);
+  editor.destroy = () => {
+    document.removeEventListener("physical-p5:themechange", apply);
+    document.removeEventListener("p5comp:editor-settings", apply);
+    destroy();
+  };
+  apply();
   return editor;
 }
 

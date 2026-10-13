@@ -48,3 +48,27 @@ test("whole project manifest takes precedence over individual sources", async ()
     p,
   );
 });
+test("p5 folder import retains HTML, CSS and nested image assets", async () => {
+  const image = {
+    name: "sample.png",
+    webkitRelativePath: "Class/assets/sample.png",
+    size: 3,
+    type: "image/png",
+    arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer,
+  };
+  const p = await projectFromFolder(
+    [
+      file("sketch.js", "function setup() {}"),
+      file("index.html", "<main></main>"),
+      file("style.css", "body { margin:0 }"),
+      image,
+    ],
+    {},
+  );
+  assert.equal(p.workbench.files["index.html"], "<main></main>");
+  assert.equal(p.workbench.files["style.css"], "body { margin:0 }");
+  assert.equal(
+    p.workbench.assets["assets/sample.png"].src,
+    "data:image/png;base64,AQID",
+  );
+});

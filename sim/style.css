@@ -375,18 +375,9 @@ summary span {
 }
 .cm-editor {
   height: 100%;
-  background: var(--ui-page) !important;
-  color: var(--ui-text) !important;
 }
 .cm-scroller {
-  font:
-    12px/1.6 ui-monospace,
-    monospace !important;
-}
-.cm-gutters {
-  background: var(--ui-page) !important;
-  border: 0 !important;
-  color: var(--ui-quiet) !important;
+  font-family: ui-monospace, monospace;
 }
 .log-tools {
   display: flex;

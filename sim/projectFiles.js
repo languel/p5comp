@@ -3,8 +3,9 @@ export const blankP5 =
   "function setup() {\n  createCanvas(600, 400);\n}\n\nfunction draw() {\n  background(240);\n}\n";
 export function validSourceName(name) {
   return (
-    /^[a-zA-Z0-9_-][a-zA-Z0-9_.-]*\.(ino|h|hpp|cpp|c|js)$/i.test(name) &&
-    !name.includes("..")
+    /^[a-zA-Z0-9_-][a-zA-Z0-9_.-]*\.(ino|h|hpp|cpp|c|js|html|css)$/i.test(
+      name,
+    ) && !name.includes("..")
   );
 }
 export async function projectFromFolder(files, fallback) {
@@ -31,6 +32,21 @@ export async function projectFromFolder(files, fallback) {
   const extras = Object.fromEntries(
     Object.entries(content).filter(([n]) => n !== ino?.name && n !== js?.name),
   );
+  const assets = {};
+  for (const f of entries.filter(
+    (f) =>
+      /\.(png|jpe?g|gif|webp|svg|mp3|wav|ogg|mp4|webm|woff2?|ttf|json)$/i.test(
+        f.name,
+      ) && !["diagram.json", "p5comp.json"].includes(f.name),
+  )) {
+    if (f.size > 4000000) throw new Error(`${f.name} exceeds 4 MB.`);
+    const path = f.webkitRelativePath?.split("/").slice(1).join("/") || f.name;
+    assets[path] = {
+      src: await assetDataURL(f),
+      type: f.type || "application/octet-stream",
+      size: f.size,
+    };
+  }
   const diagramFile = entries.find((f) => f.name === "diagram.json");
   return {
     ...fallback,
@@ -42,8 +58,17 @@ export async function projectFromFolder(files, fallback) {
     workbench: {
       name: entries[0]?.webkitRelativePath?.split("/")[0] || "Imported project",
       files: extras,
+      assets,
       arduinoName: ino?.name || "sketch.ino",
       p5Name: js?.name || "sketch.js",
     },
   };
+}
+
+export async function assetDataURL(file) {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 8192)
+    binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
+  return `data:${file.type || "application/octet-stream"};base64,${btoa(binary)}`;
 }

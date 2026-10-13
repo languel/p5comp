@@ -76,6 +76,7 @@ let running = false,
 const serial = new SerialConnection();
 const log = (line) => {
   lines.push(line);
+  if (!/^[←→]/.test(line)) workbench?.buildLog(line);
   if (lines.length > 150) lines.shift();
   $("log").textContent = lines.join("\n");
   $("log").scrollTop = $("log").scrollHeight;
@@ -103,12 +104,16 @@ const arduinoEditor = createEditor({
     updateConnection();
   },
   onRun: runArduino,
+  onUpload: () => $("compileUpload").click(),
 });
 const p5Editor = createEditor({
   parent: $("p5Editor"),
   value: savedP5[api] || (api === "native" ? nativeSketch : webserialSketch),
   language: "javascript",
-  onChange: () => persist(),
+  onChange: () => {
+    persist();
+    workbench?.scheduleP5();
+  },
   onRun: runP5,
 });
 $("comms").value = api;
@@ -155,6 +160,7 @@ function setCode(editor, text) {
   });
 }
 function updateConnection() {
+  workbench?.uploadState(serial.connected);
   bridge.updateState({}, running || (mode === "usb" && serial.connected), mode);
   $("upload").disabled =
     !artifact ||
@@ -164,7 +170,10 @@ function updateConnection() {
 }
 function runP5() {
   updateConnection();
-  bridge.run(workbench?.p5Source() || sourceValue(p5Editor));
+  bridge.run(
+    workbench?.p5Source() || sourceValue(p5Editor),
+    workbench?.p5Project() || {},
+  );
 }
 
 function receive(bytes) {
@@ -219,6 +228,7 @@ async function getFirmware() {
     return hex;
   }
   status("Compiling locally…");
+  log("Compiling Arduino Uno…");
   let response;
   try {
     response = await fetch(
@@ -239,6 +249,7 @@ async function getFirmware() {
   if (!result.ok) throw new Error(result.stderr || "Compilation failed.");
   artifact = { source, buildKey, hex: result.hex };
   $("firmwareState").textContent = "Compiled locally · cached in project";
+  log("Compilation complete · firmware cached.");
   persist();
   return result.hex;
 }
@@ -968,12 +979,12 @@ $("usb").onclick = async () => {
     if (serial.connected) {
       await serial.disconnect();
       mode = "simulation";
-      $("usb").textContent = "Connect USB Uno";
+      $("usb").textContent = "Connect USB Arduino";
       return;
     }
     stop();
     await serial.connect({ baudRate: 9600 });
-    $("usb").textContent = "Disconnect USB";
+    $("usb").textContent = "Disconnect USB Arduino";
   } catch (e) {
     notice(e.message);
   }
@@ -984,11 +995,15 @@ $("upload").onclick = async () => {
   try {
     const port = await serial.releasePort();
     try {
-      await flashUno(port, artifact.hex, (p) => status(p));
+      await flashUno(port, artifact.hex, (p) => {
+        status(p);
+        log(p);
+      });
     } finally {
       await serial.reconnect(port, 9600);
     }
     status("Uploaded and verified · physical Uno");
+    log("Uploaded and verified · physical Uno");
   } catch (e) {
     notice(e.message);
   } finally {

@@ -321,3 +321,32 @@ lecture or installation. p5 mirrors canvas pixels (not separate sketch execution
 or interactive HTML controls). The circuit mirror follows the current viewport,
 pan/zoom, parts, wire colors and reference images. Closing a mirror leaves the
 editor running. Mirror windows are local browser windows and require popup support.
+
+### Editors and p5 project files
+
+The chip / `p5⋆` tabs select the main views. The inspector uses `∞` (Arduino),
+`p5.js`, properties and help glyphs. Dropdowns show a compact selected glyph;
+open them for glyphs with readable labels. Settings includes themed checkboxes,
+editor font size and Follow theme, Subdued light/dark, GitHub light/dark palettes.
+
+- **⌘/Ctrl Enter**: compile/run Arduino or run p5 from its editor.
+- **⌘/Ctrl Shift Enter**: compile/upload from an Arduino editor, after connecting USB.
+- **⌘/Ctrl Shift + / −**: adjust editor font size (8–32 px).
+- **⌘/Ctrl Shift F**: tidy the current C++/JavaScript/HTML/CSS source. C++ uses
+  lazy-loaded browser clang-format WASM; other sources use Prettier.
+
+Arduino's compile/run and USB compile/upload controls live in its tab. Compiler
+output and upload progress appear in the bottom Console; Serial remains separate.
+p5 has explicit run/stop controls and a debounced Auto-run checkbox, **off by
+default** and reset when opening a project. Formatting is a normal undoable edit.
+
+p5 file tabs include editable `index.html` and `style.css`. The asset glyph opens
+library references, image previews, imports/removal and current-project localStorage
+metadata. Folder import preserves HTML/CSS and nested image/media/font/JSON assets
+(up to 4 MB each); these are embedded in project JSON and restored as files on
+folder save. p5 loaders and `fetch()` resolve imported asset paths inside the
+sandbox. HTML script URLs load additional libraries; the bundled p5 and
+p5.webserial libraries and project source files are not loaded twice. HTML styles,
+CSS source and imported CSS image URLs apply to the preview. Browser security
+restrictions still apply to external URLs. Project storage inspection concerns
+this project's key rather than unrelated browser storage.

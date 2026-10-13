@@ -663,3 +663,128 @@ body.unified {
   opacity: 0;
   pointer-events: none;
 }
+/* Compact glyph menus share the active application palette. */
+.glyph-select {
+  position: relative;
+  display: inline-flex;
+}
+.glyph-select-trigger {
+  min-width: 28px;
+  padding: 3px 7px;
+}
+.glyph-select-options {
+  position: absolute;
+  top: calc(100% + 5px);
+  right: 0;
+  z-index: 150;
+  min-width: 175px;
+  padding: 5px;
+  border: 1px solid var(--ui-line);
+  border-radius: 6px;
+  background: var(--ui-panel);
+  box-shadow: 0 8px 24px #0003;
+}
+.glyph-select-options button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  white-space: nowrap;
+  padding: 6px 9px;
+}
+.glyph-select-options button[aria-selected="true"] {
+  background: var(--ui-line);
+}
+input[type="checkbox"] {
+  appearance: none;
+  width: 13px;
+  height: 13px;
+  border: 1px solid var(--ui-quiet);
+  border-radius: 3px;
+  background: var(--ui-panel);
+  vertical-align: middle;
+  cursor: pointer;
+}
+input[type="checkbox"]:checked {
+  background: var(--ui-quiet);
+}
+input[type="checkbox"]:checked::after {
+  content: "✓";
+  color: var(--ui-panel);
+  display: block;
+  text-align: center;
+  font-size: 11px;
+  line-height: 11px;
+}
+input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--ui-quiet);
+  outline-offset: 2px;
+}
+.arduino-transport,
+.arduino-transport > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.arduino-transport {
+  padding: 3px 8px;
+}
+.arduino-transport #firmwareState {
+  font-size: 10px;
+  color: var(--ui-quiet);
+}
+.autorun {
+  font-size: 11px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.asset-panel {
+  padding: 10px;
+  max-height: 240px;
+  overflow: auto;
+  font-size: 11px;
+  border-top: 1px solid var(--ui-line);
+}
+.asset-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 0;
+}
+.asset-row img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+.asset-panel pre {
+  white-space: pre-wrap;
+}
+.main-view-tools svg {
+  vertical-align: middle;
+}
+#editorFontSize {
+  width: 56px;
+}
+.wb-menu input[type="checkbox"] {
+  width: 13px;
+  flex: 0 0 13px;
+}
+.wb-menu #editorFontSize {
+  width: 56px;
+}
+.wb-menu .glyph-select-trigger {
+  text-align: center;
+  min-width: 28px;
+  padding: 4px 7px;
+}
+.wb-menu > div:has(.glyph-select-options:not([hidden])) {
+  overflow: visible;
+}
+.menu-row-glyph {
+  display: inline-block;
+  width: 23px;
+  color: var(--ui-quiet);
+  text-align: center;
+  margin-right: 5px;
+}

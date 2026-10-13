@@ -927,19 +927,6 @@ select:focus-visible {
   outline-offset: 2px;
 }
 
-.cm-editor {
-  background: var(--ui-page) !important;
-  color: var(--ui-text) !important;
-}
-.cm-gutters {
-  background: var(--ui-page) !important;
-  color: var(--ui-quiet) !important;
-  border-color: var(--ui-line) !important;
-}
-.cm-activeLine,
-.cm-activeLineGutter {
-  background: var(--ui-hover) !important;
-}
 /* p5comp: the same quiet control scale and surfaces as the circuit workspace. */
 .topbar {
   height: 41px;
