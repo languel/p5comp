@@ -79,6 +79,7 @@ export function validateDiagram(d) {
       throw new Error("Label must be text under 100 characters.");
     if (!elementByType.has(p.type))
       throw new Error(`Unsupported part: ${p.type}`);
+    if (p.type === "wokwi-resistor") resistance(p.attrs?.value);
     if (
       !Number.isFinite(p.left) ||
       !Number.isFinite(p.top) ||

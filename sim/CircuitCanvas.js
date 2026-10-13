@@ -45,6 +45,7 @@ export class CircuitCanvas {
     onViewChange,
     onDocs,
     onRename,
+    onAdd,
     saved = {},
   }) {
     Object.assign(this, {
@@ -58,6 +59,7 @@ export class CircuitCanvas {
       onViewChange,
       onDocs,
       onRename,
+      onAdd,
     });
     this.camera = {
       x: Number(saved.camera?.x) || 0,
@@ -1093,10 +1095,19 @@ export class CircuitCanvas {
       this.onRename?.(part);
       return;
     }
-    const wire = e.target.closest("[data-wire]");
-    if (wire && !e.target.closest("[data-bend],[data-midpoint]")) {
+    const wire = hit?.closest("[data-wire]") || e.target.closest("[data-wire]");
+    if (wire && !hit?.closest("[data-bend],[data-midpoint]")) {
       e.preventDefault();
       this.insertBend(Number(wire.dataset.wire), this.toWorld(e));
+      return;
+    }
+    if (
+      !part &&
+      !hit?.closest("[data-pin],[data-terminal],[data-free-end]") &&
+      !this.draft
+    ) {
+      e.preventDefault();
+      this.onAdd?.(this.toWorld(e));
     }
   }
   removeBend() {

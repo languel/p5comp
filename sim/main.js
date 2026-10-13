@@ -1,3 +1,4 @@
+import { resistance } from "./passiveStates.js";
 import { Workbench } from "./Workbench.js";
 import { basePath } from "../shared/basePath.js";
 import { BREADBOARD_HOLE_RADIUS } from "./partGeometry.js";
@@ -410,6 +411,7 @@ const canvas = new CircuitCanvas({
     );
     workbench?.tab("help");
   },
+  onAdd: (point) => elementPicker.open(point),
   onRename: (wrapper) =>
     workbench?.editLabel(
       wrapper,
@@ -635,6 +637,8 @@ function renderParts() {
                 ? value === true || value === "true"
                 : value;
       }
+      if (p.type === "wokwi-resistor")
+        element.value = String(resistance(p.attrs?.value));
       body.append(element);
       if (p.type === TYPES[0]) {
         element.ledPower = running;
@@ -883,7 +887,7 @@ $("removeWire").onclick = () => {
   canvas.deleteWire();
 };
 $("removePart").onclick = () => canvas.deleteSelection();
-function addElement(type, attrs = {}) {
+function addElement(type, attrs = {}, point = null) {
   if (!elementByType.has(type)) return;
   if (diagram.parts.length >= 40) {
     notice("Maximum 40 parts.");
@@ -894,8 +898,12 @@ function addElement(type, attrs = {}) {
   const before = canvas.checkpoint(),
     id = "part" + n;
   const position = {
-    left: (canvas.stage.clientWidth / 2 - canvas.camera.x) / canvas.camera.zoom,
-    top: (canvas.stage.clientHeight / 2 - canvas.camera.y) / canvas.camera.zoom,
+    left:
+      point?.x ??
+      (canvas.stage.clientWidth / 2 - canvas.camera.x) / canvas.camera.zoom,
+    top:
+      point?.y ??
+      (canvas.stage.clientHeight / 2 - canvas.camera.y) / canvas.camera.zoom,
   };
   diagram.parts.push({ id, type, ...position, attrs: { ...attrs } });
   controls[id] = type === TYPES[2] ? 512 : type === TYPES[3] ? 100 : false;

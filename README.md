@@ -379,3 +379,7 @@ full analog/SPICE solver for parallel networks or transistor circuits. Unmodeled
 components remain marked as visual-only in the picker. No-resistor/overcurrent
 warnings appear in the LED hover tip. These states come from simulation, not
 measurement of a connected physical board.
+
+Double-click empty canvas space to open the element picker. The selected part's
+origin is placed at that world coordinate, respecting the current pan and zoom;
+the toolbar's + button continues to add at the viewport center.

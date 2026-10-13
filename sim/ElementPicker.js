@@ -33,7 +33,8 @@ export class ElementPicker {
       }
     });
   }
-  open() {
+  open(position = null) {
+    this.position = position;
     this.search.value = "";
     this.render();
     this.dialog.showModal();
@@ -96,7 +97,7 @@ export class ElementPicker {
         state.title = button.title;
         button.append(thumb, name, state);
         button.onclick = () => {
-          this.add(info.type, info.attrs || {});
+          this.add(info.type, info.attrs || {}, this.position);
           this.dialog.close();
         };
         this.results.append(button);
