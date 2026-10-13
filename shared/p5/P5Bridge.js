@@ -26,6 +26,10 @@ export class P5Bridge extends EventTarget {
     );
   }
 
+  mirror(enabled) {
+    this.mirroring = enabled;
+    this.#post({ type: "mirror", enabled });
+  }
   updateState(signals, serialConnected, transportMode = "simulation") {
     this.signals = { ...signals };
     this.serialConnected = serialConnected;
@@ -71,9 +75,16 @@ export class P5Bridge extends EventTarget {
       });
       this.#post({ type: "pins", values: this.pins });
       this.#post({ type: "run", source: this.source });
+      this.#post({ type: "mirror", enabled: !!this.mirroring });
       return;
     }
-    if (message.type === "ready") {
+    if (
+      message.type === "mirrorFrame" ||
+      message.type === "mirrorError" ||
+      message.type === "renderSize"
+    ) {
+      this.dispatchEvent(new CustomEvent(message.type, { detail: message }));
+    } else if (message.type === "ready") {
       this.dispatchEvent(new Event("ready"));
     } else if (message.type === "console") {
       this.dispatchEvent(new CustomEvent("console", { detail: message }));

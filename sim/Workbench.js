@@ -1,3 +1,4 @@
+import { ProjectionWindows } from "./ProjectionWindows.js";
 import { createEditor } from "../shared/editor/createEditor.js";
 import { circuitSVG, svgPNG } from "./exportCircuit.js";
 import { jsPDF } from "jspdf";
@@ -59,7 +60,7 @@ export class Workbench {
     const viewMenu = node(
       "details",
       "wb-menu",
-      '<summary>View</summary><div><button data-dock="split">p5 split panel</button><button data-dock="overlay">p5 overlay</button><button data-dock="window">p5 window</button><button data-dock="hidden">Hide p5 output</button><button id="showInspector">Show inspector</button></div>',
+      '<summary>View</summary><div><button data-dock="split">p5 split panel</button><button data-dock="overlay">p5 overlay</button><button id="mirrorP5">p5 projection window</button><button id="mirrorCircuit">Circuit projection window</button><button data-dock="hidden">Hide p5 output</button><button id="showInspector">Show inspector</button></div>',
     );
     examples.after(viewMenu);
     viewMenu.querySelectorAll("[data-dock]").forEach(
@@ -158,9 +159,10 @@ export class Workbench {
     const outputMode = node(
       "select",
       "",
-      '<option value="split">Split</option><option value="overlay">Overlay</option><option value="window">Window</option><option value="hidden">Hidden</option>',
+      '<option value="split">Split</option><option value="overlay">Overlay</option><option value="window">Mirror window</option><option value="hidden">Hidden</option>',
     );
     outputMode.id = "outputDock";
+    outputMode.hidden = true; // Main layout selector owns split/tab layout; overlays remain in View.
     outputMode.setAttribute("aria-label", "p5 output docking");
     document.querySelector(".preview-panel .section-bar").prepend(outputMode);
     outputMode.onchange = () => {
@@ -187,6 +189,32 @@ export class Workbench {
         e.target.onpointerup = () => (e.target.onpointermove = null);
       });
     this.outputHome = $("p5Frame").parentElement;
+    this.projections = new ProjectionWindows(ctx, () => this.references);
+    $("mirrorP5").onclick = () => this.projections.open("p5");
+    $("mirrorCircuit").onclick = () => this.projections.open("circuit");
+    const mainViews = node(
+      "div",
+      "main-view-tools",
+      '<nav class="wb-tabs" role="tablist" aria-label="Main views"><button role="tab" data-main-view="circuit">Circuit</button><button role="tab" data-main-view="p5">p5 render</button></nav><select id="mainLayout" aria-label="Main layout"><option value="tabs">Tabs</option><option value="horizontal">Horizontal split</option><option value="vertical">Vertical split</option></select><button id="projectCircuit" title="Mirror circuit to projection window" aria-label="Circuit projection window">↗</button><button id="projectP5" title="Mirror p5 to projection window" aria-label="p5 projection window">↗</button>',
+    );
+    document.querySelector(".workspace").prepend(mainViews);
+    mainViews.querySelectorAll("[data-main-view]").forEach(
+      (b) =>
+        (b.onclick = () => {
+          this.mainView(b.dataset.mainView);
+          ctx.persist();
+        }),
+    );
+    $("mainLayout").onchange = () => {
+      this.mainView(this.activeView, $("mainLayout").value);
+      ctx.persist();
+    };
+    $("projectCircuit").onclick = () => this.projections.open("circuit");
+    $("projectP5").onclick = () => this.projections.open("p5");
+    $("expandCanvas").onclick = () => {
+      this.mainView("circuit", "tabs");
+      ctx.persist();
+    };
     ctx.bridge.addEventListener("console", (e) => {
       const p = $("p5Console");
       p.textContent +=
@@ -503,6 +531,8 @@ export class Workbench {
       references: this.references,
       settings: this.settings,
       dock: $("outputDock").value,
+      layout: this.layout,
+      activeView: this.activeView,
     };
   }
   restore(d) {
@@ -516,7 +546,10 @@ export class Workbench {
     this.renderFiles();
     this.applySettings();
     this.renderReferences();
-    this.dock(d.dock === "window" ? "split" : d.dock || "split");
+    this.mainView(
+      d.activeView || "circuit",
+      ["tabs", "horizontal", "vertical"].includes(d.layout) ? d.layout : "tabs",
+    );
   }
   applySettings() {
     $("stage").style.backgroundColor = this.settings.background || "";
@@ -557,49 +590,45 @@ export class Workbench {
     }
   }
   dock(mode) {
-    if (this.pop && !this.pop.closed) {
-      this.outputHome.append(this.ctx.bridge.frame);
-      this.pop.close();
-    }
-    this.pop = null;
-    this.ctx.bridge.frame.style.cssText = "";
-    this.preview.classList.remove("output-overlay");
-    this.preview.hidden = mode === "hidden";
-    document
-      .querySelector(".workspace")
-      .classList.toggle("canvas-expanded", mode !== "split");
-    if (mode === "overlay") this.preview.classList.add("output-overlay");
     if (mode === "window") {
-      const pop = window.open("", "p5comp-output", "width=720,height=560");
-      if (!pop) {
-        this.ctx.notice("Allow popups to detach p5 output.");
-        mode = "split";
-        document
-          .querySelector(".workspace")
-          .classList.remove("canvas-expanded");
-      } else {
-        this.pop = pop;
-        pop.addEventListener("message", this.ctx.bridge.listener);
-        pop.document.title = "p5comp — output";
-        pop.document.body.style.cssText =
-          "margin:0;background:#242728;height:100vh";
-        this.ctx.bridge.frame.style.cssText = "width:100%;height:100%;border:0";
-        pop.document.body.append(this.ctx.bridge.frame);
-        this.ctx.runP5();
-        pop.addEventListener("beforeunload", () => {
-          pop.removeEventListener("message", this.ctx.bridge.listener);
-          this.outputHome.append(this.ctx.bridge.frame);
-          $("outputDock").value = "split";
-          this.preview.hidden = false;
-          document
-            .querySelector(".workspace")
-            .classList.remove("canvas-expanded");
-          this.ctx.runP5();
-        });
-        this.preview.hidden = true;
-      }
+      this.projections.open("p5");
+      return;
     }
+    this.preview.classList.remove("output-overlay");
+    this.preview.style.left = "";
+    this.preview.style.top = "";
+    this.preview.style.right = "";
+    if (mode === "overlay") {
+      this.preview.classList.add("output-overlay");
+      this.preview.hidden = false;
+      this.mainView("circuit", "tabs");
+      this.preview.hidden = false;
+    } else if (mode === "hidden") this.mainView("circuit", "tabs");
+    else this.mainView(this.activeView || "circuit", "horizontal");
     $("outputDock").value = mode;
+    this.ctx.canvas.render();
+  }
+  mainView(active = this.activeView, layout = this.layout) {
+    this.activeView = active || "circuit";
+    this.layout = layout || "tabs";
+    const workspace = document.querySelector(".workspace");
+    workspace.dataset.layout = this.layout;
+    workspace.classList.remove("canvas-expanded");
+    const circuitPanel = document.querySelector(".circuit-panel");
+    circuitPanel.hidden =
+      this.layout === "tabs" && this.activeView !== "circuit";
+    circuitPanel.inert = circuitPanel.hidden;
+    circuitPanel.setAttribute("aria-hidden", String(circuitPanel.hidden));
+    this.preview.hidden = this.layout === "tabs" && this.activeView !== "p5";
+    document
+      .querySelectorAll("[data-main-view]")
+      .forEach((b) =>
+        b.setAttribute(
+          "aria-selected",
+          String(b.dataset.mainView === this.activeView),
+        ),
+      );
+    $("mainLayout").value = this.layout;
     this.ctx.canvas.render();
   }
   async writeFolder() {

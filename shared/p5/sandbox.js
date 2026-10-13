@@ -5,6 +5,62 @@ import { installSerialProxy } from "./serialProxy.js";
 let host = parent;
 const detached = new URLSearchParams(location.search).get("detached") === "1";
 const appOrigin = new URL(import.meta.url).origin;
+let mirrorEnabled = false,
+  mirrorFailed = false,
+  mirrorAt = 0;
+function mirrorRender() {
+  if (!mirrorEnabled || mirrorFailed || performance.now() - mirrorAt < 80)
+    return;
+  const canvas = document.querySelector("canvas");
+  if (!canvas) return;
+  mirrorAt = performance.now();
+  try {
+    host.postMessage(
+      { type: "mirrorFrame", image: canvas.toDataURL("image/png") },
+      "*",
+    );
+  } catch {
+    mirrorFailed = true;
+    host.postMessage(
+      {
+        type: "mirrorError",
+        message:
+          "This canvas contains an image/video that blocks browser pixel capture. Use CORS-enabled assets for projection.",
+      },
+      "*",
+    );
+  }
+}
+let lastDraw = 0,
+  lastSize = "";
+p5.prototype.registerMethod("post", () => {
+  lastDraw = performance.now();
+  if (p5Instance?.canvas) {
+    const size = `${p5Instance.width},${p5Instance.height}`;
+    if (size !== lastSize) {
+      lastSize = size;
+      host.postMessage(
+        {
+          type: "renderSize",
+          width: p5Instance.width,
+          height: p5Instance.height,
+        },
+        "*",
+      );
+    }
+  }
+  mirrorRender();
+});
+setInterval(() => {
+  // Keep a looping sketch responsive on the projector when its editor tab is hidden.
+  if (
+    mirrorEnabled &&
+    p5Instance?.isLooping() &&
+    performance.now() - lastDraw > 150
+  )
+    p5Instance.redraw();
+  mirrorRender();
+}, 80);
 const serialProxy = installSerialProxy((bytes) =>
   host.postMessage({ type: "serialWrite", bytes }, "*"),
 );
@@ -100,6 +156,13 @@ window.addEventListener("message", (event) => {
   if (message.theme) {
     window.theme = message.theme;
     document.documentElement.dataset.theme = message.theme;
+  }
+  if (message.type === "mirror") {
+    mirrorEnabled = !!message.enabled;
+    mirrorFailed = false;
+    mirrorAt = 0;
+    mirrorRender();
+    return;
   }
   if (message.type === "theme") return;
   if (message.type === "state") {

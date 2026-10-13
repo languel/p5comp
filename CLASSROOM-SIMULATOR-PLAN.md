@@ -190,3 +190,11 @@ swatches, a no-tint `ø` circle and custom `+`. Rotation/flips share a glyph row
 Autoroute connections routes only wires attached to selected elements and creates
 one undo entry. Browser checks confirmed rotation/undo, palette alignment and
 unchanged unrelated wire paths; 37 automated tests pass.
+
+Main views now offer Circuit/p5 render tabs plus horizontal and vertical splits.
+The old replacement-window docking was replaced with independent mirrors for
+p5 canvas output and the circuit viewport. The original iframe/serial bridge is
+retained. p5 pixels stream to the projection window; circuit SVG updates follow
+scene/view mutations, preserving camera, grid and connected dots. Each mirror has
+fullscreen control. Browser checks confirmed decoded frames in both windows and
+continued p5 frame updates while the Circuit tab is active.

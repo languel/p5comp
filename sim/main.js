@@ -769,10 +769,26 @@ function renderControls() {
     $("controls").append(div);
   }
 }
+let renderWidth = 500,
+  renderHeight = 360;
+bridge.addEventListener("renderSize", (e) => {
+  if (e.detail.width > 0 && e.detail.height > 0) {
+    renderWidth = e.detail.width;
+    renderHeight = e.detail.height;
+    resize();
+  }
+});
 function resize() {
   const preview = document.querySelector(".preview");
-  if (preview.clientWidth && bridge.frame.ownerDocument === document)
-    bridge.frame.style.transform = `scale(${preview.clientWidth / 500})`;
+  if (
+    preview.clientWidth &&
+    preview.clientHeight &&
+    bridge.frame.ownerDocument === document
+  ) {
+    bridge.frame.style.width = renderWidth + "px";
+    bridge.frame.style.height = renderHeight + "px";
+    bridge.frame.style.transform = `scale(${Math.min(preview.clientWidth / renderWidth, preview.clientHeight / renderHeight)})`;
+  }
 }
 new ResizeObserver(resize).observe(document.querySelector(".preview"));
 $("run").onclick = runArduino;

@@ -1,2 +1,2 @@
 export const basePath = (path = "") =>
-  import.meta.env.BASE_URL + path.replace(/^\//, "");
+  (import.meta.env?.BASE_URL || "/") + path.replace(/^\//, "");

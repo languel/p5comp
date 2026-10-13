@@ -552,3 +552,114 @@ body.unified {
     font-size: 11px;
   }
 }
+.unified .workspace[data-layout] {
+  grid-template-rows: 34px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
+}
+.main-view-tools {
+  grid-row: 1;
+  grid-column: 1/-1;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border-bottom: 1px solid var(--ui-line);
+  padding: 0 5px;
+}
+.main-view-tools .wb-tabs {
+  border: 0;
+  padding: 0;
+  margin-right: auto;
+}
+.main-view-tools select {
+  font-size: 11px;
+  padding: 3px;
+  width: 130px;
+}
+.main-view-tools > button {
+  padding: 3px 5px;
+  font-size: 14px;
+}
+.unified .workspace[data-layout] > .circuit-panel,
+.unified .workspace[data-layout] > .preview-panel {
+  grid-row: 2;
+  grid-column: 1;
+  min-height: 0;
+  position: relative;
+  width: auto;
+  right: auto;
+  bottom: auto;
+  top: auto;
+}
+.unified .workspace[data-layout="horizontal"] {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.unified .workspace[data-layout="horizontal"] > .preview-panel {
+  grid-column: 2;
+}
+.unified .workspace[data-layout="vertical"] {
+  grid-template-rows: 34px minmax(0, 1fr) minmax(0, 1fr);
+}
+.unified .workspace[data-layout="vertical"] > .preview-panel {
+  grid-row: 3;
+  border-top: 1px solid var(--ui-line);
+}
+.unified .workspace[data-layout] > .preview-panel.output-overlay {
+  position: fixed;
+  width: 400px;
+  height: 360px;
+  right: 400px;
+  top: 100px;
+}
+.unified.ui-hidden .main-view-tools {
+  display: none !important;
+}
+.unified.ui-hidden .workspace[data-layout] {
+  grid-template-rows: minmax(0, 1fr);
+}
+.unified.ui-hidden .workspace[data-layout] > .circuit-panel,
+.unified.ui-hidden .workspace[data-layout] > .preview-panel {
+  grid-row: 1;
+}
+.unified.ui-hidden .workspace[data-layout="vertical"] {
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+}
+.unified.ui-hidden .workspace[data-layout="vertical"] > .preview-panel {
+  grid-row: 2;
+}
+@media (max-width: 700px) {
+  .main-view-tools {
+    gap: 2px;
+  }
+  .main-view-tools select {
+    width: 105px;
+  }
+  .unified .workspace[data-layout] > .preview-panel:not([hidden]) {
+    display: flex;
+  }
+}
+.unified .preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.unified .preview iframe {
+  flex: 0 0 auto;
+  transform-origin: center;
+}
+.unified .workspace[data-layout] {
+  position: relative;
+}
+/* Keep circuit geometry measurable for a live mirror while its editor tab is inactive. */
+.unified .workspace[data-layout="tabs"] > .circuit-panel[hidden] {
+  display: flex !important;
+  position: absolute !important;
+  left: 0;
+  top: 34px;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: calc(100% - 34px);
+  opacity: 0;
+  pointer-events: none;
+}

@@ -309,3 +309,15 @@ To publish a class example, place its project JSON in `public/examples/` and add
 `{"name":"Class demo", "project":"examples/class-demo.json"}` to
 `public/examples/index.json`. The Examples menu loads this manifest on both the
 local app and GitHub Pages. Keep image references embedded in that project JSON.
+
+### Main views and projection
+
+The main workspace has Circuit / p5 render tabs and a Tabs / Horizontal split /
+Vertical split selector. This layout is saved with the project. The ↗ buttons
+open independent **mirror windows** for the p5 render or circuit; the original
+editor remains in place and continues to use the same Arduino/serial session.
+Move these windows to a second screen and use their fullscreen button for a
+lecture or installation. p5 mirrors canvas pixels (not separate sketch execution
+or interactive HTML controls). The circuit mirror follows the current viewport,
+pan/zoom, parts, wire colors and reference images. Closing a mirror leaves the
+editor running. Mirror windows are local browser windows and require popup support.

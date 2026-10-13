@@ -95,13 +95,21 @@ export function circuitSVG(diagram, references, background, sources = {}) {
     const group = svgNode("g", {
       transform: `translate(${p.left},${p.top}) translate(${origin[0]},${origin[1]}) ${matrix} translate(${-origin[0]},${-origin[1]})`,
     });
+    group.style.opacity = getComputedStyle(body).opacity;
+    group.style.filter = getComputedStyle(body).filter.replace(
+      /url\(["']?[^#)]*#([^"')]+)["']?\)/g,
+      "url(#$1)",
+    );
     group.append(image);
     scene.append(group);
   }
   const wires = document.querySelector("#wires");
   for (const e of wires.children) {
     if (e.tagName === "defs") scene.append(e.cloneNode(true));
-    if (e.classList.contains("wire-line") || e.classList.contains("pin-hit")) {
+    if (
+      e.classList.contains("wire-line") ||
+      e.matches("[data-pin].connected")
+    ) {
       const copy = flatten(e);
       copy.removeAttribute("class");
       copy.removeAttribute("tabindex");
