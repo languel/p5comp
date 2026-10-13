@@ -544,8 +544,19 @@ function renderParts() {
     help.onclick = (e) => {
       e.stopPropagation();
       partDocs.open(p, partElements.get(p.id));
+      workbench?.tab("help");
     };
     wrapper.append(help);
+    for (const corner of ["nw", "ne", "sw", "se"]) {
+      const rotate = document.createElement("button");
+      rotate.className = "part-rotate";
+      rotate.dataset.rotateCorner = corner;
+      rotate.textContent = "↻";
+      rotate.title = "Drag to rotate · 45° increments";
+      rotate.setAttribute("aria-label", `Rotate ${p.id} from ${corner} corner`);
+      rotate.onclick = (e) => e.stopPropagation();
+      wrapper.append(rotate);
+    }
     handle.title =
       (elementByType.get(p.type)?.name || p.type) +
       " · drag to move; click to select";

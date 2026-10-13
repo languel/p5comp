@@ -72,3 +72,13 @@ export function freePoint(id) {
 }
 export const freeEnd = (p) =>
   `free:${Math.round(p.x * 1000) / 1000},${Math.round(p.y * 1000) / 1000}`;
+
+export function rotationFromDrag(startRotation, startAngle, angle) {
+  const delta = Math.atan2(
+    Math.sin(angle - startAngle),
+    Math.cos(angle - startAngle),
+  );
+  const degrees =
+    Math.round((startRotation + (delta * 180) / Math.PI) / 45) * 45;
+  return ((degrees % 360) + 360) % 360;
+}

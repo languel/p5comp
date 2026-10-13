@@ -1,5 +1,9 @@
 import { WIRE_COLORS } from "./colors.js";
-import { CONNECTION_DOT_RADIUS, usesOriginalColors } from "./partGeometry.js";
+import {
+  CONNECTION_DOT_RADIUS,
+  usesOriginalColors,
+  rotationFromDrag,
+} from "./partGeometry.js";
 import { ColorPicker } from "./ColorPicker.js";
 import { terminalColors } from "./elements.js";
 import {
@@ -499,6 +503,17 @@ export class CircuitCanvas {
       { mode },
     ).slice(1, -1);
   }
+  routeSelectedParts() {
+    const before = this.checkpoint();
+    this.refreshPins();
+    this.diagram.connections.forEach((c, i) => {
+      if (
+        c.slice(0, 2).some((end) => this.selectedParts.has(end.split(":")[0]))
+      )
+        this.route(i);
+    });
+    this.commit(before);
+  }
   autoRoute(i = this.selectedWire, mode = "careful") {
     if (i < 0) return;
     this.refreshPins();
@@ -575,6 +590,27 @@ export class CircuitCanvas {
     this.menu.hidden = true;
     const target = e.target;
     if (target.closest(".part-doc-help")) return;
+    const rotationHandle = target.closest(".part-rotate");
+    if (rotationHandle && e.button === 0) {
+      e.preventDefault();
+      const id = rotationHandle.closest(".part").dataset.id;
+      this.selectPart(id);
+      const part = this.diagram.parts.find((p) => p.id === id),
+        size = this.size(part);
+      const center = { x: part.left + size.w / 2, y: part.top + size.h / 2 },
+        point = this.toWorld(e);
+      this.drag = {
+        kind: "rotate",
+        id,
+        center,
+        angle: Math.atan2(point.y - center.y, point.x - center.x),
+        rotation: part.rotate || 0,
+        before: this.checkpoint(),
+      };
+      this.stage.setPointerCapture(e.pointerId);
+      this.stage.focus({ preventScroll: true });
+      return;
+    }
     if (e.button === 1 || this.space) {
       e.preventDefault();
       this.stage.focus({ preventScroll: true });
@@ -841,6 +877,17 @@ export class CircuitCanvas {
       }
       return;
     }
+    if (d.kind === "rotate") {
+      const part = this.diagram.parts.find((part) => part.id === d.id);
+      part.rotate = rotationFromDrag(
+        d.rotation,
+        d.angle,
+        Math.atan2(p.y - d.center.y, p.x - d.center.x),
+      );
+      this.applyTints();
+      this.render();
+      return;
+    }
     if (d.kind === "pan") {
       this.camera.x = d.camera.x + e.clientX - d.x;
       this.camera.y = d.camera.y + e.clientY - d.y;
@@ -954,6 +1001,14 @@ export class CircuitCanvas {
     this.drag = null;
     this.guides = [];
     if (!d) return;
+    if (d.kind === "rotate") {
+      this.diagram.connections.forEach((c, i) => {
+        if (c.slice(0, 2).some((end) => end.split(":")[0] === d.id))
+          this.route(i);
+      });
+      this.commit(d.before);
+      return;
+    }
     if (d.kind === "new-wire" && d.moved) {
       const target = this.nearestPin(this.toWorld(e));
       if (target) this.finish(target);
@@ -1109,22 +1164,43 @@ export class CircuitCanvas {
       action("Delete wire", () => this.deleteWire());
     } else {
       this.selectPart(part.dataset.id);
-      this.palette("Part tint", (c) => this.setTint(c));
+      this.palette(
+        "Part tint",
+        (c) => this.setTint(c),
+        () => this.setTint(null, true),
+      );
+      action("Autoroute connections", () => this.routeSelectedParts());
       action("Documentation", () => this.onDocs?.(this.selectedPart));
-      action("Gray tint", () => this.setTint(null));
-      action("Original colors", () => this.setTint(null, true));
-      action("Rotate 45°", () => this.transformPart("rotate"));
-      action("Flip horizontal", () => this.transformPart("flipX"));
-      action("Flip vertical", () => this.transformPart("flipY"));
+      const transforms = document.createElement("div");
+      transforms.className = "canvas-transform-tools";
+      for (const [glyph, label, operation] of [
+        ["↻", "Rotate 45°", "rotate"],
+        ["⇋", "Flip horizontal", "flipX"],
+        ["⇅", "Flip vertical", "flipY"],
+      ]) {
+        const button = document.createElement("button");
+        button.textContent = glyph;
+        button.title = label;
+        button.setAttribute("aria-label", label);
+        button.setAttribute("role", "menuitem");
+        button.onclick = () => {
+          this.menu.hidden = true;
+          this.transformPart(operation);
+        };
+        transforms.append(button);
+      }
+      this.menu.append(transforms);
       action("Delete selection", () => this.deleteSelection());
     }
     this.menu.hidden = false;
-    this.menu.style.left = Math.min(e.clientX, window.innerWidth - 185) + "px";
+    this.menu.style.left =
+      Math.min(e.clientX, window.innerWidth - this.menu.offsetWidth - 10) +
+      "px";
     this.menu.style.top =
       Math.min(e.clientY, window.innerHeight - this.menu.offsetHeight - 10) +
       "px";
   }
-  palette(label, fn) {
+  palette(label, fn, original = null) {
     const row = document.createElement("div");
     row.className = "canvas-palette";
     row.setAttribute("aria-label", label);
@@ -1142,6 +1218,18 @@ export class CircuitCanvas {
         this.menu.hidden = true;
       };
       row.append(b);
+    }
+    if (original) {
+      const clear = document.createElement("button");
+      clear.textContent = "ø";
+      clear.className = "no-tint-dot";
+      clear.title = "Original colors · no tint";
+      clear.setAttribute("aria-label", "Original colors");
+      clear.onclick = () => {
+        original();
+        this.menu.hidden = true;
+      };
+      row.append(clear);
     }
     const custom = document.createElement("button");
     custom.textContent = "+";
@@ -1202,6 +1290,29 @@ export class CircuitCanvas {
     this.refreshPins();
     this.gridView();
     const z = this.camera.zoom;
+    this.world.style.setProperty("--canvas-zoom", String(z));
+    for (const part of this.diagram.parts) {
+      const wrapper = this.elements.get(part.id)?.closest(".part");
+      if (!wrapper) continue;
+      const size = this.size(part);
+      const position = (element, q) => {
+        const point = partPoint(part, q, size);
+        element.style.left = point.x - part.left + "px";
+        element.style.top = point.y - part.top + "px";
+      };
+      position(wrapper.querySelector(".part-doc-help"), {
+        x: size.w - 7 / z,
+        y: 7 / z,
+      });
+      for (const handle of wrapper.querySelectorAll(".part-rotate")) {
+        const corner = handle.dataset.rotateCorner,
+          inset = 5 + 8 / z;
+        position(handle, {
+          x: corner.endsWith("w") ? -inset : size.w + inset,
+          y: corner.startsWith("n") ? -inset : size.h + inset,
+        });
+      }
+    }
     this.wires.replaceChildren();
     const connectedColors = terminalColors(
       this.diagram.connections,

@@ -115,3 +115,11 @@ test("half, single and double pin grids snap about a terminal anchor independent
     assert.deepEqual(p, { x: 160 + grid, y: 229 - grid });
   }
 });
+
+test("rotation handles snap angle changes to 45 degrees and wrap at the seam", async () => {
+  const { rotationFromDrag } = await import("../sim/partGeometry.js");
+  assert.equal(rotationFromDrag(0, 0, Math.PI / 3), 45);
+  assert.equal(rotationFromDrag(315, 0, Math.PI / 4), 0);
+  assert.equal(rotationFromDrag(0, Math.PI * 0.95, -Math.PI * 0.95), 0);
+  assert.equal(rotationFromDrag(0, 0, -Math.PI / 2), 270);
+});

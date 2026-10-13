@@ -182,3 +182,11 @@ labels, centered editable project name, opaque dropdowns using defined palette
 tokens, and theme-matched select backgrounds. Unified CSS no longer overrides
 interface hiding. Repeated hide/restore and light/dark menus were browser-tested
 without console errors. Menus close outside and when another menu opens.
+
+Element controls: help is a 13-screen-pixel button inside the transformed top-right
+corner. Four corner hover zones offer drag rotation snapped to 45°, with attached
+terminal geometry and undo preserved. The context palette uses one row of 10-pixel
+swatches, a no-tint `ø` circle and custom `+`. Rotation/flips share a glyph row.
+Autoroute connections routes only wires attached to selected elements and creates
+one undo entry. Browser checks confirmed rotation/undo, palette alignment and
+unchanged unrelated wire paths; 37 automated tests pass.
