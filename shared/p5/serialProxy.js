@@ -88,6 +88,11 @@ export function installSerialProxy(send) {
           controller?.close();
         } catch {}
         controller = null;
+        // An unplugged Web Serial port has no streams. Keeping the closed
+        // readable here makes p5.webserial repeatedly reacquire it in a microtask loop.
+        port.readable = null;
+        port.writable = null;
+        portOpen = false;
       }
     },
     receive(bytes) {

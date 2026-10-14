@@ -3,7 +3,9 @@ import p5 from "p5";
 import { installSerialProxy } from "./serialProxy.js";
 
 let host = parent;
-const detached = new URLSearchParams(location.search).get("detached") === "1";
+const detached =
+  new URLSearchParams(location.search).get("detached") === "1" ||
+  document.querySelector('meta[name="p5comp-detached"]')?.content === "1";
 const appOrigin = new URL(import.meta.url).origin;
 let mirrorEnabled = false,
   mirrorFailed = false,
@@ -320,9 +322,11 @@ window.addEventListener("message", async (event) => {
     for (const script of scripts.filter((s) => !s.getAttribute("src")))
       window.eval(script.textContent);
     window.eval(`${message.source}\n//# sourceURL=student-sketch.js`);
+    p5.prototype.registerMethod("afterSetup", () =>
+      host.postMessage({ type: "ready" }, "*"),
+    );
     p5Instance = new p5(undefined, document.getElementById("canvas"));
     sketchReady = true;
-    host.postMessage({ type: "ready" }, "*");
   } catch (error) {
     host.postMessage(
       {

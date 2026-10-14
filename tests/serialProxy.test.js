@@ -1,3 +1,4 @@
+import { Worker } from "node:worker_threads";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -107,4 +108,41 @@ test("unmodified p5.webserial library reads fragmented UART lines and writes LED
   runtime.advance(4000000);
   assert.equal(runtime.snapshot().led, true);
   await port.close();
+});
+
+test("unmodified p5.webserial exits on host disconnect and can reconnect without starving the browser", async () => {
+  const script = `const {parentPort,workerData}=require('node:worker_threads');const vm=require('node:vm');
+    const installSerialProxy=(${installSerialProxy.toString()});const makeFrame=(${frame.toString()});
+    (async()=>{const {context,proxy}=makeFrame(()=>{});context.console={log(){},warn(){},error(){}};
+    vm.runInContext('class p5 {}',context);vm.runInContext(workerData.library,context);
+    proxy.setConnected(true);const port=vm.runInContext('new p5().createSerial()',context);port.open(9600);
+    for(let i=0;i<30&&!port.opened();i++)await new Promise(setImmediate);
+    const initial=port.opened();proxy.setConnected(false);await new Promise(setImmediate);const disconnected=!port.opened();
+    proxy.setConnected(true);port.open(9600);for(let i=0;i<30&&!port.opened();i++)await new Promise(setImmediate);
+    const reconnected=port.opened();await port.close();parentPort.postMessage({initial,disconnected,reconnected});
+    })().catch(error=>parentPort.postMessage({error:error.message}));`;
+  const worker = new Worker(script, { eval: true, workerData: { library } });
+  try {
+    const result = await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        reject(new Error("Serial disconnect starved the event loop."));
+        worker.terminate();
+      }, 2000);
+      worker.once("message", (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      });
+      worker.once("error", (error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+    });
+    assert.deepEqual(result, {
+      initial: true,
+      disconnected: true,
+      reconnected: true,
+    });
+  } finally {
+    await worker.terminate();
+  }
 });

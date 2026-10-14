@@ -134,6 +134,9 @@ const bridge = new P5Bridge($("p5Frame"), {
   onSend: (n, v) => writeBytes(new TextEncoder().encode(`${n}:${v}\n`)),
   onSendLine: (text) => writeBytes(new TextEncoder().encode(text + "\n")),
 });
+bridge.addEventListener("status", (event) => {
+  $("p5Status").textContent = event.detail;
+});
 bridge.addEventListener("console", (e) => {
   if (e.detail.level === "error") {
     log("p5: " + e.detail.values.join(" "));

@@ -879,3 +879,21 @@ input[type="checkbox"]:focus-visible {
 .switch-pin-help p {
   line-height: 1.5;
 }
+.wb-right .section-bar > button,
+.wb-right .section-bar .glyph-select-trigger {
+  height: 28px;
+  min-width: 28px;
+  font-size: 18px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.wb-right .section-bar .glyph-select-trigger {
+  gap: 4px;
+  white-space: nowrap;
+}
+.wb-right .section-bar svg {
+  width: 18px;
+  height: 18px;
+}

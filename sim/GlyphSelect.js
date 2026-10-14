@@ -2,7 +2,7 @@ const glyphs = {
   tabs: "▣",
   horizontal: "◫",
   vertical: "⬒",
-  firmata: "⌁",
+  firmata: "ƒ",
   native: "⌁",
   webserial: "∞",
   0.5: "½",
@@ -40,7 +40,10 @@ export function glyphSelect(select) {
   const refresh = () => {
     const option = select.selectedOptions[0];
     trigger.textContent =
-      select.dataset.glyph ||
+      (select.dataset.glyph
+        ? select.dataset.glyph +
+          (select.dataset.showState ? " " + (glyphs[select.value] || "·") : "")
+        : "") ||
       glyphs[select.value] ||
       option?.textContent ||
       "⋯";

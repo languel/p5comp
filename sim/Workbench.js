@@ -229,13 +229,22 @@ export class Workbench {
     comms.value = previousComms;
     comms.setAttribute("aria-label", "Arduino ↔ p5 communications");
     comms.dataset.glyph = "↔";
+    comms.dataset.showState = "true";
     p5Tools.prepend(comms);
-    const run = node("button", "", "▷");
+    const run = node(
+      "button",
+      "",
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4l14 8-14 8Z"/></svg>',
+    );
     run.title = "Run p5 (⌘/Ctrl Enter)";
     run.setAttribute("aria-label", "Run p5 sketch");
     run.onclick = () => ctx.runP5();
     p5Tools.append(run);
-    const stop = node("button", "", "□");
+    const stop = node(
+      "button",
+      "",
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4Z"/></svg>',
+    );
     stop.title = "Stop p5";
     stop.setAttribute("aria-label", "Stop p5");
     stop.onclick = () => {
@@ -243,6 +252,8 @@ export class Workbench {
       this.disableAutorun();
     };
     p5Tools.append(stop);
+    p5Tools.prepend(run, stop, comms);
+    p5Tools.append($("loadExample"));
     const auto = node(
       "label",
       "autorun",
@@ -253,7 +264,11 @@ export class Workbench {
       this.autorun = $("p5Autorun").checked;
     };
     for (const kind of ["arduino", "p5"]) {
-      const tidy = node("button", "", "≡");
+      const tidy = node(
+        "button",
+        "",
+        '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h16"/></svg>',
+      );
       tidy.title = "Tidy code (⌘/Ctrl Shift F)";
       tidy.setAttribute("aria-label", "Tidy " + kind + " code");
       tidy.onclick = () => {
@@ -264,7 +279,11 @@ export class Workbench {
       };
       this[kind + "Pane"].querySelector(".section-bar").append(tidy);
     }
-    const assets = node("button", "", "▧");
+    const assets = node(
+      "button",
+      "",
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4ZM4 16l5-5 4 4 3-3 4 4M15 8h.01"/></svg>',
+    );
     assets.title = "Libraries, assets and project storage";
     assets.setAttribute("aria-label", "Project assets");
     assets.onclick = () => {
