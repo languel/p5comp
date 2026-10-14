@@ -114,7 +114,7 @@ export class UnoRuntime {
     );
     for (const b of this.topology.buttons)
       if (b.pin !== null && this.controls[b.id]) {
-        this.setInput(b.pin, false);
+        this.setInput(b.pin, !!b.high);
         driven.add(b.pin);
       }
     for (const r of this.topology.rails || []) {
@@ -191,6 +191,7 @@ export class UnoRuntime {
               ? 0
               : null;
         }),
+        this.controls,
       ),
     };
   }

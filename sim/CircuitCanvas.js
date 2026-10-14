@@ -1485,7 +1485,13 @@ export class CircuitCanvas {
         "aria-label": `Connect ${id}`,
       });
       const title = el("title");
-      title.textContent = id;
+      const part = this.diagram.parts.find(
+        (part) => part.id === id.split(":")[0],
+      );
+      const contact = id.split(":")[1]?.split(".")[0];
+      title.textContent = /^wokwi-pushbutton(?:-6mm)?$/.test(part?.type || "")
+        ? `${id} · contact ${contact}; same-number pins are always joined, 1 ↔ 2 closes when pressed`
+        : id;
       circle.append(title);
       circle.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {

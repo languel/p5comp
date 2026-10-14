@@ -22,6 +22,7 @@ import {
   resolveCircuit,
   validateDiagram,
   TYPES,
+  isMomentarySwitch,
 } from "./circuit.js";
 import {
   webserialSketch,
@@ -285,6 +286,10 @@ function startWorker(hex) {
               diagram.parts.find((p) => p.id === id)?.attrs?.brightness ?? 1,
             );
         }
+        if (isMomentarySwitch(element.tagName.toLowerCase())) {
+          element.title = `${id} · ${state.closed ? "closed (pressed)" : "open (released)"}`;
+          continue;
+        }
         element.title =
           `${id} · ${(state.current * 1000).toFixed(1)} mA` +
           (state.power != null
@@ -370,7 +375,8 @@ function showHealth() {
     const visual = diagram.parts.filter(
       (p) =>
         !elementByType.get(p.type)?.modeled &&
-        !["wokwi-led", "wokwi-resistor"].includes(p.type),
+        !["wokwi-led", "wokwi-resistor"].includes(p.type) &&
+        !isMomentarySwitch(p.type),
     ).length;
     if (visual) $("circuitHealth").textContent += ` · ${visual} unmodeled`;
     $("circuitHealth").style.color = topology.warnings.length ? "#a76d50" : "";
@@ -659,8 +665,10 @@ function renderParts() {
           setControl(p.id, element.value),
         );
       }
-      if (p.type === TYPES[4]) {
+      if (isMomentarySwitch(p.type)) {
         element.color = p.attrs?.color || "green";
+        controls[p.id] ??= !!p.attrs?.pressed;
+        element.pressed = !!controls[p.id];
         element.addEventListener("button-press", () => setControl(p.id, true));
         element.addEventListener("button-release", () =>
           setControl(p.id, false),
@@ -735,7 +743,8 @@ function setControl(id, value) {
   persist();
   const el = partElements.get(id);
   if (el?.tagName === "WOKWI-POTENTIOMETER") el.value = value;
-  if (el?.tagName === "WOKWI-PUSHBUTTON") el.pressed = Boolean(value);
+  if (el && isMomentarySwitch(el.tagName.toLowerCase()))
+    el.pressed = Boolean(value);
   const hold = document.querySelector(`[aria-label="Hold ${id}"]`);
   if (hold) hold.setAttribute("aria-pressed", String(Boolean(value)));
   const out = document.querySelector(`[data-value="${id}"]`);
@@ -756,8 +765,8 @@ function setControl(id, value) {
 }
 function renderControls() {
   $("controls").replaceChildren();
-  for (const p of diagram.parts.filter((p) =>
-    [TYPES[2], TYPES[3], TYPES[4]].includes(p.type),
+  for (const p of diagram.parts.filter(
+    (p) => [TYPES[2], TYPES[3]].includes(p.type) || isMomentarySwitch(p.type),
   )) {
     const div = document.createElement("div");
     div.className = "control";
@@ -766,7 +775,7 @@ function renderControls() {
     div.append(label);
     const output = document.createElement("output");
     output.dataset.value = p.id;
-    if (p.type === TYPES[4]) {
+    if (isMomentarySwitch(p.type)) {
       const btn = document.createElement("button");
       btn.textContent = "Hold";
       btn.setAttribute("aria-label", "Hold " + p.id);
@@ -1121,7 +1130,7 @@ document.addEventListener("keyup", (e) => {
   if (id && partElements.has(id)) setControl(id, false);
 });
 window.addEventListener("blur", () => {
-  for (const p of diagram.parts.filter((p) => p.type === TYPES[4]))
+  for (const p of diagram.parts.filter((p) => isMomentarySwitch(p.type)))
     setControl(p.id, false);
 });
 // Explicit semantic API for agents and lecture tooling; source edits and nets are reviewable.
@@ -1171,6 +1180,7 @@ workbench = new Workbench({
   p5Editor,
   compile: getFirmware,
   upload: uploadFirmware,
+  setControl,
   setCode,
   stop,
   runP5,
@@ -1201,6 +1211,8 @@ workbench = new Workbench({
       delete controls[selectedPart];
       selectedPart = next.id;
     }
+    if (isMomentarySwitch(next.type) && next.attrs?.pressed !== undefined)
+      controls[next.id] = !!next.attrs.pressed;
     diagram = candidate;
     renderParts();
     canvas.commit(before, true);

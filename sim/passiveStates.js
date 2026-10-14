@@ -12,7 +12,7 @@ export function resistance(value) {
   return n;
 }
 // Classroom series-path model: fixed rails/digital outputs, resistors and LEDs.
-export function passiveStates(network = {}, pins = []) {
+export function passiveStates(network = {}, pins = [], controls = {}) {
   const sources = new Map(
     (network.sources || [])
       .filter((s) => s.volts != null || pins[s.pin] != null)
@@ -20,7 +20,10 @@ export function passiveStates(network = {}, pins = []) {
   );
   const resistors = network.resistors || [],
     adj = new Map();
-  for (const r of resistors)
+  const closed = (network.switches || [])
+    .filter((s) => controls[s.id])
+    .map((s) => ({ ...s, ohms: 0, switch: true }));
+  for (const r of [...resistors, ...closed])
     for (const [a, b] of [
       [r.a, r.b],
       [r.b, r.a],
@@ -43,12 +46,14 @@ export function passiveStates(network = {}, pins = []) {
           pending.push({
             net: edge.net,
             ohms: item.ohms + edge.r.ohms,
-            path: [...item.path, edge.r.id],
+            path: edge.r.switch ? item.path : [...item.path, edge.r.id],
           });
     }
     return null;
   };
   const result = {};
+  for (const s of network.switches || [])
+    result[s.id] = { pressed: !!controls[s.id], closed: !!controls[s.id] };
   for (const r of resistors) result[r.id] = { current: 0, power: 0 };
   for (const led of network.leds || []) {
     const a = find(led.a),

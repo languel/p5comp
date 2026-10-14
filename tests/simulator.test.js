@@ -98,3 +98,21 @@ test("disconnected buttons release to the firmware pull-up and supply wires driv
   grounded.advance(4000000);
   assert.match(out, /99\.\d,512,1,0/);
 });
+
+test("6mm buttons use the same contact groups and a pressed supply-connected switch drives HIGH", () => {
+  const d = classroomCircuit();
+  d.parts.find((p) => p.id === "b1").type = "wokwi-pushbutton-6mm";
+  d.connections = d.connections.filter(([a]) => a !== "bb:12t.e");
+  d.connections.push(["bb:12t.e", "uno:5V"]);
+  const t = resolveCircuit(d);
+  assert.equal(t.buttons.find((b) => b.id === "b1").high, true);
+  let out = "";
+  const r = new UnoRuntime(
+    hex,
+    t,
+    { pot: 512, sonar: 100, b1: true },
+    (b) => (out += String.fromCharCode(b)),
+  );
+  r.advance(4000000);
+  assert.match(out, /99\.\d,512,0,0/);
+});

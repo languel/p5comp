@@ -1,8 +1,17 @@
 import catalog from "./elements.json" with { type: "json" };
 for (const info of catalog)
-  if (["wokwi-led", "wokwi-resistor"].includes(info.type)) {
+  if (
+    [
+      "wokwi-led",
+      "wokwi-resistor",
+      "wokwi-pushbutton",
+      "wokwi-pushbutton-6mm",
+    ].includes(info.type)
+  ) {
     info.modeled = true;
-    info.modelDescription = "Classroom series LED/resistor model";
+    info.modelDescription = info.type.includes("pushbutton")
+      ? "Momentary contacts: 1.l/1.r always joined, 2.l/2.r always joined; press joins 1 and 2"
+      : "Classroom series LED/resistor model";
   }
 export const ELEMENTS = catalog;
 export const elementByType = new Map(catalog.map((e) => [e.type, e]));

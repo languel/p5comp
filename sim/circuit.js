@@ -1,6 +1,8 @@
 import { resistance } from "./passiveStates.js";
 import { elementByType, elementPins } from "./elements.js";
 import { freePoint } from "./partGeometry.js";
+export const isMomentarySwitch = (type) =>
+  ["wokwi-pushbutton", "wokwi-pushbutton-6mm"].includes(type);
 export const TYPES = [
   "wokwi-arduino-uno",
   "wokwi-breadboard",
@@ -151,7 +153,7 @@ export function resolveCircuit(diagram) {
         for (const r of ["bp", "bn", "tp", "tn"])
           join(`${p.id}:${r}.1`, `${p.id}:${r}.${n}`);
       }
-    if (p.type === TYPES[4]) {
+    if (isMomentarySwitch(p.type)) {
       join(`${p.id}:1.l`, `${p.id}:1.r`);
       join(`${p.id}:2.l`, `${p.id}:2.r`);
     }
@@ -196,18 +198,22 @@ export function resolveCircuit(diagram) {
       if (!power || trig === null || echo === null)
         warnings.push(`${p.id}: check supply, trigger and echo wires.`);
     }
-    if (p.type === TYPES[4]) {
-      let pin = null;
+    if (isMomentarySwitch(p.type)) {
+      let pin = null,
+        high = false;
       for (const [a, b] of [
         ["1.l", "2.l"],
         ["2.l", "1.l"],
-      ])
-        if (equal(`${p.id}:${b}`, `${id}:GND.1`)) pin = target(`${p.id}:${a}`);
-      buttons.push({ id: p.id, pin });
-      if (pin === null)
-        warnings.push(
-          `${p.id}: connect opposite switch contacts to a digital input and GND.`,
-        );
+      ]) {
+        if (equal(`${p.id}:${b}`, `${id}:GND.1`)) {
+          pin = target(`${p.id}:${a}`);
+          high = false;
+        } else if (equal(`${p.id}:${b}`, `${id}:5V`)) {
+          pin = target(`${p.id}:${a}`);
+          high = true;
+        }
+      }
+      buttons.push({ id: p.id, pin, high });
     }
   }
   const drivers = [
@@ -246,8 +252,15 @@ export function resolveCircuit(diagram) {
     ],
     resistors: [],
     leds: [],
+    switches: [],
   };
   for (const p of diagram.parts) {
+    if (isMomentarySwitch(p.type))
+      passive.switches.push({
+        id: p.id,
+        a: net(p.id + ":1.l"),
+        b: net(p.id + ":2.l"),
+      });
     if (p.type === "wokwi-resistor")
       passive.resistors.push({
         id: p.id,

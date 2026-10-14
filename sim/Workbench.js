@@ -1,3 +1,4 @@
+import { isMomentarySwitch } from "./circuit.js";
 import { projectArchive } from "./projectArchive.js";
 import { glyphSelect } from "./GlyphSelect.js";
 import {
@@ -968,6 +969,12 @@ export class Workbench {
     field("Label", part.label || part.attrs?.label || "", (value) =>
       this.ctx.updatePart({ ...part, label: value }),
     );
+    if (isMomentarySwitch(part.type)) {
+      const help = node("details", "switch-pin-help");
+      help.innerHTML =
+        '<summary>Switch contacts · wiring</summary><pre>1.l ───── 1.r\n     ╲   closes while pressed\n2.l ───── 2.r</pre><p>Same number = always connected. Connect one wire to contact 1 and the other to contact 2 (either side). No polarity; rotation changes the position, not the pin names.</p><p>Input example: D2 → 1.l, GND → 2.l, with INPUT_PULLUP. Released = HIGH; pressed = LOW. For an LED, put the switch in series with its resistor.</p><a href="https://docs.wokwi.com/parts/wokwi-pushbutton" target="_blank" rel="noopener">Official pin reference ↗</a>';
+      panel.append(help);
+    }
     const element = this.ctx.element(),
       properties = element?.constructor.elementProperties || new Map();
     for (const [name] of properties) {
@@ -980,7 +987,9 @@ export class Workbench {
         continue;
       if (part.type === "wokwi-led" && name === "value") continue;
       const current =
-        part.attrs?.[name] ??
+        (isMomentarySwitch(part.type) && name === "pressed"
+          ? element.pressed
+          : part.attrs?.[name]) ??
         (part.type === "wokwi-led" && name === "brightness"
           ? 1
           : element[name]);
@@ -998,6 +1007,10 @@ export class Workbench {
             : typeof current === "number"
               ? Number(value)
               : value;
+          if (isMomentarySwitch(part.type) && name === "pressed") {
+            this.ctx.setControl(part.id, parsed);
+            return;
+          }
           this.ctx.updatePart({
             ...part,
             attrs: { ...part.attrs, [name]: parsed },

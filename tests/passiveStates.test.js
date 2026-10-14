@@ -51,3 +51,28 @@ test("LED polarity, series resistance, disconnection and digital output states c
       state.led.brightness,
   );
 });
+
+test("both momentary switch sizes close an LED series path, while equal-number contacts are always joined", () => {
+  for (const type of ["wokwi-pushbutton", "wokwi-pushbutton-6mm"]) {
+    const d = structuredClone(diagram);
+    d.parts.push({ id: "button", type, left: 0, top: 100 });
+    d.connections[2] = ["led:C", "button:1.r"];
+    d.connections.push(["button:2.l", "uno:GND.1"]);
+    const t = resolveCircuit(d),
+      pins = Array(20).fill(null);
+    pins[13] = 5;
+    assert.equal(
+      passiveStates(t.passive, pins, { button: false }).led.lit,
+      false,
+    );
+    const pressed = passiveStates(t.passive, pins, { button: true });
+    assert.equal(pressed.led.lit, true);
+    assert.ok(Math.abs(pressed.led.current - 3 / 220) < 1e-8);
+    assert.equal(pressed.button.closed, true);
+    d.connections[3][0] = "button:1.l";
+    assert.equal(
+      passiveStates(resolveCircuit(d).passive, pins, { button: false }).led.lit,
+      true,
+    );
+  }
+});
