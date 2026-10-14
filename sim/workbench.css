@@ -852,7 +852,8 @@ input[type="checkbox"]:focus-visible {
   padding: 0;
 }
 .wb-right .section-bar {
-  gap: 6px;
+  flex-wrap: nowrap;
+  gap: 4px;
   justify-content: flex-start;
 }
 .arduino-transport #firmwareState {
@@ -861,5 +862,7 @@ input[type="checkbox"]:focus-visible {
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-.wb-right .section-bar { flex-wrap: nowrap; gap: 4px; }
-.wb-right .glyph-select-options { left: 0; right: auto; }
+.wb-right .glyph-select-options {
+  left: 0;
+  right: auto;
+}
