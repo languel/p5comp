@@ -1,3 +1,4 @@
+import { isBreadboard } from "../sim/breadboard.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
@@ -27,7 +28,7 @@ test("catalog includes every registered Wokwi element and searches labels, types
     )
     .filter(Boolean);
   assert.deepEqual(
-    ELEMENTS.filter((e) => e.type !== "wokwi-breadboard")
+    ELEMENTS.filter((e) => !isBreadboard(e.type))
       .map((e) => e.type)
       .sort(),
     types.sort(),

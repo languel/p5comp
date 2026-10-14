@@ -1689,3 +1689,13 @@ footer button {
   height: 26px;
   padding: 0;
 }
+#wires .terminal.seated:not(.connected) {
+  opacity: 1;
+  fill: var(--accent, #a0a8ad);
+  stroke: var(--ui-page);
+  stroke-width: 0.5;
+}
+
+#wires:not(.wiring) .terminal.covered {
+  pointer-events: none;
+}

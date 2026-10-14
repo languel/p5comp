@@ -17,18 +17,18 @@
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --ui-page: #1b1e1c;
-  --ui-panel: #222623;
-  --ui-text: #d7ded9;
-  --ui-quiet: #9da69f;
-  --ui-line: #383e3a;
-  --ui-hover: #2c332e;
-  --ui-accent: #9aa99e;
-  --ui-accent-fill: #3b4840;
-  --ui-primary: #596b60;
-  --ui-primary-ink: #f3f6f4;
-  --ui-focus: #a2b8a8;
-  --ui-grid: #353d37;
+  --ui-page: #1c1c1e;
+  --ui-panel: #242426;
+  --ui-text: #d8d8da;
+  --ui-quiet: #a1a1a5;
+  --ui-line: #3d3d40;
+  --ui-hover: #303033;
+  --ui-accent: #a4a4aa;
+  --ui-accent-fill: #414145;
+  --ui-primary: #66666c;
+  --ui-primary-ink: #f4f4f6;
+  --ui-focus: #b3b3bb;
+  --ui-grid: #39393c;
   --ui-note: #342e28;
   --ui-warning: #c6a188;
 }

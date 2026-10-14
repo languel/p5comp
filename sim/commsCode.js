@@ -60,9 +60,9 @@ export function embedComms(source, api, sources = {}) {
 export function commsExample(api, sources = {}) {
   const starter =
     api === "none"
-      ? "function setup(){createCanvas(500,360); }\nfunction draw(){background(window.theme === 'dark' ? '#222623' : '#fafafa'); }"
+      ? "function setup(){createCanvas(500,360); }\nfunction draw(){background(window.theme === 'dark' ? '#242426' : '#fafafa'); }"
       : api === "firmata"
-        ? "function setup(){createCanvas(500,360);arduinoComms.onReady=board=>board.setPinMode('A0','ANALOG');}\nfunction draw(){background(window.theme === 'dark' ? '#222623' : '#fafafa');fill(window.theme === 'dark' ? '#d7ded9' : '#464b49');text('Firmata A0: '+(arduinoComms.board?.pins.find(p=>p.id==='A0')?.value??'waiting'),20,40);}"
+        ? "function setup(){createCanvas(500,360);arduinoComms.onReady=board=>board.setPinMode('A0','ANALOG');}\nfunction draw(){background(window.theme === 'dark' ? '#242426' : '#fafafa');fill(window.theme === 'dark' ? '#d8d8da' : '#464b49');text('Firmata A0: '+(arduinoComms.board?.pins.find(p=>p.id==='A0')?.value??'waiting'),20,40);}"
         : api === "native"
           ? nativeSketch
           : webserialSketch;

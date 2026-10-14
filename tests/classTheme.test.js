@@ -24,12 +24,12 @@ test("legacy class colors migrate while custom logic and serial API remain intac
   const updated = upgradeClassSketchTheme(legacy);
   assert.ok(
     updated.includes(
-      "background(window.theme === 'dark' ? '#222623' : '#fafafa')",
+      "background(window.theme === 'dark' ? '#242426' : '#fafafa')",
     ),
   );
   assert.ok(updated.includes("var(--ui-hover)"));
   assert.ok(
-    updated.includes("window.theme === 'dark' ? '#3b4840' : '#e8eeea'"),
+    updated.includes("window.theme === 'dark' ? '#414145' : '#e8eeea'"),
   );
   assert.ok(updated.includes("const studentThreshold = 37;"));
   assert.ok(updated.includes("navigator.serial.requestPort()"));

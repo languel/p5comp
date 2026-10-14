@@ -1,3 +1,10 @@
+import {
+  breadboardName,
+  breadboardPins,
+  breadboardSVG,
+  breadboardContacts,
+  isBreadboard,
+} from "./breadboard.js";
 import firmataParserSource from "../firmata/FirmataParser.js?raw";
 import firmataClientSource from "../firmata/FirmataClient.js?raw";
 import { embedComms, commsExample } from "./commsCode.js";
@@ -330,7 +337,7 @@ async function runArduino() {
       await serial.disconnect();
       mode = "simulation";
     }
-    topology = resolveCircuit(diagram);
+    topology = resolveCurrentCircuit();
     showHealth();
     const hex = await getFirmware();
     startWorker(hex);
@@ -368,7 +375,7 @@ function stop() {
 }
 function showHealth() {
   try {
-    topology = resolveCircuit(diagram);
+    topology = resolveCurrentCircuit();
     $("circuitHealth").textContent = topology.warnings.length
       ? topology.warnings.join(" ")
       : "Wiring ready · Uno at 16 MHz";
@@ -412,7 +419,8 @@ const canvas = new CircuitCanvas({
       notice("");
       changed();
     } else {
-      persist();
+      if (seatingChanged()) changed();
+      else persist();
       renderWires();
       workbench?.selectPart();
     }
@@ -463,7 +471,7 @@ const canvas = new CircuitCanvas({
       sonarSimulator.panel.hidden = true;
     if (partsChanged) renderParts();
     else renderWires();
-    if (nets) changed();
+    if (nets || seatingChanged()) changed();
     else persist();
   },
   onViewChange: () => {
@@ -532,53 +540,24 @@ $("expandCanvas").onclick = () => {
   $("expandCanvas").setAttribute("aria-pressed", String(expanded));
 };
 
-function bbPins() {
-  const out = [];
-  for (let n = 1; n <= 30; n++) {
-    const x = 18 + (n - 1) * 9.5;
-    ["a", "b", "c", "d", "e"].forEach((r, i) =>
-      out.push({ name: `${n}t.${r}`, x, y: 40 + i * 9.5 }),
-    );
-    ["f", "g", "h", "i", "j"].forEach((r, i) =>
-      out.push({ name: `${n}b.${r}`, x, y: 106.5 + i * 9.5 }),
-    );
-    [
-      ["tp", 12],
-      ["tn", 21.5],
-      ["bp", 165.4],
-      ["bn", 174.9],
-    ].forEach(([r, y]) => out.push({ name: `${r}.${n}`, x, y }));
-  }
-  return out;
+function breadboard(part) {
+  const container = document.createElement("div");
+  container.innerHTML = breadboardSVG(part);
+  return container.firstElementChild;
 }
-function breadboard() {
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute("width", "313.5");
-  svg.setAttribute("height", "192");
-  svg.setAttribute("viewBox", "0 0 313.5 192");
-  svg.innerHTML =
-    '<rect class="breadboard" x="1" y="1" width="311.5" height="190" rx="5"/><path d="M8 92.25H305.5" stroke="#e0e5df"/>' +
-    bbPins()
-      .map(
-        (p) =>
-          `<circle class="breadboard-hole" cx="${p.x}" cy="${p.y}" r="${BREADBOARD_HOLE_RADIUS}"/>`,
-      )
-      .join("") +
-    '<path class="breadboard-rail" stroke="#bc7770" d="M12 6H300.5M12 160.4H300.5"/><path class="breadboard-rail" stroke="#99a4aa" d="M12 28H300.5M12 181.9H300.5"/>';
-  const columns = [1, 5, 10, 15, 20, 25, 30]
-    .map(
-      (n) =>
-        `<text class="breadboard-label" text-anchor="middle" x="${18 + (n - 1) * 9.5}" y="35">${n}</text>`,
-    )
-    .join("");
-  const rows = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
-    .map(
-      (r, i) =>
-        `<text class="breadboard-label" x="5" y="${i < 5 ? 43 + i * 10 : 113 + (i - 5) * 10}">${r}</text>`,
-    )
-    .join("");
-  svg.insertAdjacentHTML("beforeend", columns + rows);
-  return svg;
+function currentContacts() {
+  canvas.refreshPins();
+  return breadboardContacts(diagram.parts, canvas.pins);
+}
+function resolveCurrentCircuit() {
+  return resolveCircuit(diagram, currentContacts());
+}
+let seatedKey = "";
+function seatingChanged() {
+  const next = JSON.stringify(currentContacts());
+  const changed = next !== seatedKey;
+  seatedKey = next;
+  return changed;
 }
 let partRenderVersion = 0;
 function renderParts() {
@@ -620,16 +599,18 @@ function renderParts() {
       wrapper.append(rotate);
     }
     handle.title =
-      (elementByType.get(p.type)?.name || p.type) +
+      (isBreadboard(p.type)
+        ? breadboardName(p)
+        : elementByType.get(p.type)?.name || p.type) +
       " · drag to move; click to select";
     wrapper.append(handle);
     const body = document.createElement("div");
     body.className = "part-body";
     wrapper.append(body);
     let element;
-    if (p.type === TYPES[1]) {
-      element = breadboard();
-      element.pinInfo = bbPins();
+    if (isBreadboard(p.type)) {
+      element = breadboard(p);
+      element.pinInfo = breadboardPins(p);
       body.append(element);
     } else {
       element = document.createElement(p.type);
@@ -684,7 +665,10 @@ function renderParts() {
   Promise.all(
     [...partElements.values()].map((element) => element.updateComplete),
   ).then(() => {
-    if (version === partRenderVersion) canvas.render();
+    if (version === partRenderVersion) {
+      canvas.render();
+      if (seatingChanged()) changed();
+    }
   });
 }
 function renderWires() {
@@ -1189,6 +1173,7 @@ workbench = new Workbench({
       parser: firmataParserSource,
       client: firmataClientSource,
     }),
+  seated: (id) => currentContacts().filter(([pin]) => pin.startsWith(id + ":")),
   selected: () => diagram.parts.find((p) => p.id === selectedPart),
   element: () => partElements.get(selectedPart),
   updatePart: (next) => {

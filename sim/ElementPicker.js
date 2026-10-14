@@ -1,3 +1,4 @@
+import { isBreadboard, breadboardName } from "./breadboard.js";
 import { searchElements, elementByType } from "./elements.js";
 export class ElementPicker {
   constructor(add) {
@@ -76,7 +77,7 @@ export class ElementPicker {
         const body = document.createElement("span");
         body.className = "thumb-body";
         thumb.append(body);
-        if (info.type === "wokwi-breadboard") thumb.textContent = "▦";
+        if (isBreadboard(info.type)) thumb.textContent = "▦";
         else {
           const part = document.createElement(info.type);
           for (const [key, val] of Object.entries(info.attrs || {}))

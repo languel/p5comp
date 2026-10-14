@@ -1,4 +1,30 @@
+import { isBreadboard } from "./breadboard.js";
 import catalog from "./elements.json" with { type: "json" };
+const legacyBoard = catalog.find((e) => e.type === "wokwi-breadboard");
+Object.assign(legacyBoard, {
+  name: "Breadboard long",
+  modelDescription:
+    "63 columns · continuous power rails · automatic terminal seating",
+  attrs: { size: "full" },
+});
+catalog.push(
+  {
+    ...legacyBoard,
+    type: "wokwi-breadboard-half",
+    name: "Breadboard medium",
+    modelDescription:
+      "30 columns · continuous power rails · automatic terminal seating",
+    attrs: {},
+  },
+  {
+    ...legacyBoard,
+    type: "wokwi-breadboard-mini",
+    name: "Breadboard mini",
+    modelDescription:
+      "17 columns · no power rails · automatic terminal seating",
+    attrs: {},
+  },
+);
 for (const info of catalog)
   if (
     [

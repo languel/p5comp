@@ -18,24 +18,24 @@ function makeControls() {
 }
 function draw() {
   readSerial();
-  background(window.theme === 'dark' ? '#222623' : '#fafafa'); noStroke(); textFont('sans-serif'); textAlign(LEFT);
-  fill(window.theme === 'dark' ? '#9da69f' : '#858e88'); textSize(11); text('ARDUINO → SERIAL → P5', 25, 26);
-  fill(window.theme === 'dark' ? '#d7ded9' : '#464b49'); textSize(38);
+  background(window.theme === 'dark' ? '#242426' : '#fafafa'); noStroke(); textFont('sans-serif'); textAlign(LEFT);
+  fill(window.theme === 'dark' ? '#a1a1a5' : '#858e88'); textSize(11); text('ARDUINO → SERIAL → P5', 25, 26);
+  fill(window.theme === 'dark' ? '#d8d8da' : '#464b49'); textSize(38);
   text(!received ? 'Waiting for serial…' : values[0] < 0 ? 'No echo' : values[0].toFixed(1) + ' cm', 25, 78);
-  fill(window.theme === 'dark' ? '#9da69f' : '#858e88'); textSize(12); text('pot  ' + values[1] + ' / 1023', 27, 110);
+  fill(window.theme === 'dark' ? '#a1a1a5' : '#858e88'); textSize(12); text('pot  ' + values[1] + ' / 1023', 27, 110);
   for (let j = 0; j < 2; j++) {
     const x = 290 + j * 90;
-    fill(values[j + 2] ? '#46836f' : (window.theme === 'dark' ? '#3b4840' : '#e8eeea')); circle(x, 66, 32);
-    fill(window.theme === 'dark' ? '#9da69f' : '#858e88'); text('button ' + (j + 1), x - 24, 104);
+    fill(values[j + 2] ? '#46836f' : (window.theme === 'dark' ? '#414145' : '#e8eeea')); circle(x, 66, 32);
+    fill(window.theme === 'dark' ? '#a1a1a5' : '#858e88'); text('button ' + (j + 1), x - 24, 104);
   }
-  stroke(window.theme === 'dark' ? '#383e3a' : '#e4e7e5'); line(25, 140, 465, 140); line(25, 245, 465, 245);
+  stroke(window.theme === 'dark' ? '#3d3d40' : '#e4e7e5'); line(25, 140, 465, 140); line(25, 245, 465, 245);
   noFill(); strokeWeight(1.5);
   for (let j = 0; j < 2; j++) {
     stroke(j ? '#b0a078' : '#46836f'); beginShape();
     history.forEach((v,i) => vertex(25 + i / 179 * 440, 237 - constrain(v[j] / (j ? 1023 : 400),0,1) * 85));
     endShape();
   }
-  noStroke(); fill(window.theme === 'dark' ? '#9da69f' : '#858e88'); textSize(11); text('distance', 25, 267); fill('#b0a078'); text('potentiometer', 95, 267);
+  noStroke(); fill(window.theme === 'dark' ? '#a1a1a5' : '#858e88'); textSize(11); text('distance', 25, 267); fill('#b0a078'); text('potentiometer', 95, 267);
   text('P5 → SERIAL → ARDUINO', 25, 302);
 }
 `;
@@ -94,11 +94,11 @@ export function upgradeClassSketchTheme(source) {
   )
     return source;
   const colors = {
-    "#fafafa": "#222623",
-    "#464b49": "#d7ded9",
-    "#858e88": "#9da69f",
-    "#e4e7e5": "#383e3a",
-    "#e8eeea": "#3b4840",
+    "#fafafa": "#242426",
+    "#464b49": "#d8d8da",
+    "#858e88": "#a1a1a5",
+    "#e4e7e5": "#3d3d40",
+    "#e8eeea": "#414145",
   };
   return source
     .replace(
@@ -110,7 +110,7 @@ export function upgradeClassSketchTheme(source) {
     )
     .replace(
       /:\s*(['"])#e8eeea\1/g,
-      ": (window.theme === 'dark' ? '#3b4840' : '#e8eeea')",
+      ": (window.theme === 'dark' ? '#414145' : '#e8eeea')",
     )
     .replace(
       /\.style\(\s*(['"])background\1\s*,\s*(['"])#e8eeea\2\s*\)/g,

@@ -92,7 +92,7 @@ export class Workbench {
         node(
           "label",
           "",
-          'Theme <select id="appTheme" aria-label="Theme"><option value="light">Light</option><option value="dark">Dark</option></select>',
+          'Theme <button id="appThemeButton" type="button" aria-label="Toggle theme"></button><select hidden id="appTheme" aria-label="Theme"><option value="light">Light</option><option value="dark">Dark</option></select>',
         ),
       );
     settingsMenu
@@ -110,11 +110,20 @@ export class Workbench {
         ),
       );
     const syncPreferences = () => {
-      $("appTheme").value = document.documentElement.dataset.theme || "light";
+      const dark = document.documentElement.dataset.theme === "dark";
+      $("appTheme").value = dark ? "dark" : "light";
+      $("appThemeButton").textContent = dark ? "☾" : "☼";
+      $("appThemeButton").title =
+        `Theme: ${dark ? "Dark" : "Light"} · click to toggle`;
+      $("appThemeButton").setAttribute(
+        "aria-label",
+        `Switch to ${dark ? "light" : "dark"} theme`,
+      );
       $("editorTheme").value = editorPreferences().theme;
       $("editorFontSize").value = editorPreferences().fontSize;
       document.dispatchEvent(new Event("p5comp:refresh-selects"));
     };
+    $("appThemeButton").onclick = () => $("themeToggle").click();
     $("appTheme").onchange = () => {
       if ($("appTheme").value !== document.documentElement.dataset.theme)
         $("themeToggle").click();
@@ -969,6 +978,19 @@ export class Workbench {
     field("Label", part.label || part.attrs?.label || "", (value) =>
       this.ctx.updatePart({ ...part, label: value }),
     );
+    const seats = this.ctx.seated?.(part.id) || [];
+    if (seats.length) {
+      const mounted = node("details", "switch-pin-help");
+      mounted.append(
+        node("summary", "", `Breadboard contacts · ${seats.length}`),
+      );
+      const list = document.createElement("pre");
+      list.textContent = seats
+        .map(([pin, hole]) => `${pin.split(":")[1]} → ${hole}`)
+        .join("\n");
+      mounted.append(list);
+      panel.append(mounted);
+    }
     if (isMomentarySwitch(part.type)) {
       const help = node("details", "switch-pin-help");
       help.innerHTML =

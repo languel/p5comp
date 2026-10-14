@@ -1,3 +1,4 @@
+import { isBreadboard, breadboardContacts } from "./breadboard.js";
 import { componentColor } from "./componentColor.js";
 import { WIRE_COLORS } from "./colors.js";
 import {
@@ -243,17 +244,19 @@ export class CircuitCanvas {
   }
   rectangles(includeBreadboards = false) {
     return this.diagram.parts
-      .filter((p) => includeBreadboards || p.type !== TYPES[1])
+      .filter((p) => includeBreadboards || !isBreadboard(p.type))
       .map((p) => partBounds(p, this.size(p)));
   }
   gridSettings() {
     if (this.gridReference === "none")
       return { grid: 0, gridOrigin: { x: 0, y: 0 } };
     const board =
-      this.diagram?.parts.find(
-        (p) => p.type === TYPES[this.gridReference === "breadboard" ? 1 : 0],
+      this.diagram?.parts.find((p) =>
+        this.gridReference === "breadboard"
+          ? isBreadboard(p.type)
+          : p.type === TYPES[0],
       ) || this.diagram?.parts.find((p) => p.type === TYPES[0]);
-    const breadboard = board?.type === TYPES[1],
+    const breadboard = isBreadboard(board?.type || ""),
       info = this.elements.get(board?.id)?.pinInfo || [],
       first = breadboard ? "1t.a" : "0",
       second = breadboard ? "2t.a" : "1",
@@ -481,7 +484,7 @@ export class CircuitCanvas {
   }
   routingBoards() {
     return this.diagram.parts
-      .filter((p) => p.type === TYPES[1])
+      .filter((p) => isBreadboard(p.type))
       .map((p) => {
         const holes = [...this.pins.values()].filter((q) => q.part === p.id);
         const xs = [
@@ -1467,15 +1470,35 @@ export class CircuitCanvas {
         });
       }
     }
+    const seats = new Map(breadboardContacts(this.diagram.parts, this.pins));
+    const seatedHoles = new Set(seats.values());
+    const bodies = this.rectangles();
+    const boardIds = new Set(
+      this.diagram.parts.filter((p) => isBreadboard(p.type)).map((p) => p.id),
+    );
     for (const [id, p] of this.pins) {
       const connectedColor = connectedColors.get(id);
       const circle = el("circle", {
         cx: p.x,
         cy: p.y,
-        r: connectedColor ? CONNECTION_DOT_RADIUS : 4 / z,
+        r:
+          connectedColor || seats.has(id) || seatedHoles.has(id)
+            ? CONNECTION_DOT_RADIUS
+            : 4 / z,
         class:
           "terminal" +
           (connectedColor ? " connected" : "") +
+          (seats.has(id) || seatedHoles.has(id) ? " seated" : "") +
+          (boardIds.has(p.part) &&
+          bodies.some(
+            (b) =>
+              p.x >= b.x - 4 / z &&
+              p.x <= b.x + b.w + 4 / z &&
+              p.y >= b.y - 4 / z &&
+              p.y <= b.y + b.h + 4 / z,
+          )
+            ? " covered"
+            : "") +
           (this.draft?.source === id ? " pending" : ""),
         style: connectedColor ? `--wire-color:${connectedColor}` : "",
         "data-pin": id,
@@ -1492,6 +1515,8 @@ export class CircuitCanvas {
       title.textContent = /^wokwi-pushbutton(?:-6mm)?$/.test(part?.type || "")
         ? `${id} · contact ${contact}; same-number pins are always joined, 1 ↔ 2 closes when pressed`
         : id;
+      if (seats.has(id))
+        title.textContent += ` · seated in ${seats.get(id)} (automatic connection)`;
       circle.append(title);
       circle.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {

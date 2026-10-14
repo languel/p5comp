@@ -39,7 +39,7 @@ export function initializeTheme() {
     );
     toggle.setAttribute("aria-pressed", String(theme === "dark"));
     if (themeColor)
-      themeColor.content = theme === "dark" ? "#1b1e1c" : "#fafafa";
+      themeColor.content = theme === "dark" ? "#1c1c1e" : "#fafafa";
     if (persist) saveTheme(theme);
     document.dispatchEvent(
       new CustomEvent("physical-p5:themechange", { detail: theme }),

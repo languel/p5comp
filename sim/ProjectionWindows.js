@@ -53,7 +53,7 @@ export class ProjectionWindows {
       kind +
       ' view"><p>Waiting for editor…</p></main><button title="Fullscreen" aria-label="Fullscreen">⛶</button>';
     win.document.body.style.cssText =
-      "margin:0;background:#1b1e1c;height:100vh;overflow:hidden;font:14px sans-serif;color:#9da69f";
+      "margin:0;background:#1c1c1e;height:100vh;overflow:hidden;font:14px sans-serif;color:#a1a1a5";
     const main = win.document.querySelector("main");
     main.style.cssText =
       "width:100%;height:100%;display:grid;place-items:center";
@@ -64,7 +64,7 @@ export class ProjectionWindows {
     hint.style.gridArea = "1/1";
     const full = win.document.querySelector("button");
     full.style.cssText =
-      "position:fixed;right:12px;top:12px;background:#222623;color:#d7ded9;border:1px solid #383e3a;border-radius:4px;font-size:20px;cursor:pointer";
+      "position:fixed;right:12px;top:12px;background:#242426;color:#d8d8da;border:1px solid #3d3d40;border-radius:4px;font-size:20px;cursor:pointer";
     full.onclick = () => win.document.documentElement.requestFullscreen();
     image.onload = () => {
       const button = document.getElementById(

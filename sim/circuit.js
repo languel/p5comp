@@ -1,3 +1,4 @@
+import { isBreadboard, boardSpec, breadboardPins } from "./breadboard.js";
 import { resistance } from "./passiveStates.js";
 import { elementByType, elementPins } from "./elements.js";
 import { freePoint } from "./partGeometry.js";
@@ -117,18 +118,13 @@ export function partPins(p) {
       ...Array.from({ length: 14 }, (_, i) => String(i)),
       ...Array.from({ length: 6 }, (_, i) => "A" + i),
     ];
-  if (p.type === TYPES[1])
-    return Array.from({ length: 30 }, (_, i) => i + 1).flatMap((n) => [
-      ...["a", "b", "c", "d", "e"].map((r) => `${n}t.${r}`),
-      ...["f", "g", "h", "i", "j"].map((r) => `${n}b.${r}`),
-      ...["bp", "bn", "tp", "tn"].map((r) => `${r}.${n}`),
-    ]);
+  if (isBreadboard(p.type)) return breadboardPins(p).map((p) => p.name);
   if (p.type === TYPES[2]) return ["GND", "SIG", "VCC"];
   if (p.type === TYPES[3]) return ["VCC", "TRIG", "ECHO", "GND"];
   return elementPins(p);
 }
 
-export function resolveCircuit(diagram) {
+export function resolveCircuit(diagram, contacts = []) {
   validateDiagram(diagram);
   const parent = new Map();
   const find = (x) => {
@@ -144,13 +140,13 @@ export function resolveCircuit(diagram) {
       join(`${p.id}:GND.1`, `${p.id}:GND.2`);
       join(`${p.id}:GND.1`, `${p.id}:GND.3`);
     }
-    if (p.type === TYPES[1])
-      for (let n = 1; n <= 30; n++) {
+    if (isBreadboard(p.type))
+      for (let n = 1; n <= boardSpec(p).columns; n++) {
         for (const r of ["b", "c", "d", "e"])
           join(`${p.id}:${n}t.a`, `${p.id}:${n}t.${r}`);
         for (const r of ["g", "h", "i", "j"])
           join(`${p.id}:${n}b.f`, `${p.id}:${n}b.${r}`);
-        for (const r of ["bp", "bn", "tp", "tn"])
+        for (const r of boardSpec(p).rails ? ["bp", "bn", "tp", "tn"] : [])
           join(`${p.id}:${r}.1`, `${p.id}:${r}.${n}`);
       }
     if (isMomentarySwitch(p.type)) {
@@ -158,6 +154,7 @@ export function resolveCircuit(diagram) {
       join(`${p.id}:2.l`, `${p.id}:2.r`);
     }
   }
+  for (const [a, b] of contacts) if (known.has(a) && known.has(b)) join(a, b);
   for (const [a, b] of diagram.connections) {
     if ((!known.has(a) && !freePoint(a)) || (!known.has(b) && !freePoint(b)))
       throw new Error(`Unknown terminal: ${!known.has(a) ? a : b}`);

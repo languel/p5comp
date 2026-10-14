@@ -54,12 +54,12 @@ export function editorTheme(prefs) {
         }
     : dark
       ? {
-          bg: "#222623",
-          text: "#d7ded9",
-          quiet: "#849087",
-          line: "#2c332e",
-          selection: "#3b4840",
-          keyword: "#b5c4bc",
+          bg: "#242426",
+          text: "#d8d8da",
+          quiet: "#909094",
+          line: "#303033",
+          selection: "#414145",
+          keyword: "#babac4",
           string: "#b1b8a0",
           number: "#b9aea0",
           fn: "#aabec7",
