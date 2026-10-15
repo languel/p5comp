@@ -176,6 +176,15 @@ export class Workbench {
     this.p5Pane = this.editorPanel.querySelector('[data-pane="p5"] > section');
     this.addFileBar(this.arduinoPane, "arduino");
     this.addFileBar(this.p5Pane, "p5");
+    for (const kind of ["arduino", "p5"]) {
+      const bar = node("button", "editor-status");
+      bar.id = kind + "EditorStatus";
+      bar.setAttribute("aria-label", kind + " editor status: open console");
+      bar.title = "Open console";
+      bar.onclick = () => this.bottomTab("console");
+      this[kind + "Pane"].append(bar);
+      this.editorStatus(kind, "Ready");
+    }
     this.editorPanel
       .querySelectorAll("[data-tab]")
       .forEach((b) => (b.onclick = () => this.tab(b.dataset.tab)));
@@ -200,6 +209,7 @@ export class Workbench {
     for (const child of [...arduinoTools.childNodes])
       if (child.nodeType === Node.TEXT_NODE) child.remove();
     arduinoTools.append(transport);
+    $("arduinoEditorStatus").replaceChildren($("firmwareState"));
     $("usb").title = "Connect USB Arduino";
     $("usb").setAttribute("aria-label", "Connect USB Arduino");
     $("upload").hidden = true;
@@ -255,13 +265,19 @@ export class Workbench {
     p5Tools.prepend(run, stop, comms);
     p5Tools.append($("loadExample"));
     const auto = node(
-      "label",
+      "button",
       "autorun",
-      'Auto-run <input id="p5Autorun" type="checkbox" aria-label="p5 auto-run">',
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8a8 8 0 0 1 14-2l2 2M20 3v5h-5M20 16a8 8 0 0 1-14 2l-2-2M4 21v-5h5"/></svg>',
     );
     p5Tools.append(auto);
-    $("p5Autorun").onchange = () => {
-      this.autorun = $("p5Autorun").checked;
+    auto.id = "p5Autorun";
+    auto.title = "Auto-run p5 after edits";
+    auto.setAttribute("aria-label", "Auto-run p5 after edits");
+    auto.setAttribute("aria-pressed", "false");
+    auto.onclick = () => {
+      this.autorun = !this.autorun;
+      auto.setAttribute("aria-pressed", String(this.autorun));
+      if (!this.autorun) clearTimeout(this.autoTimer);
     };
     for (const kind of ["arduino", "p5"]) {
       const tidy = node(
@@ -385,6 +401,12 @@ export class Workbench {
       ctx.persist();
     };
     ctx.bridge.addEventListener("console", (e) => {
+      if (["error", "warn"].includes(e.detail.level))
+        this.editorStatus(
+          "p5",
+          e.detail.values.join(" "),
+          e.detail.level === "warn" ? "warning" : "error",
+        );
       const p = $("p5Console");
       p.textContent +=
         e.detail.values
@@ -392,7 +414,11 @@ export class Workbench {
           .join(" ") + "\n";
       p.textContent = p.textContent.slice(-20000);
     });
+    ctx.bridge.addEventListener("status", (e) => {
+      this.editorStatus("p5", e.detail);
+    });
     ctx.bridge.addEventListener("runtimeError", (e) => {
+      this.editorStatus("p5", e.detail.message, "error");
       $("p5Console").textContent += e.detail.message + "\n";
       this.bottomTab("console");
     });
@@ -818,10 +844,39 @@ export class Workbench {
   disableAutorun() {
     this.autorun = false;
     clearTimeout(this.autoTimer);
-    if ($("p5Autorun")) $("p5Autorun").checked = false;
+    if ($("p5Autorun")) $("p5Autorun").setAttribute("aria-pressed", "false");
   }
   uploadState(connected) {
     if ($("compileUpload")) $("compileUpload").disabled = !connected;
+  }
+  editorStatus(kind, message, level = "info") {
+    const bar = $(kind + "EditorStatus");
+    if (!bar) return;
+    if (
+      level === "info" &&
+      bar.dataset.level === "warning" &&
+      /Running|Uploaded/.test(message)
+    )
+      return;
+    if (/Compiling|Loading|Starting/.test(message)) {
+      const tab = this.bottom?.querySelector('[data-bottom="console"]');
+      if (tab) {
+        delete tab.dataset.level;
+        tab.title = "Console";
+      }
+    }
+    bar.dataset.level = level;
+    bar.title = message + " · Open console";
+    if (kind === "arduino" && $("firmwareState"))
+      $("firmwareState").textContent = message;
+    else bar.textContent = message;
+    if (level !== "info") {
+      const tab = this.bottom?.querySelector('[data-bottom="console"]');
+      if (tab) {
+        tab.dataset.level = level;
+        tab.title = "Console · " + level;
+      }
+    }
   }
   buildLog(line) {
     const console = $("buildConsole");
