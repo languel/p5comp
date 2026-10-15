@@ -987,3 +987,32 @@ input[type="checkbox"]:focus-visible {
 .ui-hidden .workspace[data-layout="vertical"] > .view-divider {
   top: calc(var(--view-ratio, 0.5) * 100% - 3px);
 }
+
+.part-value-editor {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 6px);
+  z-index: 100;
+  display: grid;
+  grid-template-columns: 100px auto 28px;
+  gap: 5px;
+  align-items: center;
+  padding: 6px;
+  border: 1px solid var(--ui-line);
+  border-radius: 5px;
+  background: var(--ui-panel, #272729);
+  color: var(--ui-text);
+  box-shadow: 0 3px 12px #0004;
+}
+.part-value-editor input {
+  width: 100%;
+  min-width: 0;
+}
+.part-value-editor small {
+  grid-column: 1/-1;
+  color: #d47777;
+  max-width: 220px;
+}
+.part-value-editor small:empty {
+  display: none;
+}

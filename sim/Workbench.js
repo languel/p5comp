@@ -1,3 +1,4 @@
+import { resistance } from "./passiveStates.js";
 import { isMomentarySwitch } from "./circuit.js";
 import { projectArchive } from "./projectArchive.js";
 import { glyphSelect } from "./GlyphSelect.js";
@@ -1046,6 +1047,50 @@ export class Workbench {
     $("propertyTitle").textContent = part?.label || part?.id || "Selection";
     this.renderAttributes(part);
     this.showPartState();
+  }
+  editValue(wrapper, part) {
+    const element = wrapper.querySelector(".part-body")?.firstElementChild;
+    const hasValue = element?.constructor.elementProperties?.has("value");
+    if (!hasValue || part.type === "wokwi-led")
+      return this.editLabel(wrapper, part);
+    document.querySelector(".part-value-editor")?.remove();
+    const form = node("form", "part-value-editor");
+    const input = node("input", "");
+    input.type = "text";
+    input.value = part.attrs?.value ?? element.value ?? "";
+    input.setAttribute("aria-label", "Component value");
+    const units = node("span", "");
+    units.textContent = part.type === "wokwi-resistor" ? "Ω" : "";
+    const apply = node("button", "", "✓");
+    apply.type = "submit";
+    apply.title = "Apply value (Enter)";
+    const error = node("small", "");
+    error.setAttribute("role", "alert");
+    form.append(input, units, apply, error);
+    form.onpointerdown = (e) => e.stopPropagation();
+    form.ondblclick = (e) => e.stopPropagation();
+    form.onkeydown = (e) => {
+      e.stopPropagation();
+      if (e.key === "Escape") form.remove();
+    };
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      try {
+        const value =
+          part.type === "wokwi-resistor"
+            ? String(resistance(input.value.replace(/Ω|ohms?/gi, "").trim()))
+            : input.value.trim();
+        if (!value) throw new Error("Enter a value.");
+        await this.ctx.updatePart({ ...part, attrs: { ...part.attrs, value } });
+        form.remove();
+      } catch (e) {
+        error.textContent = e.message;
+        input.setAttribute("aria-invalid", "true");
+      }
+    };
+    wrapper.append(form);
+    input.focus();
+    input.select();
   }
   editLabel(wrapper, part) {
     const handle = wrapper.querySelector(".part-handle");

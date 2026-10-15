@@ -450,7 +450,7 @@ const canvas = new CircuitCanvas({
   },
   onAdd: (point) => elementPicker.open(point),
   onRename: (wrapper) =>
-    workbench?.editLabel(
+    workbench?.editValue(
       wrapper,
       diagram.parts.find((p) => p.id === wrapper.dataset.id),
     ),
