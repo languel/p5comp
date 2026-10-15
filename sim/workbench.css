@@ -935,3 +935,55 @@ input[type="checkbox"]:focus-visible {
 .editor-status[data-level="warning"]::before {
   content: "⚠ ";
 }
+
+.unified .workspace[data-layout="horizontal"] {
+  grid-template-columns: minmax(0, var(--view-first, 1fr)) minmax(
+      0,
+      var(--view-second, 1fr)
+    );
+}
+.unified .workspace[data-layout="vertical"] {
+  grid-template-rows: 34px minmax(0, var(--view-first, 1fr)) minmax(
+      0,
+      var(--view-second, 1fr)
+    );
+}
+.view-divider {
+  display: none;
+  position: absolute;
+  z-index: 15;
+  touch-action: none;
+}
+.workspace[data-layout="horizontal"] > .view-divider {
+  display: block;
+  top: 34px;
+  bottom: 0;
+  left: calc(var(--view-ratio, 0.5) * 100% - 3px);
+  width: 6px;
+  cursor: col-resize;
+}
+.workspace[data-layout="vertical"] > .view-divider {
+  display: block;
+  left: 0;
+  right: 0;
+  top: calc(34px + (100% - 34px) * var(--view-ratio, 0.5) - 3px);
+  height: 6px;
+  cursor: row-resize;
+}
+.view-divider:hover,
+.view-divider:focus-visible {
+  background: var(--ui-muted);
+  opacity: 0.45;
+}
+.unified.ui-hidden .workspace[data-layout="vertical"] {
+  grid-template-rows: minmax(0, var(--view-first, 1fr)) minmax(
+      0,
+      var(--view-second, 1fr)
+    );
+}
+.ui-hidden .workspace[data-layout="horizontal"] > .view-divider {
+  top: 0;
+}
+.ui-hidden .workspace[data-layout="vertical"] > .view-divider {
+  top: calc(var(--view-ratio, 0.5) * 100% - 3px);
+}

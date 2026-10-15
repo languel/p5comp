@@ -394,10 +394,60 @@ export class Workbench {
       this.mainView(this.activeView, $("mainLayout").value);
       ctx.persist();
     };
-    $("projectCircuit").onclick = () => this.projections.open("circuit");
-    $("projectP5").onclick = () => this.projections.open("p5");
-    $("expandCanvas").onclick = () => {
-      this.mainView("circuit", "tabs");
+    const circuitPopup = $("projectCircuit");
+    const p5Popup = $("projectP5");
+    $("expandCanvas").replaceWith(circuitPopup);
+    $("runP5").replaceWith(p5Popup);
+    circuitPopup.onclick = () => this.projections.open("circuit");
+    p5Popup.onclick = () => this.projections.open("p5");
+    const workspace = document.querySelector(".workspace");
+    const divider = node("div", "view-divider");
+    divider.setAttribute("role", "separator");
+    divider.setAttribute("tabindex", "0");
+    divider.setAttribute("aria-label", "Resize circuit and p5 panels");
+    divider.title = "Drag to resize · double-click to reset";
+    workspace.append(divider);
+    const setSplit = (ratio) => {
+      this.splitRatio = Math.max(0.15, Math.min(0.85, ratio));
+      workspace.style.setProperty("--view-first", this.splitRatio + "fr");
+      workspace.style.setProperty("--view-second", 1 - this.splitRatio + "fr");
+      workspace.style.setProperty("--view-ratio", this.splitRatio);
+      divider.setAttribute("aria-valuenow", Math.round(this.splitRatio * 100));
+      ctx.canvas.render();
+    };
+    this.setSplit = setSplit;
+    setSplit(0.5);
+    divider.onpointerdown = (event) => {
+      event.preventDefault();
+      divider.setPointerCapture(event.pointerId);
+      divider.onpointermove = (e) => {
+        const rect = workspace.getBoundingClientRect();
+        const top = document.body.classList.contains("ui-hidden") ? 0 : 34;
+        setSplit(
+          this.layout === "vertical"
+            ? (e.clientY - rect.top - top) / (rect.height - top)
+            : (e.clientX - rect.left) / rect.width,
+        );
+      };
+      divider.onpointerup = divider.onpointercancel = () => {
+        divider.onpointermove = null;
+        ctx.persist();
+      };
+    };
+    divider.ondblclick = () => {
+      setSplit(0.5);
+      ctx.persist();
+    };
+    divider.onkeydown = (e) => {
+      const direction = {
+        ArrowLeft: -1,
+        ArrowUp: -1,
+        ArrowRight: 1,
+        ArrowDown: 1,
+      }[e.key];
+      if (!direction) return;
+      e.preventDefault();
+      setSplit(this.splitRatio + direction * 0.02);
       ctx.persist();
     };
     ctx.bridge.addEventListener("console", (e) => {
@@ -953,9 +1003,11 @@ export class Workbench {
       dock: $("outputDock").value,
       layout: this.layout,
       activeView: this.activeView,
+      splitRatio: this.splitRatio,
     };
   }
   restore(d) {
+    this.setSplit?.(Number.isFinite(d.splitRatio) ? d.splitRatio : 0.5);
     this.name = d.name || "Classroom";
     this.title.textContent = this.name;
     this.files = { ...(d.files || {}) };
@@ -1198,6 +1250,12 @@ export class Workbench {
         ),
       );
     $("mainLayout").value = this.layout;
+    document
+      .querySelector(".view-divider")
+      ?.setAttribute(
+        "aria-orientation",
+        this.layout === "vertical" ? "horizontal" : "vertical",
+      );
     document.dispatchEvent(new Event("p5comp:refresh-selects"));
     this.ctx.canvas.render();
   }
