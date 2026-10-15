@@ -97,7 +97,10 @@ const notice = (message) => {
   $("notice").hidden = !message;
   $("notice").textContent = message || "";
 };
-const status = (s) => ($("status").textContent = s);
+const status = (s) => {
+  $("status").textContent = s;
+  workbench?.editorStatus("arduino", s);
+};
 function sourceValue(editor) {
   return editor.state.doc.toString();
 }
@@ -266,6 +269,13 @@ async function getFirmware() {
   const result = await response.json();
   log(result.stdout || "");
   if (!result.ok) throw new Error(result.stderr || "Compilation failed.");
+  if (result.stderr) log(result.stderr);
+  if (/warning:/i.test((result.stderr || "") + (result.stdout || "")))
+    workbench?.editorStatus(
+      "arduino",
+      "Compiled with warnings · check console",
+      "warning",
+    );
   artifact = { source, buildKey, hex: result.hex };
   $("firmwareState").textContent = "Compiled locally · cached in project";
   log("Compilation complete · firmware cached.");
@@ -350,6 +360,8 @@ async function runArduino() {
     stop();
     notice(e.message);
     log(e.message);
+    workbench?.editorStatus("arduino", e.message, "error");
+    workbench?.bottomTab("console");
     $("code").open = sourceValue(arduinoEditor).trim() !== lessonSource.trim();
   } finally {
     compiling = false;
@@ -1084,6 +1096,7 @@ async function uploadFirmware() {
   } catch (e) {
     notice(e.message);
     log("Upload failed: " + e.message);
+    workbench?.editorStatus("arduino", "Upload failed: " + e.message, "error");
   } finally {
     updateConnection();
   }

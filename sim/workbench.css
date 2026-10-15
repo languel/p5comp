@@ -897,3 +897,41 @@ input[type="checkbox"]:focus-visible {
   width: 18px;
   height: 18px;
 }
+
+.wb-right .editor-status {
+  flex: 0 0 25px;
+  width: 100%;
+  display: block;
+  padding: 4px 9px;
+  border: 0;
+  border-top: 1px solid var(--ui-border);
+  border-radius: 0;
+  background: var(--ui-panel);
+  color: var(--ui-muted);
+  font-size: 11px;
+  text-align: left;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.editor-status #firmwareState {
+  max-width: none;
+}
+.editor-status::before {
+  content: "● ";
+  font-size: 9px;
+}
+.editor-status[data-level="error"],
+.wb-tabs button[data-level="error"] {
+  color: #d47777;
+}
+.editor-status[data-level="warning"],
+.wb-tabs button[data-level="warning"] {
+  color: #c4a34d;
+}
+.editor-status[data-level="error"]::before {
+  content: "⊗ ";
+}
+.editor-status[data-level="warning"]::before {
+  content: "⚠ ";
+}
