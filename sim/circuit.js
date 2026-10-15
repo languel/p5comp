@@ -2,6 +2,8 @@ import { isBreadboard, boardSpec, breadboardPins } from "./breadboard.js";
 import { resistance } from "./passiveStates.js";
 import { elementByType, elementPins } from "./elements.js";
 import { freePoint } from "./partGeometry.js";
+export const isAVRBoard = (type) =>
+  ["wokwi-arduino-uno", "wokwi-arduino-nano"].includes(type);
 export const isMomentarySwitch = (type) =>
   ["wokwi-pushbutton", "wokwi-pushbutton-6mm"].includes(type);
 export const TYPES = [
@@ -136,9 +138,12 @@ export function resolveCircuit(diagram, contacts = []) {
   const known = new Set();
   for (const p of diagram.parts) {
     for (const n of partPins(p)) known.add(`${p.id}:${n}`);
-    if (p.type === TYPES[0]) {
+    if (isAVRBoard(p.type)) {
       join(`${p.id}:GND.1`, `${p.id}:GND.2`);
       join(`${p.id}:GND.1`, `${p.id}:GND.3`);
+      if (p.type === "wokwi-arduino-nano")
+        for (const pin of ["5V", "11", "12", "13"])
+          join(`${p.id}:${pin}`, `${p.id}:${pin}.2`);
     }
     if (isBreadboard(p.type))
       for (let n = 1; n <= boardSpec(p).columns; n++) {
@@ -149,6 +154,7 @@ export function resolveCircuit(diagram, contacts = []) {
         for (const r of boardSpec(p).rails ? ["bp", "bn", "tp", "tn"] : [])
           join(`${p.id}:${r}.1`, `${p.id}:${r}.${n}`);
       }
+    if (p.type === "wokwi-7segment") join(`${p.id}:COM.1`, `${p.id}:COM.2`);
     if (isMomentarySwitch(p.type)) {
       join(`${p.id}:1.l`, `${p.id}:1.r`);
       join(`${p.id}:2.l`, `${p.id}:2.r`);
@@ -160,15 +166,18 @@ export function resolveCircuit(diagram, contacts = []) {
       throw new Error(`Unknown terminal: ${!known.has(a) ? a : b}`);
     if (known.has(a) && known.has(b)) join(a, b);
   }
-  const uno = diagram.parts.filter((p) => p.type === TYPES[0]);
-  if (uno.length !== 1) throw new Error("Use exactly one Arduino Uno.");
+  const uno = diagram.parts.filter((p) => isAVRBoard(p.type));
+  if (uno.length !== 1)
+    throw new Error(
+      "Use exactly one simulated Arduino Uno or Nano. Mega and non-AVR boards are not emulated yet.",
+    );
   const id = uno[0].id,
     equal = (a, b) => find(a) === find(b),
     warnings = [];
   if (equal(`${id}:5V`, `${id}:GND.1`))
     throw new Error("5V is shorted to GND. Remove the short before running.");
   const target = (endpoint) => {
-    for (let n = 0; n < 20; n++) {
+    for (let n = 0; n < (uno[0].type === "wokwi-arduino-nano" ? 22 : 20); n++) {
       const name = n < 14 ? String(n) : "A" + (n - 14);
       if (equal(endpoint, `${id}:${name}`)) return n;
     }
@@ -250,6 +259,7 @@ export function resolveCircuit(diagram, contacts = []) {
     resistors: [],
     leds: [],
     switches: [],
+    groups: [],
   };
   for (const p of diagram.parts) {
     if (isMomentarySwitch(p.type))
@@ -273,5 +283,79 @@ export function resolveCircuit(diagram, contacts = []) {
         forwardVoltage: Number(p.attrs?.forwardVoltage) || 2,
       });
   }
-  return { pots, sonars, buttons, rails, warnings, passive };
+  const peripherals = [];
+  for (const p of diagram.parts) {
+    if (["wokwi-rgb-led", "wokwi-7segment"].includes(p.type)) {
+      const rgb = p.type === "wokwi-rgb-led";
+      const channels = rgb
+        ? ["R", "G", "B"]
+        : ["A", "B", "C", "D", "E", "F", "G", "DP"];
+      const common = rgb ? "COM" : "COM.1";
+      if (!rgb && Number(p.attrs?.digits || 1) !== 1)
+        warnings.push(
+          p.id + ": only single-digit seven-segment simulation is supported.",
+        );
+
+      const anode = p.attrs?.common === "anode";
+      const ids = channels.map((pin, i) => {
+        const channel = `${p.id}__${i}`;
+        passive.leds.push({
+          id: channel,
+          a: net(p.id + ":" + (anode ? common : pin)),
+          c: net(p.id + ":" + (anode ? pin : common)),
+          forwardVoltage: 2,
+        });
+        return channel;
+      });
+      passive.groups.push({
+        id: p.id,
+        type: rgb ? "rgb" : "segments",
+        channels: ids,
+      });
+    }
+    if (
+      [
+        "wokwi-servo",
+        "wokwi-buzzer",
+        "wokwi-lcd1602",
+        "wokwi-lcd2004",
+      ].includes(p.type)
+    ) {
+      const pin = (name) => target(p.id + ":" + name);
+      if (p.type.includes("lcd") && p.attrs?.pins === "i2c")
+        warnings.push(
+          p.id + ": I2C LCD simulation is not implemented; use parallel pins.",
+        );
+      peripherals.push({
+        id: p.id,
+        type: p.type,
+        attrs: p.attrs || {},
+        pins: Object.fromEntries(partPins(p).map((n) => [n, pin(n)])),
+        levels: Object.fromEntries(
+          partPins(p).map((n) => [
+            n,
+            equal(p.id + ":" + n, id + ":5V") ? true : false,
+          ]),
+        ),
+        powered:
+          p.type === "wokwi-servo"
+            ? equal(p.id + ":V+", id + ":5V") &&
+              equal(p.id + ":GND", id + ":GND.1")
+            : p.type.includes("lcd")
+              ? equal(p.id + ":VDD", id + ":5V") &&
+                equal(p.id + ":VSS", id + ":GND.1")
+              : equal(p.id + ":2", id + ":GND.1"),
+      });
+    }
+  }
+  return {
+    board: uno[0].type === "wokwi-arduino-nano" ? "nano" : "uno",
+    pots,
+    sonars,
+    buttons,
+    rails,
+    warnings,
+    passive,
+    peripherals,
+  };
 }

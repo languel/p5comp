@@ -1,3 +1,4 @@
+import { PeripheralModels } from "./peripherals.js";
 import { passiveStates } from "./passiveStates.js";
 import {
   CPU,
@@ -70,6 +71,7 @@ export class UnoRuntime {
     this.rx = [];
     this.controls = controls;
     this.topology = topology;
+    this.peripherals = new PeripheralModels(topology.peripherals);
     this.triggerStarts = new Map();
     this.lastTriggers = new Map();
     this.echoBusy = new Set();
@@ -78,6 +80,10 @@ export class UnoRuntime {
       port.addListener(() => {
         this.applyDigitalInputs();
         this.checkTriggers();
+        this.peripherals.tick(this.cpu.cycles, (n) => {
+          const [port, bit] = this.pin(n);
+          return port.pinState(bit) === PinState.High;
+        });
       });
     this.applyInputs();
   }
@@ -180,19 +186,22 @@ export class UnoRuntime {
       seconds: this.cpu.cycles / F_CPU,
       led: this.ports.B.pinState(5) === PinState.High,
       baudRate: this.uart.baudRate,
-      parts: passiveStates(
-        this.topology.passive,
-        Array.from({ length: 20 }, (_, n) => {
-          const [port, bit] = this.pin(n),
-            state = port.pinState(bit);
-          return state === PinState.High
-            ? 5
-            : state === PinState.Low
-              ? 0
-              : null;
-        }),
-        this.controls,
-      ),
+      parts: {
+        ...this.peripherals.snapshot(this.cpu.cycles),
+        ...passiveStates(
+          this.topology.passive,
+          Array.from({ length: 20 }, (_, n) => {
+            const [port, bit] = this.pin(n),
+              state = port.pinState(bit);
+            return state === PinState.High
+              ? 5
+              : state === PinState.Low
+                ? 0
+                : null;
+          }),
+          this.controls,
+        ),
+      },
     };
   }
 }

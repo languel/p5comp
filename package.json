@@ -27,9 +27,11 @@
     "avr8js": "^0.21.1",
     "avrgirl-arduino": "^5.0.1",
     "codemirror": "^6.0.1",
+    "dompurify": "^3.4.17",
     "express": "^5.1.0",
     "fflate": "^0.8.3",
     "jspdf": "^4.2.1",
+    "marked": "^18.1.1",
     "p5": "^1.11.10",
     "prettier": "^3.9.10"
   },

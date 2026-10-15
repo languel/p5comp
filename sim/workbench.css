@@ -1016,3 +1016,78 @@ input[type="checkbox"]:focus-visible {
 .part-value-editor small:empty {
   display: none;
 }
+.scene-item {
+  border: 1px solid var(--ui-line);
+  border-radius: 4px;
+}
+.scene-handle {
+  width: 100%;
+  text-align: left;
+  font-size: 11px;
+  cursor: move;
+  border: 0;
+  border-radius: 0;
+  background: var(--ui-panel);
+  color: var(--ui-quiet);
+}
+.scene-media {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.lesson-note {
+  padding: 14px;
+  background: var(--ui-panel);
+  color: var(--ui-text);
+  cursor: text;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.lesson-note > :first-child {
+  margin-top: 0;
+}
+.lesson-note > :last-child {
+  margin-bottom: 0;
+}
+.lesson-note pre {
+  white-space: pre-wrap;
+  padding: 8px;
+  background: var(--ui-hover);
+}
+.lesson-note img {
+  max-width: 100%;
+}
+.lesson-note table {
+  border-collapse: collapse;
+}
+.lesson-note td,
+.lesson-note th {
+  padding: 4px;
+  border: 1px solid var(--ui-line);
+}
+.lesson-note-editor {
+  width: min(650px, 85vw);
+  border: 1px solid var(--ui-line);
+  border-radius: 7px;
+  background: var(--ui-panel);
+  color: var(--ui-text);
+}
+.lesson-note-editor header,
+.lesson-note-editor footer {
+  display: flex;
+  gap: 8px;
+  padding: 8px 0;
+}
+.lesson-note-editor header input {
+  flex: 1;
+}
+.lesson-note-editor textarea {
+  box-sizing: border-box;
+  width: 100%;
+  height: 300px;
+  font: 13px monospace;
+  padding: 10px;
+}
+.lesson-note-editor footer {
+  justify-content: flex-end;
+}

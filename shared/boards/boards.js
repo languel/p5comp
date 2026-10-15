@@ -8,7 +8,18 @@ export const boards = Object.freeze({
     runtimeBaudRate: 9600,
     digitalPins: 14,
     analogPins: 6,
-    flashPageSize: 128
+    flashPageSize: 128,
+  }),
+  nano: Object.freeze({
+    id: "nano",
+    label: "Arduino Nano (ATmega328P)",
+    fqbn: "arduino:avr:nano:cpu=atmega328",
+    uploadProtocol: "stk500v1",
+    uploadBaudRate: 115200,
+    runtimeBaudRate: 9600,
+    digitalPins: 14,
+    analogPins: 8,
+    flashPageSize: 128,
   }),
   mega: Object.freeze({
     id: "mega",
@@ -19,8 +30,8 @@ export const boards = Object.freeze({
     runtimeBaudRate: 9600,
     digitalPins: 54,
     analogPins: 16,
-    flashPageSize: 256
-  })
+    flashPageSize: 256,
+  }),
 });
 
 export function boardForId(id) {

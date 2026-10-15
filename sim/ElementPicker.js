@@ -45,6 +45,7 @@ export class ElementPicker {
     this.results.replaceChildren();
     const found = searchElements(this.search.value),
       groups = [
+        "Custom",
         "Basic",
         "Inputs",
         "Sensors",

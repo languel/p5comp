@@ -1,3 +1,5 @@
+import { setComponentPresets } from "./elements.js";
+import { lessonHTML } from "./lessonContent.js";
 import { resistance } from "./passiveStates.js";
 import { isMomentarySwitch } from "./circuit.js";
 import { projectArchive } from "./projectArchive.js";
@@ -44,6 +46,7 @@ export class Workbench {
     this.files = {};
     this.extra = new Map();
     this.references = [];
+    this.components = [];
     this.settings = {};
     this.name = "Classroom";
     document.body.classList.add("unified");
@@ -54,7 +57,7 @@ export class Workbench {
     const fileMenu = node(
       "details",
       "wb-menu",
-      '<summary>File</summary><div><button id="newProject">New project</button><button id="saveProject">Save project…</button><button id="saveZIP">Download project ZIP</button><button id="openProject">Open project…</button><button id="openFolder">Open folder…</button><button id="saveFolder">Save to folder…</button><hr><button id="addReference">Add reference image…</button><button id="exportPNG">Export PNG</button><button id="exportSVG">Export SVG</button><button id="exportPDF">Export PDF with code</button></div>',
+      '<summary>File</summary><div><button id="newProject">New project</button><button id="saveProject">Save project…</button><button id="saveZIP">Download project ZIP</button><button id="openProject">Open project…</button><button id="openFolder">Open folder…</button><button id="saveFolder">Save to folder…</button><hr><button id="addReference">Add image / video…</button><button id="addLessonNote">Add lesson note…</button><button id="componentLibrary">Component editor…</button><button id="exportPNG">Export PNG</button><button id="exportSVG">Export SVG</button><button id="exportPDF">Export PDF with code</button></div>',
     );
     toolbar.querySelector(".brand").after(fileMenu);
     ["save", "open", "lesson"].forEach((id) => ($(id).hidden = true));
@@ -536,11 +539,13 @@ export class Workbench {
     );
     this.imageInput = node("input", "");
     this.imageInput.type = "file";
-    this.imageInput.accept = "image/*";
+    this.imageInput.accept = "image/*,video/*";
     this.imageInput.multiple = true;
     this.imageInput.hidden = true;
     document.body.append(this.imageInput);
     $("addReference").onclick = () => this.imageInput.click();
+    $("addLessonNote").onclick = () => this.editLessonNote();
+    $("componentLibrary").onclick = () => this.editComponents();
     this.imageInput.onchange = () => this.action(() => this.loadImages());
     $("classExample").onclick = () =>
       this.action(() => ctx.openProject(ctx.lesson()));
@@ -954,6 +959,12 @@ export class Workbench {
       label.textContent =
         name + " · " + (asset.type || "file") + " · " + asset.size + " B";
       row.append(label);
+      if (ref.kind === "note") {
+        const edit = node("button", "", "✎");
+        edit.title = "Edit lesson note";
+        edit.onclick = () => this.editLessonNote(ref);
+        row.append(edit);
+      }
       if (asset.type?.startsWith("image/")) {
         const image = node("img", "");
         image.src = asset.src;
@@ -1000,6 +1011,7 @@ export class Workbench {
       arduinoName: this.arduinoName,
       p5Name: this.p5Name,
       references: this.references,
+      components: this.components,
       settings: this.settings,
       dock: $("outputDock").value,
       layout: this.layout,
@@ -1022,6 +1034,8 @@ export class Workbench {
       '"></script></body></html>\n';
     this.files["style.css"] ??= "body { margin: 0; }\n";
     this.references = d.references || [];
+    this.components = d.components || [];
+    setComponentPresets(this.components);
     this.settings = d.settings || {};
     this.syncCommsLibrary($("comms").value);
     this.renderFiles();
@@ -1341,10 +1355,109 @@ export class Workbench {
     }
     this.ctx.notice("Project folder saved.");
   }
+  editComponents() {
+    const dialog = node("dialog", "lesson-note-editor");
+    dialog.setAttribute("aria-label", "Component preset editor");
+    dialog.innerHTML =
+      '<form><header>Component presets <span title="Reuse an existing part’s pin layout and simulation with your own attributes. New device protocols require a simulator model.">ⓘ</span></header><textarea aria-label="Component definitions" spellcheck="false"></textarea><small role="alert"></small><footer><button type="button">Cancel</button><button type="submit">Save components</button></footer></form>';
+    const source = dialog.querySelector("textarea");
+    source.value = JSON.stringify(
+      this.components.length
+        ? this.components
+        : [
+            {
+              name: "10k resistor",
+              base: "wokwi-resistor",
+              attrs: { value: "10000" },
+            },
+          ],
+      null,
+      2,
+    );
+    const close = () => {
+      dialog.close();
+      dialog.remove();
+    };
+    dialog.querySelector('[type="button"]').onclick = close;
+    dialog.querySelector("form").onsubmit = (e) => {
+      e.preventDefault();
+      try {
+        const definitions = JSON.parse(source.value);
+        setComponentPresets(definitions);
+        this.components = definitions;
+        this.ctx.persist();
+        close();
+      } catch (e) {
+        dialog.querySelector("small").textContent = e.message;
+      }
+    };
+    document.body.append(dialog);
+    dialog.showModal();
+    source.focus();
+  }
+  editLessonNote(existing = null) {
+    const dialog = node("dialog", "lesson-note-editor");
+    dialog.setAttribute("aria-label", "Lesson note editor");
+    dialog.innerHTML =
+      '<form><header><input aria-label="Note title" placeholder="Title"><select aria-label="Note format"><option value="markdown">Markdown</option><option value="html">HTML</option></select></header><textarea aria-label="Note source" spellcheck="false"></textarea><footer><button type="button" aria-label="Cancel note">×</button><button type="submit" aria-label="Save note">✓</button></footer></form>';
+    const title = dialog.querySelector("input"),
+      format = dialog.querySelector("select"),
+      source = dialog.querySelector("textarea");
+    title.value = existing?.name || "Lesson note";
+    format.value = existing?.format || "markdown";
+    source.value =
+      existing?.source ||
+      "## Button → LED\n\nPress the **button** to light the LED.\n\n```cpp\ndigitalWrite(ledPin, !digitalRead(buttonPin));\n```";
+    const close = () => {
+      dialog.close();
+      dialog.remove();
+    };
+    dialog.querySelector('[type="button"]').onclick = close;
+    dialog.oncancel = () => dialog.remove();
+    dialog.querySelector("form").onsubmit = (e) => {
+      e.preventDefault();
+      const bounds = $("stage").getBoundingClientRect();
+      const position = this.ctx.canvas.toWorld({
+        clientX: bounds.left + 24,
+        clientY: bounds.top + 24,
+      });
+      const ref = existing || {
+        id: crypto.randomUUID(),
+        kind: "note",
+        x: position.x,
+        y: position.y,
+        width: 320,
+        opacity: 1,
+        blend: "normal",
+      };
+      Object.assign(ref, {
+        name: title.value || "Lesson note",
+        format: format.value,
+        source: source.value,
+      });
+      if (!existing) this.references.push(ref);
+      this.renderReferences();
+      this.ctx.persist();
+      this.tab("properties");
+      close();
+    };
+    document.body.append(dialog);
+    dialog.showModal();
+    source.focus();
+  }
   async loadImages() {
+    const bounds = $("stage").getBoundingClientRect();
+    const position = this.ctx.canvas.toWorld({
+      clientX: bounds.left + 24,
+      clientY: bounds.top + 24,
+    });
     for (const f of this.imageInput.files) {
-      if (f.size > 4000000)
-        throw new Error("Reference images must be under 4 MB.");
+      if (f.size > 24000000)
+        throw new Error(
+          "Scene media must be under 24 MB. Use a shorter video clip.",
+        );
+      if (!/^(image|video)\//.test(f.type))
+        throw new Error("Choose an image or video.");
       const data = await new Promise((resolve, reject) => {
         const r = new FileReader();
         r.onload = () => resolve(r.result);
@@ -1354,9 +1467,10 @@ export class Workbench {
       this.references.push({
         id: crypto.randomUUID(),
         name: f.name,
+        kind: f.type.startsWith("video/") ? "video" : "image",
         src: data,
-        x: 0,
-        y: 0,
+        x: position.x,
+        y: position.y,
         width: 400,
         opacity: 0.5,
         blend: "normal",
@@ -1373,17 +1487,41 @@ export class Workbench {
     $("world").prepend(layer);
     $("referenceProperties").replaceChildren();
     for (const ref of this.references) {
-      const img = node("img", "reference-image");
-      img.src = ref.src;
-      img.alt = ref.name;
-      img.draggable = false;
+      const img = node("div", "reference-image scene-item");
+      img.dataset.reference = ref.id;
+      const handle = node("button", "scene-handle");
+      handle.textContent = ref.name;
+      handle.title = "Drag to move · double-click to edit note";
+      handle.setAttribute("aria-label", "Move " + ref.name);
+      img.append(handle);
+      let content;
+      if (ref.kind === "note") {
+        content = node("article", "lesson-note");
+        content.innerHTML = lessonHTML(ref.source, ref.format);
+        content.ondblclick = (e) => {
+          e.stopPropagation();
+          this.editLessonNote(ref);
+        };
+      } else {
+        content = node(ref.kind === "video" ? "video" : "img", "scene-media");
+        content.src = ref.src;
+        content.alt = ref.name;
+        content.draggable = false;
+        if (ref.kind === "video") {
+          content.controls = true;
+          content.preload = "metadata";
+          content.playsInline = true;
+        }
+      }
+      img.append(content);
       img.style.cssText = `left:${ref.x}px;top:${ref.y}px;width:${ref.width}px;opacity:${ref.opacity};mix-blend-mode:${ref.blend}`;
       layer.append(img);
-      img.onpointerdown = (e) => {
+      img.addEventListener("dblclick", (e) => e.stopPropagation());
+      handle.onpointerdown = (e) => {
         e.stopPropagation();
         const start = { x: e.clientX, y: e.clientY, rx: ref.x, ry: ref.y };
-        img.setPointerCapture(e.pointerId);
-        img.onpointermove = (e) => {
+        handle.setPointerCapture(e.pointerId);
+        handle.onpointermove = (e) => {
           ref.x =
             start.rx + (e.clientX - start.x) / this.ctx.canvas.camera.zoom;
           ref.y =
@@ -1391,8 +1529,8 @@ export class Workbench {
           img.style.left = ref.x + "px";
           img.style.top = ref.y + "px";
         };
-        img.onpointerup = () => {
-          img.onpointermove = null;
+        handle.onpointerup = () => {
+          handle.onpointermove = null;
           this.ctx.persist();
         };
       };
@@ -1400,9 +1538,17 @@ export class Workbench {
       const label = node("span", "");
       label.textContent = ref.name;
       row.append(label);
+      if (ref.kind === "note") {
+        const edit = node("button", "", "✎");
+        edit.title = "Edit lesson note";
+        edit.onclick = () => this.editLessonNote(ref);
+        row.append(edit);
+      }
       for (const [prop, type] of [
         ["opacity", "range"],
         ["width", "number"],
+        ["x", "number"],
+        ["y", "number"],
       ]) {
         const input = node("input", "");
         input.type = type;
@@ -1415,7 +1561,13 @@ export class Workbench {
         input.value = ref[prop];
         input.oninput = () => {
           ref[prop] = Number(input.value);
-          img.style[prop] = prop === "width" ? ref[prop] + "px" : ref[prop];
+          const css = {
+            x: "left",
+            y: "top",
+            width: "width",
+            opacity: "opacity",
+          }[prop];
+          img.style[css] = prop === "opacity" ? ref[prop] : ref[prop] + "px";
           this.ctx.persist();
         };
         row.append(input);

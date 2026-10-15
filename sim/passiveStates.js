@@ -87,5 +87,19 @@ export function passiveStates(network = {}, pins = [], controls = {}) {
         Math.abs(a.volts - b.volts) / (r.ohms + a.ohms + b.ohms);
     result[r.id].power = result[r.id].current ** 2 * r.ohms;
   }
+  for (const group of network.groups || []) {
+    const channels = group.channels.map((id) => result[id]);
+    result[group.id] =
+      group.type === "rgb"
+        ? {
+            ledRed: channels[0].brightness,
+            ledGreen: channels[1].brightness,
+            ledBlue: channels[2].brightness,
+          }
+        : { values: channels.map((s) => (s.lit ? 1 : 0)) };
+    result[group.id].current = channels.reduce((sum, s) => sum + s.current, 0);
+    result[group.id].warning = channels.find((s) => s.warning)?.warning || "";
+    for (const id of group.channels) delete result[id];
+  }
   return result;
 }

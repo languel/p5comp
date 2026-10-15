@@ -408,3 +408,16 @@ p5 preview startup now reports Loading / Starting / Running and visible console 
 Serial disconnects now clear the proxy port's streams, matching native Web Serial. This prevents p5.webserial from repeatedly reacquiring a closed reader and starving the preview's event loop. Regression coverage runs the unmodified p5.webserial library through disconnect/reconnect in a bounded worker.
 
 The p5 code toolbar orders Run / Stop first, followed by communications. Its **↔** selector includes the current state glyph (**ø** None, **∞** p5.webserial, **⌁** navigator.serial, **ƒ** Firmata). Actions use consistent 28px controls and 18px SVG icons.
+
+## Expanded simulation and lesson content
+
+The classic Nano now shares the ATmega328P simulator with Uno. The bundled
+**Nano · displays / RGB / servo / buzzer** example exercises RGB LEDs, a
+single-digit seven-segment display, parallel LCD text, servo pulses and buzzer
+activity using compiled AVR firmware. Further board architectures, I2C/SPI
+displays, multiplexing and audio remain future work.
+
+File contains **Add image / video**, **Add lesson note** (Markdown/HTML), and a
+**Component editor** for reusable part presets. See
+[simulation and lesson canvas](docs/simulation-and-lessons.md) for supported
+protocols, media storage limits and the custom-model extension path.

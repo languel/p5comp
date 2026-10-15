@@ -1,1 +1,6 @@
-[]
+[
+  {
+    "name": "Nano \u00b7 displays / RGB / servo / buzzer",
+    "project": "examples/peripheral-lab.json"
+  }
+]

@@ -9,7 +9,31 @@ export class SonarSimulator {
       <svg viewBox="0 0 280 105" aria-label="Drag the target to change distance"><path class="sonar-beam" d="M25 52 L260 12 L260 92 Z"/><rect class="sonar-source" x="10" y="37" width="20" height="30" rx="3"/><g class="sonar-target" tabindex="0" role="slider" aria-label="Distance target" aria-valuemin="2" aria-valuemax="400"><rect x="-7" y="16" width="14" height="72" rx="3"/><path d="M-18 52 H18 M-18 52 L-12 46 M-18 52 L-12 58 M18 52 L12 46 M18 52 L12 58"/></g></svg>
       <label>Distance <input aria-label="Simulated distance cm" type="number" min="2" max="400" step="1"> cm</label>
       <label><input type="checkbox" aria-label="Simulator no echo"> No echo / out of range</label><small>Drag the target · arrow keys adjust distance</small>`;
-    stage.append(this.panel);
+    document.body.append(this.panel);
+    this.panel.style.position = "fixed";
+    const header = this.panel.querySelector("header");
+    header.style.cursor = "move";
+    header.onpointerdown = (e) => {
+      if (e.target.closest("button")) return;
+      const r = this.panel.getBoundingClientRect(),
+        x = e.clientX,
+        y = e.clientY;
+      header.setPointerCapture(e.pointerId);
+      header.onpointermove = (e) => {
+        this.panel.style.left =
+          Math.max(
+            4,
+            Math.min(innerWidth - r.width - 4, r.left + e.clientX - x),
+          ) + "px";
+        this.panel.style.top =
+          Math.max(
+            4,
+            Math.min(innerHeight - r.height - 4, r.top + e.clientY - y),
+          ) + "px";
+      };
+      header.onpointerup = header.onpointercancel = () =>
+        (header.onpointermove = null);
+    };
     this.target = this.panel.querySelector(".sonar-target");
     this.number = this.panel.querySelector("input[type=number]");
     this.noEcho = this.panel.querySelector("input[type=checkbox]");
@@ -63,6 +87,31 @@ export class SonarSimulator {
     this.panel.querySelector("strong").textContent = id + " · distance";
     this.panel.hidden = false;
     this.sync(id, this.getControl(id) ?? 100);
+    const part = [...document.querySelectorAll(".part")].find(
+      (p) => p.dataset.id === id,
+    );
+    const r = part?.getBoundingClientRect();
+    if (r) {
+      const w = this.panel.offsetWidth,
+        h = this.panel.offsetHeight,
+        gap = 14;
+      const candidates = [
+        { x: r.right + gap, y: r.top },
+        { x: r.left - w - gap, y: r.top },
+        { x: r.left, y: r.bottom + gap },
+        { x: r.left, y: r.top - h - gap },
+      ].map((p) => ({
+        x: Math.max(4, Math.min(innerWidth - w - 4, p.x)),
+        y: Math.max(4, Math.min(innerHeight - h - 4, p.y)),
+      }));
+      const overlap = (p) =>
+        Math.max(0, Math.min(p.x + w, r.right) - Math.max(p.x, r.left)) *
+        Math.max(0, Math.min(p.y + h, r.bottom) - Math.max(p.y, r.top));
+      candidates.sort((a, b) => overlap(a) - overlap(b));
+      this.panel.style.left = candidates[0].x + "px";
+      this.panel.style.top = candidates[0].y + "px";
+      this.panel.style.right = "auto";
+    }
   }
   set(value) {
     if (value !== -1) value = Math.round(Math.max(2, Math.min(400, value)));

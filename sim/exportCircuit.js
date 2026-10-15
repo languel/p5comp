@@ -49,7 +49,15 @@ export function circuitSVG(diagram, references, background, sources = {}) {
         h: b?.offsetHeight || 100,
       };
     }),
-    ...references.map((r) => ({ x: r.x, y: r.y, w: r.width, h: r.width })),
+    ...references.map((r) => ({
+      x: r.x,
+      y: r.y,
+      w: r.width,
+      h:
+        [...document.querySelectorAll("[data-reference]")].find(
+          (e) => e.dataset.reference === r.id,
+        )?.offsetHeight || r.width,
+    })),
   ];
   const x = Math.min(0, ...rectangles.map((r) => r.x)) - 30,
     y = Math.min(0, ...rectangles.map((r) => r.y)) - 30;
@@ -67,17 +75,61 @@ export function circuitSVG(diagram, references, background, sources = {}) {
   root.append(svgNode("rect", { width, height, fill: background }));
   const scene = svgNode("g", { transform: `translate(${-x},${-y})` });
   root.append(scene);
-  for (const r of references)
+  for (const r of references) {
+    const item = [...document.querySelectorAll("[data-reference]")].find(
+      (e) => e.dataset.reference === r.id,
+    );
+    const h = item?.offsetHeight || r.width;
+    if (r.kind === "note") {
+      scene.append(
+        svgNode("rect", {
+          x: r.x,
+          y: r.y,
+          width: r.width,
+          height: h,
+          fill: background,
+          stroke: "#888",
+          opacity: r.opacity,
+        }),
+      );
+      const text = item?.querySelector("article")?.innerText || r.source || "";
+      let y = r.y + 20;
+      for (const line of text.split("\n")) {
+        const t = svgNode("text", {
+          x: r.x + 12,
+          y,
+          fill: "#888",
+          "font-family": "sans-serif",
+          "font-size": 13,
+        });
+        t.textContent = line;
+        scene.append(t);
+        y += 18;
+      }
+      continue;
+    }
+    let src = r.src;
+    if (r.kind === "video") {
+      const video = item?.querySelector("video");
+      if (!video?.videoWidth) continue;
+      const frame = document.createElement("canvas");
+      frame.width = video.videoWidth;
+      frame.height = video.videoHeight;
+      frame.getContext("2d").drawImage(video, 0, 0);
+      src = frame.toDataURL("image/png");
+    }
     scene.append(
       svgNode("image", {
-        href: r.src,
+        href: src,
         x: r.x,
         y: r.y,
         width: r.width,
+        height: h,
         opacity: r.opacity,
         style: `mix-blend-mode:${r.blend}`,
       }),
     );
+  }
   for (const p of diagram.parts) {
     const body = document.querySelector(`[data-id="${p.id}"] .part-body`),
       original = findSVG(body);

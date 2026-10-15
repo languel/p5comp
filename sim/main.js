@@ -1,3 +1,4 @@
+import { isAVRBoard } from "./circuit.js";
 import {
   breadboardName,
   breadboardPins,
@@ -233,7 +234,11 @@ async function writeBytes(bytes) {
 async function getFirmware() {
   const source = sourceValue(arduinoEditor);
   const files = workbench?.arduinoFiles() || {};
-  const buildKey = source + JSON.stringify(files);
+  const board = diagram.parts.some((p) => p.type === "wokwi-arduino-nano")
+    ? "nano"
+    : "uno";
+  const buildKey =
+    source + JSON.stringify(files) + (board === "uno" ? "" : board);
   if (
     artifact?.buildKey === buildKey &&
     artifact?.source === source &&
@@ -258,7 +263,7 @@ async function getFirmware() {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ board: "uno", source, files }),
+        body: JSON.stringify({ board, source, files }),
       },
     );
   } catch {
@@ -293,7 +298,8 @@ function startWorker(hex) {
       $("clock").textContent = d.seconds.toFixed(2) + " s";
       $("led").dataset.on = String(d.led);
       $("led").textContent = "LED 13 · " + (d.led ? "on" : "off");
-      document.querySelector("wokwi-arduino-uno").led13 = d.led;
+      document.querySelector("wokwi-arduino-uno,wokwi-arduino-nano").led13 =
+        d.led;
       for (const [id, state] of Object.entries(d.parts || {})) {
         const element = partElements.get(id);
         if (!element) continue;
@@ -305,6 +311,24 @@ function startWorker(hex) {
             Number(
               diagram.parts.find((p) => p.id === id)?.attrs?.brightness ?? 1,
             );
+        }
+        for (const prop of [
+          "angle",
+          "hasSignal",
+          "characters",
+          "values",
+          "ledRed",
+          "ledGreen",
+          "ledBlue",
+        ])
+          if (state[prop] != null) element[prop] = state[prop];
+        if (
+          state.angle != null ||
+          state.hasSignal != null ||
+          state.characters
+        ) {
+          element.title = `${id} · ${state.powered ? (state.angle != null ? state.angle.toFixed(0) + "°" : state.frequency != null ? state.frequency.toFixed(0) + " Hz" : "LCD running") : "check power connections"}`;
+          continue;
         }
         if (isMomentarySwitch(element.tagName.toLowerCase())) {
           element.title = `${id} · ${state.closed ? "closed (pressed)" : "open (released)"}`;
@@ -335,9 +359,10 @@ function startWorker(hex) {
   paused = false;
   $("pause").disabled = false;
   $("pause").textContent = "Pause";
-  status("Running · simulated Uno");
+  status("Running · simulated Arduino");
   updateConnection();
-  document.querySelector("wokwi-arduino-uno").ledPower = true;
+  document.querySelector("wokwi-arduino-uno,wokwi-arduino-nano").ledPower =
+    true;
 }
 async function runArduino() {
   if (compiling) return;
@@ -375,11 +400,19 @@ function stop() {
   running = false;
   paused = false;
   $("pause").disabled = true;
-  status("Stopped · simulated Uno");
-  const board = document.querySelector("wokwi-arduino-uno");
+  status("Stopped · simulated Arduino");
+  const board = document.querySelector("wokwi-arduino-uno,wokwi-arduino-nano");
   if (board) board.ledPower = false;
   for (const element of partElements.values()) {
     delete element.dataset.simulation;
+    if (element.tagName === "WOKWI-RGB-LED")
+      element.ledRed = element.ledGreen = element.ledBlue = 0;
+    if (element.tagName === "WOKWI-7SEGMENT") element.values = Array(8).fill(0);
+    if (element.tagName === "WOKWI-BUZZER") element.hasSignal = false;
+    if (["WOKWI-LCD1602", "WOKWI-LCD2004"].includes(element.tagName))
+      element.characters = Array(
+        element.tagName === "WOKWI-LCD2004" ? 80 : 32,
+      ).fill(32);
     if (element.tagName === "WOKWI-LED") {
       element.value = false;
       element.brightness = 0;
@@ -393,7 +426,7 @@ function showHealth() {
     topology = resolveCurrentCircuit();
     $("circuitHealth").textContent = topology.warnings.length
       ? topology.warnings.join(" ")
-      : "Wiring ready · Uno at 16 MHz";
+      : `Wiring ready · ${topology.board === "nano" ? "Nano" : "Uno"} at 16 MHz`;
     const visual = diagram.parts.filter(
       (p) =>
         !elementByType.get(p.type)?.modeled &&
@@ -450,15 +483,17 @@ const canvas = new CircuitCanvas({
   },
   onAdd: (point) => elementPicker.open(point),
   onRename: (wrapper) =>
-    workbench?.editValue(
-      wrapper,
-      diagram.parts.find((p) => p.id === wrapper.dataset.id),
-    ),
+    diagram.parts.find((p) => p.id === wrapper.dataset.id)?.type === TYPES[3]
+      ? sonarSimulator.open(wrapper.dataset.id)
+      : workbench?.editValue(
+          wrapper,
+          diagram.parts.find((p) => p.id === wrapper.dataset.id),
+        ),
   onSelectPart: (id) => {
     selectedPart = id;
     workbench?.selectPart(id);
     $("removePart").disabled =
-      !id || id === diagram.parts.find((p) => p.type === TYPES[0])?.id;
+      !id || id === diagram.parts.find((p) => isAVRBoard(p.type))?.id;
     $("partTint").disabled = !id;
     $("grayTint").disabled = !id;
     $("originalTint").disabled = !id;
@@ -580,7 +615,7 @@ function renderParts() {
   $("removeWire").disabled = selectedWire < 0;
   $("removePart").disabled =
     !selectedPart ||
-    selectedPart === diagram.parts.find((p) => p.type === TYPES[0])?.id;
+    selectedPart === diagram.parts.find((p) => isAVRBoard(p.type))?.id;
   partElements.clear();
   $("parts").replaceChildren();
   for (const p of diagram.parts) {
@@ -650,7 +685,7 @@ function renderParts() {
       if (p.type === "wokwi-resistor")
         element.value = String(resistance(p.attrs?.value));
       body.append(element);
-      if (p.type === TYPES[0]) {
+      if (isAVRBoard(p.type)) {
         element.ledPower = running;
       }
       if (p.type === TYPES[2]) {
@@ -863,7 +898,15 @@ function resize() {
   }
 }
 new ResizeObserver(resize).observe(document.querySelector(".preview"));
-$("run").onclick = runArduino;
+$("run").onclick = () => {
+  if (!paused) return runArduino();
+  paused = false;
+  worker?.postMessage({ type: "pause", paused: false });
+  $("pause").disabled = false;
+  $("run").title = "Run Arduino + p5";
+  $("run").setAttribute("aria-label", "Run Arduino + p5");
+  status("Running · simulated Arduino");
+};
 $("compile").onclick = runArduino;
 $("runP5").onclick = runP5;
 $("reset").onclick = runArduino;
@@ -871,8 +914,11 @@ $("pause").onclick = () => {
   if (mode === "usb") return;
   paused = !paused;
   worker?.postMessage({ type: "pause", paused });
-  $("pause").textContent = paused ? "Resume" : "Pause";
-  status(paused ? "Paused · simulated Uno" : "Running · simulated Uno");
+  $("pause").textContent = "Pause";
+  $("pause").disabled = paused;
+  $("run").title = paused ? "Resume simulation" : "Run Arduino + p5";
+  $("run").setAttribute("aria-label", $("run").title);
+  status(paused ? "Paused · simulated Arduino" : "Running · simulated Arduino");
 };
 $("comms").onchange = async () => {
   const oldBaud = api === "firmata" ? 57600 : 9600;
