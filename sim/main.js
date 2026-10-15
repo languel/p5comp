@@ -821,6 +821,19 @@ function renderParts() {
     [...partElements.values()].map((element) => element.updateComplete),
   ).then(() => {
     if (version === partRenderVersion) {
+      for (const element of partElements.values()) {
+        const slider = element.localName === "wokwi-slide-potentiometer";
+        const toggle = element.localName === "wokwi-slide-switch";
+        if (!slider && !toggle) continue;
+        const head = element.shadowRoot?.querySelector(slider ? "#tip" : "#handle");
+        if (head) {
+          head.style.cursor = slider ? "ew-resize" : "pointer";
+          head.setAttribute("aria-label", slider ? "Drag slider" : "Toggle switch");
+          const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
+          title.textContent = slider ? "Drag to change value · Alt-drag to move part" : "Click to toggle · Alt-drag to move part";
+          head.append(title);
+        }
+      }
       canvas.render();
       if (seatingChanged()) changed();
     }

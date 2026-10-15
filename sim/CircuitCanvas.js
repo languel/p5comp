@@ -869,6 +869,12 @@ export class CircuitCanvas {
         1
       );
     }
+    // Let the native controls receive pointer/mouse events on their moving heads.
+    // The case, mounting holes, and pins remain canvas drag targets.
+    if (p.type === "wokwi-slide-potentiometer")
+      return path.some((n) => n.id === "tip" || n.tagName === "INPUT");
+    if (p.type === "wokwi-slide-switch")
+      return path.some((n) => n.id === "handle" || n.tagName === "INPUT");
     if (p.type === TYPES[4])
       return path.some((n) => n.classList?.contains("clickable-element"));
     return path.some(
