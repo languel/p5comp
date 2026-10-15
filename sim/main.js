@@ -1,3 +1,7 @@
+import { InputSimulator } from "./InputSimulator.js";
+import { isPot, isSensorInput } from "./inputModels.js";
+import { boardKind } from "./avrBoards.js";
+import { isNeoPixel } from "./outputModels.js";
 import { isAVRBoard } from "./circuit.js";
 import {
   breadboardName,
@@ -19,6 +23,7 @@ import { initializeCompactUI } from "./compactUI.js";
 import { SonarSimulator } from "./SonarSimulator.js";
 import "./style.css";
 import "@wokwi/elements";
+import "./extraElements.js";
 import { CircuitCanvas } from "./CircuitCanvas.js";
 import { initializeTheme } from "../shared/ui/theme.js";
 import { createEditor } from "../shared/editor/createEditor.js";
@@ -234,9 +239,7 @@ async function writeBytes(bytes) {
 async function getFirmware() {
   const source = sourceValue(arduinoEditor);
   const files = workbench?.arduinoFiles() || {};
-  const board = diagram.parts.some((p) => p.type === "wokwi-arduino-nano")
-    ? "nano"
-    : "uno";
+  const board = boardKind(diagram.parts.find((p) => isAVRBoard(p.type))?.type);
   const buildKey =
     source + JSON.stringify(files) + (board === "uno" ? "" : board);
   if (
@@ -245,7 +248,11 @@ async function getFirmware() {
     typeof artifact.hex === "string"
   )
     return artifact.hex;
-  if (!Object.keys(files).length && source.trim() === lessonSource.trim()) {
+  if (
+    board === "uno" &&
+    !Object.keys(files).length &&
+    source.trim() === lessonSource.trim()
+  ) {
     const response = await fetch(basePath("sim/classroom.hex"));
     if (!response.ok) throw new Error("Bundled classroom HEX could not load.");
     const hex = await response.text();
@@ -255,7 +262,9 @@ async function getFirmware() {
     return hex;
   }
   status("Compiling locally…");
-  log("Compiling Arduino Uno…");
+  log(
+    `Compiling Arduino ${board === "mega" ? "Mega" : board === "nano" ? "Nano" : "Uno"}…`,
+  );
   let response;
   try {
     response = await fetch(
@@ -298,8 +307,9 @@ function startWorker(hex) {
       $("clock").textContent = d.seconds.toFixed(2) + " s";
       $("led").dataset.on = String(d.led);
       $("led").textContent = "LED 13 · " + (d.led ? "on" : "off");
-      document.querySelector("wokwi-arduino-uno,wokwi-arduino-nano").led13 =
-        d.led;
+      document.querySelector(
+        "wokwi-arduino-uno,wokwi-arduino-nano,wokwi-arduino-mega",
+      ).led13 = d.led;
       for (const [id, state] of Object.entries(d.parts || {})) {
         const element = partElements.get(id);
         if (!element) continue;
@@ -322,12 +332,56 @@ function startWorker(hex) {
           "ledBlue",
         ])
           if (state[prop] != null) element[prop] = state[prop];
+        for (const prop of [
+          "energized",
+          "active",
+          "ledPower",
+          "ledDO",
+          "ledSignal",
+          "outerHandAngle",
+          "innerHandAngle",
+        ])
+          if (state[prop] != null) element[prop] = state[prop];
+        if (element.tagName === "WOKWI-STEPPER-MOTOR" && state.steps != null) {
+          element.value = Number(state.steps).toFixed(1);
+          element.units = "steps";
+        }
+        if (state.pixels) {
+          if (element.tagName === "WOKWI-NEOPIXEL")
+            Object.assign(element, state.pixels[0] || { r: 0, g: 0, b: 0 });
+          else
+            state.pixels.forEach((color, i) =>
+              element.tagName === "WOKWI-NEOPIXEL-MATRIX"
+                ? element.setPixel(
+                    Math.floor(i / Number(element.cols)),
+                    i % Number(element.cols),
+                    color,
+                  )
+                : element.setPixel(i, color),
+            );
+          element.title = id + " · " + state.pixels.length + " pixels";
+          continue;
+        }
+        if (state.energized != null) {
+          element.title =
+            id + " · " + (state.energized ? "COM → NO" : "COM → NC");
+          continue;
+        }
+        if (state.digital != null) {
+          element.title =
+            id +
+            " · " +
+            (state.powered
+              ? "AO " + state.analog + " · DO " + Number(state.digital)
+              : "check VCC / GND");
+          continue;
+        }
         if (
           state.angle != null ||
           state.hasSignal != null ||
           state.characters
         ) {
-          element.title = `${id} · ${state.powered ? (state.angle != null ? state.angle.toFixed(0) + "°" : state.frequency != null ? state.frequency.toFixed(0) + " Hz" : "LCD running") : "check power connections"}`;
+          element.title = `${id} · ${state.powered !== false ? (state.angle != null ? state.angle.toFixed(0) + "°" : state.frequency != null ? state.frequency.toFixed(0) + " Hz" : "LCD running") : "check power connections"}`;
           continue;
         }
         if (isMomentarySwitch(element.tagName.toLowerCase())) {
@@ -361,8 +415,9 @@ function startWorker(hex) {
   $("pause").textContent = "Pause";
   status("Running · simulated Arduino");
   updateConnection();
-  document.querySelector("wokwi-arduino-uno,wokwi-arduino-nano").ledPower =
-    true;
+  document.querySelector(
+    "wokwi-arduino-uno,wokwi-arduino-nano,wokwi-arduino-mega",
+  ).ledPower = true;
 }
 async function runArduino() {
   if (compiling) return;
@@ -395,19 +450,29 @@ async function runArduino() {
   }
 }
 function stop() {
+  $("run").title = "Run Arduino + p5";
+  $("run").setAttribute("aria-label", "Run Arduino + p5");
   worker?.terminate();
   worker = null;
   running = false;
   paused = false;
   $("pause").disabled = true;
   status("Stopped · simulated Arduino");
-  const board = document.querySelector("wokwi-arduino-uno,wokwi-arduino-nano");
+  const board = document.querySelector(
+    "wokwi-arduino-uno,wokwi-arduino-nano,wokwi-arduino-mega",
+  );
   if (board) board.ledPower = false;
   for (const element of partElements.values()) {
     delete element.dataset.simulation;
+    if (isNeoPixel(element.tagName.toLowerCase())) {
+      if (element.reset) element.reset();
+      else Object.assign(element, { r: 0, g: 0, b: 0 });
+    }
+    if (element.tagName === "WOKWI-RELAY-MODULE") element.energized = false;
     if (element.tagName === "WOKWI-RGB-LED")
       element.ledRed = element.ledGreen = element.ledBlue = 0;
-    if (element.tagName === "WOKWI-7SEGMENT") element.values = Array(8).fill(0);
+    if (["WOKWI-7SEGMENT", "WOKWI-LED-BAR-GRAPH"].includes(element.tagName))
+      element.values = Array(8).fill(0);
     if (element.tagName === "WOKWI-BUZZER") element.hasSignal = false;
     if (["WOKWI-LCD1602", "WOKWI-LCD2004"].includes(element.tagName))
       element.characters = Array(
@@ -426,7 +491,7 @@ function showHealth() {
     topology = resolveCurrentCircuit();
     $("circuitHealth").textContent = topology.warnings.length
       ? topology.warnings.join(" ")
-      : `Wiring ready · ${topology.board === "nano" ? "Nano" : "Uno"} at 16 MHz`;
+      : `Wiring ready · ${topology.board === "mega" ? "Mega" : topology.board === "nano" ? "Nano" : "Uno"} at 16 MHz`;
     const visual = diagram.parts.filter(
       (p) =>
         !elementByType.get(p.type)?.modeled &&
@@ -483,12 +548,17 @@ const canvas = new CircuitCanvas({
   },
   onAdd: (point) => elementPicker.open(point),
   onRename: (wrapper) =>
-    diagram.parts.find((p) => p.id === wrapper.dataset.id)?.type === TYPES[3]
-      ? sonarSimulator.open(wrapper.dataset.id)
-      : workbench?.editValue(
-          wrapper,
+    isSensorInput(diagram.parts.find((p) => p.id === wrapper.dataset.id)?.type)
+      ? inputSimulator.open(
           diagram.parts.find((p) => p.id === wrapper.dataset.id),
-        ),
+        )
+      : diagram.parts.find((p) => p.id === wrapper.dataset.id)?.type ===
+          TYPES[3]
+        ? sonarSimulator.open(wrapper.dataset.id)
+        : workbench?.editValue(
+            wrapper,
+            diagram.parts.find((p) => p.id === wrapper.dataset.id),
+          ),
   onSelectPart: (id) => {
     selectedPart = id;
     workbench?.selectPart(id);
@@ -568,6 +638,7 @@ $("selectTool").onclick = () => {
 const partDocs = new PartDocs();
 const elementPicker = new ElementPicker(addElement);
 $("addElement").onclick = () => elementPicker.open();
+const inputSimulator = new InputSimulator(setControl, (id) => controls[id]);
 const sonarSimulator = new SonarSimulator(
   $("stage"),
   setControl,
@@ -576,9 +647,10 @@ const sonarSimulator = new SonarSimulator(
 $("routeWire").onclick = () => canvas.autoRoute();
 $("routeWireSimple").onclick = () =>
   canvas.autoRoute(canvas.selectedWire, "simple");
-$("cleanup").onclick = () => {
+$("cleanup").title = "Cleanup wires · Shift-click for simple routing";
+$("cleanup").onclick = (e) => {
   notice("");
-  canvas.cleanup();
+  canvas.cleanup(e.shiftKey ? "simple" : "careful");
 };
 $("undoCanvas").onclick = () => canvas.undo();
 $("redoCanvas").onclick = () => canvas.redo();
@@ -688,14 +760,47 @@ function renderParts() {
       if (isAVRBoard(p.type)) {
         element.ledPower = running;
       }
-      if (p.type === TYPES[2]) {
+      if (isPot(p.type)) {
         element.min = 0;
         element.max = 1023;
-        element.value = controls[p.id] ?? 512;
+        controls[p.id] ??= Number(p.attrs?.value ?? 512);
+        element.value = controls[p.id];
         element.addEventListener("input", () =>
           setControl(p.id, element.value),
         );
       }
+      if (p.type === "wokwi-dip-switch-8") {
+        controls[p.id] ??= p.attrs?.values || Array(8).fill(0);
+        element.values = [...controls[p.id]];
+        element.addEventListener("switch-change", () =>
+          setControl(p.id, [...element.values]),
+        );
+      }
+      if (p.type === "wokwi-slide-switch") {
+        controls[p.id] ??= Number(p.attrs?.value || 0);
+        element.value = controls[p.id];
+        element.addEventListener("input", () =>
+          setControl(p.id, element.value),
+        );
+      }
+      if (p.type === "wokwi-membrane-keypad") {
+        controls[p.id] ??= [];
+        const key = (e, on) => {
+          const values = new Set(controls[p.id]);
+          const k = e.detail.row + "," + e.detail.column;
+          if (on) values.add(k);
+          else values.delete(k);
+          setControl(p.id, [...values]);
+        };
+        element.addEventListener("button-press", (e) => key(e, true));
+        element.addEventListener("button-release", (e) => key(e, false));
+      }
+      if (isSensorInput(p.type))
+        controls[p.id] ??= p.type.includes("photo")
+          ? Number(p.attrs?.lux ?? 500)
+          : p.type.includes("pir")
+            ? false
+            : Number(p.attrs?.level || 0);
       if (isMomentarySwitch(p.type)) {
         element.color = p.attrs?.color || "green";
         controls[p.id] ??= !!p.attrs?.pressed;
@@ -776,7 +881,12 @@ function setControl(id, value) {
   worker?.postMessage({ type: "controls", controls });
   persist();
   const el = partElements.get(id);
-  if (el?.tagName === "WOKWI-POTENTIOMETER") el.value = value;
+  if (
+    el &&
+    (isPot(el.tagName.toLowerCase()) || el.tagName === "WOKWI-SLIDE-SWITCH")
+  )
+    el.value = value;
+  if (el?.tagName === "WOKWI-DIP-SWITCH-8") el.values = [...value];
   if (el && isMomentarySwitch(el.tagName.toLowerCase()))
     el.pressed = Boolean(value);
   const hold = document.querySelector(`[aria-label="Hold ${id}"]`);
@@ -800,7 +910,16 @@ function setControl(id, value) {
 function renderControls() {
   $("controls").replaceChildren();
   for (const p of diagram.parts.filter(
-    (p) => [TYPES[2], TYPES[3]].includes(p.type) || isMomentarySwitch(p.type),
+    (p) =>
+      isPot(p.type) ||
+      p.type === TYPES[3] ||
+      isMomentarySwitch(p.type) ||
+      isSensorInput(p.type) ||
+      [
+        "wokwi-dip-switch-8",
+        "wokwi-slide-switch",
+        "wokwi-membrane-keypad",
+      ].includes(p.type),
   )) {
     const div = document.createElement("div");
     div.className = "control";
@@ -809,7 +928,23 @@ function renderControls() {
     div.append(label);
     const output = document.createElement("output");
     output.dataset.value = p.id;
-    if (isMomentarySwitch(p.type)) {
+    if (
+      isSensorInput(p.type) ||
+      [
+        "wokwi-dip-switch-8",
+        "wokwi-slide-switch",
+        "wokwi-membrane-keypad",
+      ].includes(p.type)
+    ) {
+      const button = document.createElement("button");
+      button.textContent = "Simulate";
+      button.setAttribute("aria-label", "Simulate " + p.id);
+      button.onclick = () => inputSimulator.open(p);
+      div.append(button);
+      output.textContent = Array.isArray(controls[p.id])
+        ? controls[p.id].join(" ")
+        : String(controls[p.id]);
+    } else if (isMomentarySwitch(p.type)) {
       const btn = document.createElement("button");
       btn.textContent = "Hold";
       btn.setAttribute("aria-label", "Hold " + p.id);
@@ -1007,7 +1142,7 @@ $("lesson").onclick = () => {
   selectedPart = null;
   renderParts();
   canvas.commit(before, true);
-  canvas.cleanup();
+  canvas.cleanup(e.shiftKey ? "simple" : "careful");
   canvas.fit();
   notice("Classroom wiring restored. Your Arduino and p5 code are kept.");
 };
@@ -1024,6 +1159,7 @@ $("save").onclick = () => {
 };
 $("open").onclick = () => $("projectFile").click();
 function openProject(d) {
+  inputSimulator.close();
   const candidate = d.diagram || d;
   validateDiagram(candidate);
   stop();
@@ -1071,7 +1207,7 @@ function openProject(d) {
     api === "native" ? "navigator.serial" : "p5.webserial";
   renderParts();
   changed();
-  notice("Project opened. Run to start the Uno.");
+  notice("Project opened. Run to start the Arduino.");
 }
 $("projectFile").onchange = async () => {
   const f = $("projectFile").files[0];
@@ -1126,6 +1262,12 @@ $("usb").onclick = async () => {
 };
 async function uploadFirmware() {
   if (!serial.connected || !artifact) return;
+  if (diagram.parts.some((p) => p.type === "wokwi-arduino-mega")) {
+    notice(
+      "Mega simulation/compilation is supported; use the reference Code uploader for Mega hardware (STK500v2).",
+    );
+    return;
+  }
   $("upload").disabled = true;
   try {
     const port = await serial.releasePort();
@@ -1283,7 +1425,7 @@ $("apiLabel").textContent =
 if (diagram.canvasEditor !== 2) {
   requestAnimationFrame(() => {
     diagram.canvasEditor = 2;
-    canvas.cleanup();
+    canvas.cleanup(e.shiftKey ? "simple" : "careful");
     canvas.fit();
   });
 }

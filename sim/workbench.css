@@ -1091,3 +1091,42 @@ input[type="checkbox"]:focus-visible {
 .lesson-note-editor footer {
   justify-content: flex-end;
 }
+.input-simulator {
+  position: fixed;
+  width: 270px;
+  padding: 12px;
+  border: 1px solid var(--ui-line);
+  border-radius: 7px;
+  background: var(--ui-panel);
+  color: var(--ui-text);
+  box-shadow: 0 4px 18px #0003;
+  z-index: 100;
+}
+.input-simulator[hidden] {
+  display: none;
+}
+.input-simulator header,
+.input-simulator label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+.input-simulator input[type="range"] {
+  width: 135px;
+}
+.input-simulator input[type="number"] {
+  width: 100px;
+}
+.input-simulator small {
+  display: block;
+  font-size: 11px;
+  color: var(--ui-quiet);
+  margin-top: 8px;
+}
+.keypad-controls {
+  display: grid;
+  gap: 5px;
+}

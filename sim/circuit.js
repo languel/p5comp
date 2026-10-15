@@ -1,9 +1,14 @@
+import { isNeoPixel, pixelCount } from "./outputModels.js";
+import { isPot, isSensorInput } from "./inputModels.js";
+import { boardKind, boardLayout } from "./avrBoards.js";
 import { isBreadboard, boardSpec, breadboardPins } from "./breadboard.js";
 import { resistance } from "./passiveStates.js";
 import { elementByType, elementPins } from "./elements.js";
 import { freePoint } from "./partGeometry.js";
 export const isAVRBoard = (type) =>
-  ["wokwi-arduino-uno", "wokwi-arduino-nano"].includes(type);
+  ["wokwi-arduino-uno", "wokwi-arduino-nano", "wokwi-arduino-mega"].includes(
+    type,
+  );
 export const isMomentarySwitch = (type) =>
   ["wokwi-pushbutton", "wokwi-pushbutton-6mm"].includes(type);
 export const TYPES = [
@@ -85,6 +90,44 @@ export function validateDiagram(d) {
     if (!elementByType.has(p.type))
       throw new Error(`Unsupported part: ${p.type}`);
     if (p.type === "wokwi-resistor") resistance(p.attrs?.value);
+    if (isNeoPixel(p.type)) {
+      for (const prop of ["pixels", "rows", "cols"])
+        if (
+          p.attrs?.[prop] != null &&
+          (!Number.isInteger(Number(p.attrs[prop])) ||
+            Number(p.attrs[prop]) < 1 ||
+            Number(p.attrs[prop]) > 256)
+        )
+          throw new Error(`${p.id}: ${prop} must be an integer from 1 to 256.`);
+      if (
+        p.type === "wokwi-neopixel-matrix" &&
+        Number(p.attrs?.rows || 8) * Number(p.attrs?.cols || 8) > 256
+      )
+        throw new Error(`${p.id}: maximum 256 pixels per matrix.`);
+    }
+    if (
+      p.type === "wokwi-membrane-keypad" &&
+      p.attrs?.columns != null &&
+      ![3, 4].includes(Number(p.attrs.columns))
+    )
+      throw new Error(`${p.id}: keypad columns must be 3 or 4.`);
+    for (const prop of [
+      "threshold",
+      "gamma",
+      "rl10",
+      "delayTime",
+      "inhibitTime",
+      "stepsPerRevolution",
+    ])
+      if (
+        p.attrs?.[prop] != null &&
+        (!Number.isFinite(Number(p.attrs[prop])) ||
+          Number(p.attrs[prop]) < 0 ||
+          (["gamma", "rl10", "stepsPerRevolution"].includes(prop) &&
+            Number(p.attrs[prop]) === 0))
+      )
+        throw new Error(`${p.id}: ${prop} needs a valid positive value.`);
+
     if (
       !Number.isFinite(p.left) ||
       !Number.isFinite(p.top) ||
@@ -139,12 +182,19 @@ export function resolveCircuit(diagram, contacts = []) {
   for (const p of diagram.parts) {
     for (const n of partPins(p)) known.add(`${p.id}:${n}`);
     if (isAVRBoard(p.type)) {
+      if (p.type === "wokwi-arduino-mega") {
+        for (const n of [4, 5]) join(`${p.id}:GND.1`, `${p.id}:GND.${n}`);
+        for (const n of [1, 2]) join(`${p.id}:5V`, `${p.id}:5V.${n}`);
+        join(`${p.id}:SDA`, `${p.id}:20`);
+        join(`${p.id}:SCL`, `${p.id}:21`);
+      }
       join(`${p.id}:GND.1`, `${p.id}:GND.2`);
       join(`${p.id}:GND.1`, `${p.id}:GND.3`);
       if (p.type === "wokwi-arduino-nano")
         for (const pin of ["5V", "11", "12", "13"])
           join(`${p.id}:${pin}`, `${p.id}:${pin}.2`);
     }
+    if (p.type === "wokwi-a4988") join(`${p.id}:GND.1`, `${p.id}:GND.2`);
     if (isBreadboard(p.type))
       for (let n = 1; n <= boardSpec(p).columns; n++) {
         for (const r of ["b", "c", "d", "e"])
@@ -168,17 +218,19 @@ export function resolveCircuit(diagram, contacts = []) {
   }
   const uno = diagram.parts.filter((p) => isAVRBoard(p.type));
   if (uno.length !== 1)
-    throw new Error(
-      "Use exactly one simulated Arduino Uno or Nano. Mega and non-AVR boards are not emulated yet.",
-    );
+    throw new Error("Use exactly one simulated Arduino Uno, Nano or Mega.");
+  const kind = boardKind(uno[0].type),
+    layout = boardLayout(kind);
+  const terminal = (n) =>
+    n < layout.analogBase ? String(n) : "A" + (n - layout.analogBase);
   const id = uno[0].id,
     equal = (a, b) => find(a) === find(b),
     warnings = [];
   if (equal(`${id}:5V`, `${id}:GND.1`))
     throw new Error("5V is shorted to GND. Remove the short before running.");
   const target = (endpoint) => {
-    for (let n = 0; n < (uno[0].type === "wokwi-arduino-nano" ? 22 : 20); n++) {
-      const name = n < 14 ? String(n) : "A" + (n - 14);
+    for (let n = 0; n < layout.analogBase + layout.analogCount; n++) {
+      const name = terminal(n);
       if (equal(endpoint, `${id}:${name}`)) return n;
     }
     return null;
@@ -189,11 +241,11 @@ export function resolveCircuit(diagram, contacts = []) {
     sonars = [],
     buttons = [];
   for (const p of diagram.parts) {
-    if (p.type === TYPES[2]) {
+    if (isPot(p.type)) {
       const pin = target(`${p.id}:SIG`),
         power = powered(p);
       pots.push({ id: p.id, pin, powered: power });
-      if (!power || pin === null || pin < 14)
+      if (!power || pin === null || pin < layout.analogBase)
         warnings.push(`${p.id}: connect VCC/GND and SIG to an analog input.`);
     }
     if (p.type === TYPES[3]) {
@@ -229,15 +281,15 @@ export function resolveCircuit(diagram, contacts = []) {
   ];
   if (new Set(drivers).size !== drivers.length)
     throw new Error(
-      "Multiple sensor drivers share an Uno input. Separate those signal nets.",
+      "Multiple sensor drivers share an Arduino input. Separate those signal nets.",
     );
   const rails = [];
-  for (let n = 0; n < 20; n++) {
-    const terminal = `${id}:${n < 14 ? n : "A" + (n - 14)}`;
-    if (equal(terminal, `${id}:5V`) || equal(terminal, `${id}:GND.1`)) {
-      rails.push({ pin: n, high: equal(terminal, `${id}:5V`) });
+  for (let n = 0; n < layout.digitalCount; n++) {
+    const endpoint = `${id}:${terminal(n)}`;
+    if (equal(endpoint, `${id}:5V`) || equal(endpoint, `${id}:GND.1`)) {
+      rails.push({ pin: n, high: equal(endpoint, `${id}:5V`) });
       warnings.push(
-        `${terminal} is tied to a supply rail; do not configure it as an opposing output.`,
+        `${endpoint} is tied to a supply rail; do not configure it as an opposing output.`,
       );
     }
   }
@@ -251,8 +303,8 @@ export function resolveCircuit(diagram, contacts = []) {
     sources: [
       { net: net(`${id}:5V`), volts: 5 },
       { net: net(`${id}:GND.1`), volts: 0 },
-      ...Array.from({ length: 20 }, (_, pin) => ({
-        net: net(`${id}:${pin < 14 ? pin : "A" + (pin - 14)}`),
+      ...Array.from({ length: layout.digitalCount }, (_, pin) => ({
+        net: net(`${id}:${pin < layout.analogBase ? pin : "A" + (pin - 14)}`),
         pin,
       })),
     ],
@@ -283,15 +335,88 @@ export function resolveCircuit(diagram, contacts = []) {
         forwardVoltage: Number(p.attrs?.forwardVoltage) || 2,
       });
   }
+  const switchedContacts = passive.switches;
+  const sensors = [];
+  for (const p of diagram.parts) {
+    const add = (a, b, extra) =>
+      switchedContacts.push({
+        id: p.id,
+        a: net(p.id + ":" + a),
+        b: net(p.id + ":" + b),
+        ...extra,
+      });
+    if (p.type === "wokwi-dip-switch-8")
+      for (let i = 0; i < 8; i++)
+        add(i + 1 + "a", i + 1 + "b", {
+          kind: "dip",
+          index: i,
+          initial: p.attrs?.values || Array(8).fill(0),
+        });
+    if (p.type === "wokwi-slide-switch") {
+      add("2", "1", {
+        kind: "slide",
+        position: 0,
+        initial: Number(p.attrs?.value || 0),
+      });
+      add("2", "3", {
+        kind: "slide",
+        position: 1,
+        initial: Number(p.attrs?.value || 0),
+      });
+    }
+    if (p.type === "wokwi-membrane-keypad")
+      for (let row = 0; row < 4; row++)
+        for (let col = 0; col < Number(p.attrs?.columns || 4); col++)
+          add("R" + (row + 1), "C" + (col + 1), {
+            kind: "keypad",
+            key: row + "," + col,
+          });
+    if (p.type === "wokwi-relay-module") {
+      add("COM", "NO", { kind: "relay", energized: true });
+      add("COM", "NC", { kind: "relay", energized: false });
+    }
+    if (isSensorInput(p.type))
+      sensors.push({
+        id: p.id,
+        type: p.type,
+        attrs: p.attrs || {},
+        powered: powered(p),
+        analog: target(p.id + ":" + (p.type.includes("photo") ? "AO" : "AOUT")),
+        digitalNet: net(
+          p.id +
+            ":" +
+            (p.type.includes("photo")
+              ? "DO"
+              : p.type.includes("pir")
+                ? "OUT"
+                : "DOUT"),
+        ),
+      });
+  }
+  const digital = {
+    high: net(id + ":5V"),
+    ground: net(id + ":GND.1"),
+    pinNets: Array.from({ length: layout.digitalCount }, (_, n) =>
+      net(id + ":" + terminal(n)),
+    ),
+    contacts: switchedContacts,
+  };
   const peripherals = [];
   for (const p of diagram.parts) {
-    if (["wokwi-rgb-led", "wokwi-7segment"].includes(p.type)) {
+    if (
+      ["wokwi-rgb-led", "wokwi-7segment", "wokwi-led-bar-graph"].includes(
+        p.type,
+      )
+    ) {
       const rgb = p.type === "wokwi-rgb-led";
-      const channels = rgb
-        ? ["R", "G", "B"]
-        : ["A", "B", "C", "D", "E", "F", "G", "DP"];
+      const bar = p.type === "wokwi-led-bar-graph";
+      const channels = bar
+        ? Array.from({ length: 10 }, (_, i) => "A" + (i + 1))
+        : rgb
+          ? ["R", "G", "B"]
+          : ["A", "B", "C", "D", "E", "F", "G", "DP"];
       const common = rgb ? "COM" : "COM.1";
-      if (!rgb && Number(p.attrs?.digits || 1) !== 1)
+      if (!rgb && !bar && Number(p.attrs?.digits || 1) !== 1)
         warnings.push(
           p.id + ": only single-digit seven-segment simulation is supported.",
         );
@@ -302,7 +427,7 @@ export function resolveCircuit(diagram, contacts = []) {
         passive.leds.push({
           id: channel,
           a: net(p.id + ":" + (anode ? common : pin)),
-          c: net(p.id + ":" + (anode ? pin : common)),
+          c: net(p.id + ":" + (bar ? "C" + (i + 1) : anode ? pin : common)),
           forwardVoltage: 2,
         });
         return channel;
@@ -315,6 +440,14 @@ export function resolveCircuit(diagram, contacts = []) {
     }
     if (
       [
+        "wokwi-relay-module",
+        "wokwi-a4988",
+        "wokwi-stepper-motor",
+        "wokwi-biaxial-stepper",
+        "wokwi-neopixel",
+        "wokwi-led-ring",
+        "wokwi-led-strip",
+        "wokwi-neopixel-matrix",
         "wokwi-servo",
         "wokwi-buzzer",
         "wokwi-lcd1602",
@@ -337,19 +470,77 @@ export function resolveCircuit(diagram, contacts = []) {
             equal(p.id + ":" + n, id + ":5V") ? true : false,
           ]),
         ),
-        powered:
-          p.type === "wokwi-servo"
-            ? equal(p.id + ":V+", id + ":5V") &&
-              equal(p.id + ":GND", id + ":GND.1")
-            : p.type.includes("lcd")
+        powered: isNeoPixel(p.type)
+          ? equal(
+              p.id + ":" + (p.type === "wokwi-neopixel" ? "VDD" : "VCC"),
+              id + ":5V",
+            ) &&
+            equal(
+              p.id + ":" + (p.type === "wokwi-neopixel" ? "VSS" : "GND"),
+              id + ":GND.1",
+            )
+          : p.type === "wokwi-relay-module"
+            ? powered(p)
+            : p.type === "wokwi-a4988"
               ? equal(p.id + ":VDD", id + ":5V") &&
-                equal(p.id + ":VSS", id + ":GND.1")
-              : equal(p.id + ":2", id + ":GND.1"),
+                equal(p.id + ":GND.2", id + ":GND.1")
+              : p.type === "wokwi-servo"
+                ? equal(p.id + ":V+", id + ":5V") &&
+                  equal(p.id + ":GND", id + ":GND.1")
+                : p.type.includes("lcd")
+                  ? equal(p.id + ":VDD", id + ":5V") &&
+                    equal(p.id + ":VSS", id + ":GND.1")
+                  : equal(p.id + ":2", id + ":GND.1"),
       });
     }
   }
+  // Driver/motor links and NeoPixel DOUT chains retain explicit wiring semantics.
+  for (const p of peripherals) {
+    if (p.type === "wokwi-relay-module")
+      p.connectedIN =
+        target(p.id + ":IN") !== null ||
+        equal(p.id + ":IN", id + ":5V") ||
+        equal(p.id + ":IN", id + ":GND.1");
+    if (
+      p.type === "wokwi-a4988" &&
+      target(p.id + ":SLEEP") === null &&
+      !equal(p.id + ":SLEEP", id + ":GND.1")
+    )
+      p.levels.SLEEP = true;
+    if (p.type === "wokwi-stepper-motor") {
+      const driver = peripherals.find(
+        (d) =>
+          d.type === "wokwi-a4988" &&
+          [
+            ["A+", "2A"],
+            ["A-", "2B"],
+            ["B+", "1A"],
+            ["B-", "1B"],
+          ].every(([a, b]) => equal(p.id + ":" + a, d.id + ":" + b)),
+      );
+      if (driver) p.driver = driver.id;
+    }
+    if (isNeoPixel(p.type)) {
+      const original = diagram.parts.find((x) => x.id === p.id);
+      p.count = pixelCount(original);
+      p.offset = 0;
+      let current = p.id,
+        seen = new Set([current]);
+      while (p.pins.DIN === null) {
+        const upstream = peripherals.find(
+          (d) => isNeoPixel(d.type) && equal(current + ":DIN", d.id + ":DOUT"),
+        );
+        if (!upstream || seen.has(upstream.id)) break;
+        seen.add(upstream.id);
+        p.offset += pixelCount(diagram.parts.find((x) => x.id === upstream.id));
+        p.powered = p.powered && upstream.powered;
+        current = upstream.id;
+        p.pins.DIN = target(current + ":DIN");
+      }
+    }
+  }
   return {
-    board: uno[0].type === "wokwi-arduino-nano" ? "nano" : "uno",
+    board: kind,
     pots,
     sonars,
     buttons,
@@ -357,5 +548,7 @@ export function resolveCircuit(diagram, contacts = []) {
     warnings,
     passive,
     peripherals,
+    sensors,
+    digital,
   };
 }

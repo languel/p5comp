@@ -1182,6 +1182,42 @@ export class Workbench {
         '<summary>Switch contacts · wiring</summary><pre>1.l ───── 1.r\n     ╲   closes while pressed\n2.l ───── 2.r</pre><p>Same number = always connected. Connect one wire to contact 1 and the other to contact 2 (either side). No polarity; rotation changes the position, not the pin names.</p><p>Input example: D2 → 1.l, GND → 2.l, with INPUT_PULLUP. Released = HIGH; pressed = LOW. For an LED, put the switch in series with its resistor.</p><a href="https://docs.wokwi.com/parts/wokwi-pushbutton" target="_blank" rel="noopener">Official pin reference ↗</a>';
       panel.append(help);
     }
+    const modelAttributes =
+      {
+        "wokwi-photoresistor-sensor": { threshold: 2.5, rl10: 50, gamma: 0.7 },
+        "wokwi-small-sound-sensor": { threshold: 512, activeLow: false },
+        "wokwi-big-sound-sensor": { threshold: 512, activeLow: false },
+        "wokwi-pir-motion-sensor": {
+          delayTime: 5,
+          inhibitTime: 1.2,
+          retrigger: "1",
+        },
+        "wokwi-relay-module": { transistor: "npn", activeLow: false },
+        "wokwi-stepper-motor": { stepsPerRevolution: 200 },
+        "wokwi-biaxial-stepper": { stepsPerRevolution: 200 },
+        "wokwi-neopixel": { colorOrder: "GRB" },
+        "wokwi-led-ring": { colorOrder: "GRB" },
+        "wokwi-led-strip": { colorOrder: "GRB" },
+        "wokwi-neopixel-matrix": { colorOrder: "GRB" },
+      }[part.type] || {};
+    for (const [name, fallback] of Object.entries(modelAttributes))
+      field(
+        name,
+        part.attrs?.[name] ?? fallback,
+        (value) =>
+          this.ctx.updatePart({
+            ...part,
+            attrs: {
+              ...part.attrs,
+              [name]: typeof fallback === "number" ? Number(value) : value,
+            },
+          }),
+        typeof fallback === "boolean"
+          ? "checkbox"
+          : typeof fallback === "number"
+            ? "number"
+            : "text",
+      );
     const element = this.ctx.element(),
       properties = element?.constructor.elementProperties || new Map();
     for (const [name] of properties) {

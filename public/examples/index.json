@@ -1,6 +1,46 @@
 [
   {
-    "name": "Nano \u00b7 displays / RGB / servo / buzzer",
+    "name": "Nano · displays / RGB / servo / buzzer",
     "project": "examples/peripheral-lab.json"
+  },
+  {
+    "name": "DIP switches · eight digital inputs",
+    "project": "examples/dip-inputs.json"
+  },
+  {
+    "name": "Keypad · scan rows and columns",
+    "project": "examples/keypad-scan.json"
+  },
+  {
+    "name": "Slider and switch · analog + digital",
+    "project": "examples/slider-switch.json"
+  },
+  {
+    "name": "Light and motion · photoresistor + PIR",
+    "project": "examples/light-motion.json"
+  },
+  {
+    "name": "Sound sensors · analog level and threshold",
+    "project": "examples/sound-levels.json"
+  },
+  {
+    "name": "NeoPixels · ring → strip → single LED",
+    "project": "examples/neopixel-chain.json"
+  },
+  {
+    "name": "NeoPixel matrix · row-major pixels",
+    "project": "examples/neopixel-matrix.json"
+  },
+  {
+    "name": "Relay · normally open / normally closed",
+    "project": "examples/relay-contacts.json"
+  },
+  {
+    "name": "Stepper · A4988 STEP / DIR",
+    "project": "examples/stepper-driver.json"
+  },
+  {
+    "name": "Mega · high pins / A15 / LED bar",
+    "project": "examples/mega-gpio.json"
   }
 ]

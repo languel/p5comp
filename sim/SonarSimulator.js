@@ -5,6 +5,16 @@ export class SonarSimulator {
     this.panel = document.createElement("section");
     this.panel.className = "sonar-simulator";
     this.panel.hidden = true;
+    document.addEventListener(
+      "keydown",
+      (e) => {
+        if (e.key === "Escape" && !this.panel.hidden) {
+          this.panel.hidden = true;
+          e.stopPropagation();
+        }
+      },
+      true,
+    );
     this.panel.innerHTML = `<header><strong>Distance simulator</strong><button aria-label="Close distance simulator">×</button></header>
       <svg viewBox="0 0 280 105" aria-label="Drag the target to change distance"><path class="sonar-beam" d="M25 52 L260 12 L260 92 Z"/><rect class="sonar-source" x="10" y="37" width="20" height="30" rx="3"/><g class="sonar-target" tabindex="0" role="slider" aria-label="Distance target" aria-valuemin="2" aria-valuemax="400"><rect x="-7" y="16" width="14" height="72" rx="3"/><path d="M-18 52 H18 M-18 52 L-12 46 M-18 52 L-12 58 M18 52 L12 46 M18 52 L12 58"/></g></svg>
       <label>Distance <input aria-label="Simulated distance cm" type="number" min="2" max="400" step="1"> cm</label>

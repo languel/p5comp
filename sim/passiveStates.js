@@ -1,3 +1,4 @@
+import { contactClosed } from "./inputModels.js";
 export function resistance(value) {
   const match = String(value ?? 1000)
     .trim()
@@ -21,7 +22,7 @@ export function passiveStates(network = {}, pins = [], controls = {}) {
   const resistors = network.resistors || [],
     adj = new Map();
   const closed = (network.switches || [])
-    .filter((s) => controls[s.id])
+    .filter((s) => contactClosed(s, controls))
     .map((s) => ({ ...s, ohms: 0, switch: true }));
   for (const r of [...resistors, ...closed])
     for (const [a, b] of [
@@ -53,7 +54,8 @@ export function passiveStates(network = {}, pins = [], controls = {}) {
   };
   const result = {};
   for (const s of network.switches || [])
-    result[s.id] = { pressed: !!controls[s.id], closed: !!controls[s.id] };
+    if (!s.kind)
+      result[s.id] = { pressed: !!controls[s.id], closed: !!controls[s.id] };
   for (const r of resistors) result[r.id] = { current: 0, power: 0 };
   for (const led of network.leds || []) {
     const a = find(led.a),

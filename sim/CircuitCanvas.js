@@ -199,6 +199,27 @@ export class CircuitCanvas {
           else if ([TYPES[2], TYPES[3]].includes(p.type)) direction = "down";
           else if (p.type === TYPES[4])
             direction = pin.name.endsWith(".l") ? "left" : "right";
+          if (!direction) {
+            const size = this.size(p);
+            if (p.type === "wokwi-dip-switch-8")
+              direction = pin.name.endsWith("a") ? "down" : "up";
+            else if (
+              ["wokwi-membrane-keypad", "wokwi-led", "wokwi-rgb-led"].includes(
+                p.type,
+              )
+            )
+              direction = "down";
+            else {
+              const edges = [
+                ["up", Math.abs(pin.y)],
+                ["down", Math.abs(size.h - pin.y)],
+                ["left", Math.abs(pin.x)],
+                ["right", Math.abs(size.w - pin.x)],
+              ];
+              edges.sort((a, b) => a[1] - b[1]);
+              direction = edges[0][0];
+            }
+          }
           if (direction) {
             const vectors = {
                 up: { x: 0, y: -1 },
@@ -538,7 +559,7 @@ export class CircuitCanvas {
     this.selectedBend = -1;
     this.commit(before);
   }
-  cleanup() {
+  cleanup(mode = "careful") {
     this.refreshPins();
     const before = this.checkpoint();
     const order = this.diagram.connections
@@ -551,7 +572,7 @@ export class CircuitCanvas {
         ),
       }))
       .sort((a, b) => a.length - b.length);
-    for (const { i } of order) this.route(i);
+    for (const { i } of order) this.route(i, mode);
     this.selectedBend = -1;
     this.commit(before);
   }
@@ -852,6 +873,8 @@ export class CircuitCanvas {
       return path.some((n) => n.classList?.contains("clickable-element"));
     return path.some(
       (n) =>
+        (n.hasAttribute?.("tabindex") &&
+          n.getRootNode() instanceof ShadowRoot) ||
         n.id === "reset-button" ||
         n.getAttribute?.("role") === "slider" ||
         (n.tagName === "BUTTON" && n.getRootNode() instanceof ShadowRoot) ||

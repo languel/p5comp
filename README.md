@@ -168,15 +168,15 @@ p5 sources, Arduino code, controls and cached firmware; **Open project** restore
 them. A complete starter is at `/sim/classroom.physical-p5.json`.
 
 The first supported circuit is Uno R3 / ATmega328P at 16 MHz, HC-SR04 on D9/D8,
-pot on A0, buttons on D2/D3 with `INPUT_PULLUP`, and built-in LED 13. Additional
-instances of those inputs and breadboards are simulated. All catalog parts can
-be placed and wired, with behavior limited to these classroom models. JSON uses
+pot on A0, buttons on D2/D3 with `INPUT_PULLUP`, and built-in LED 13. Uno, Nano and Mega and the additional input/output models are listed in
+[simulation and lesson canvas](docs/simulation-and-lessons.md). All catalog parts can
+be placed and wired; a filled dot in the picker marks modeled behavior. JSON uses
 a documented subset of Wokwi's part/connection names; arbitrary Wokwi projects,
 Wokwi string wire-route metadata, I2C/SPI devices, ESP32, and general analog circuit solving
 are not implemented. Disconnected digital inputs follow configured pull-ups;
 unpulled floating inputs resolve low. Missing pot power reads zero; missing
 sonar power/trigger produces no echo. Supply shorts and conflicting sensor
-drivers are rejected. This model does not calculate current or output contention.
+drivers are rejected. LED/resistor series paths estimate current; this is not a general circuit solver and output contention is not electrically modeled.
 
 The default project can run from a static local/HTTPS host with no remote
 simulation service. Editing Arduino C++ still needs the local compiler helper;
@@ -414,8 +414,7 @@ The p5 code toolbar orders Run / Stop first, followed by communications. Its **â
 The classic Nano now shares the ATmega328P simulator with Uno. The bundled
 **Nano Â· displays / RGB / servo / buzzer** example exercises RGB LEDs, a
 single-digit seven-segment display, parallel LCD text, servo pulses and buzzer
-activity using compiled AVR firmware. Further board architectures, I2C/SPI
-displays, multiplexing and audio remain future work.
+activity using compiled AVR firmware. Mega 2560, DIP/keypad/slider/switch inputs, sound/photo/PIR sensors, NeoPixels, LED bars, relays and A4988 steppers now have dedicated catalog lessons. Each includes cached firmware and routed wires. I2C/SPI display protocols, mechanical/acoustic models and live microphone input remain future work.
 
 File contains **Add image / video**, **Add lesson note** (Markdown/HTML), and a
 **Component editor** for reusable part presets. See

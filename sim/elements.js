@@ -1,5 +1,7 @@
+import { extraCatalog } from "./extraCatalog.js";
 import { isBreadboard } from "./breadboard.js";
 import catalog from "./elements.json" with { type: "json" };
+catalog.push(...extraCatalog);
 const legacyBoard = catalog.find((e) => e.type === "wokwi-breadboard");
 Object.assign(legacyBoard, {
   name: "Breadboard long",
@@ -41,6 +43,34 @@ for (const info of catalog)
   }
 for (const info of catalog) {
   const models = {
+    "wokwi-arduino-mega":
+      "ATmega2560 · 256 KB flash · 8 KB SRAM · 70 GPIO/16 ADC · timers 0–5 and UARTs 0–3",
+    "wokwi-dip-switch-8":
+      "Eight independent bidirectional contacts · click switches or use simulator",
+    "wokwi-membrane-keypad":
+      "Scanned 4×3 / 4×4 matrix · multiple keys · no diodes (ghosting possible)",
+    "wokwi-slide-potentiometer": "Powered analog slider · 0–1023",
+    "wokwi-slide-switch": "SPDT · middle pin 2 selects 1 or 3",
+    "wokwi-small-sound-sensor":
+      "Deterministic sound-level input · AO/DO threshold · no microphone required",
+    "wokwi-big-sound-sensor":
+      "Deterministic sound-level input · AO/DO threshold · no microphone required",
+    "wokwi-photoresistor-sensor":
+      "Lux → LDR divider voltage and digital threshold · rl10/gamma attributes",
+    "wokwi-pir-motion-sensor":
+      "Motion triggers timed OUT · delay/inhibit/retrigger · emulated time",
+    "wokwi-led-bar-graph":
+      "Ten independent series LED channels · individual anode/cathode pins",
+    "wokwi-neopixel": "WS2812 800 kHz · GRB/RGB order · DIN/DOUT chaining",
+    "wokwi-led-ring":
+      "WS2812 800 kHz · configurable pixels · DIN/DOUT chaining",
+    "wokwi-neopixel-matrix":
+      "WS2812 800 kHz · row-major rows×cols · up to 256 pixels",
+    "wokwi-stepper-motor":
+      "Ideal bipolar full/half steps or A4988 driver · steps and angle · no mechanical load",
+    "wokwi-biaxial-stepper":
+      "Two independent bipolar coil sequences · inner/outer angle",
+
     "wokwi-arduino-nano":
       "ATmega328P at 16 MHz · A6/A7 analog inputs · upload not hardware-tested",
     "wokwi-rgb-led":
