@@ -104,7 +104,16 @@ const notice = (message) => {
   $("notice").hidden = !message;
   $("notice").textContent = message || "";
 };
+const boardLabel = () => boardKind(diagram.parts.find(p => isAVRBoard(p.type))?.type).toUpperCase();
+function usbIdentity() {
+  const port = serial.port;
+  const info = port?.getInfo?.() || {};
+  return port?.deviceName || port?.name || port?.path || (info.usbVendorId != null
+    ? `USB ${info.usbVendorId.toString(16).padStart(4, "0")}:${(info.usbProductId || 0).toString(16).padStart(4, "0")}`
+    : "USB serial device");
+}
 const status = (s) => {
+  s = s.replace(/simulated (?:Arduino|Uno)/g, `(${boardLabel()} sim)`);
   agentSurface?.emit("runtime.status", { message: s });
   $("status").textContent = s;
   $("run").dataset.running = String(running);
@@ -198,6 +207,10 @@ function setCode(editor, text) {
 }
 function updateConnection() {
   workbench?.uploadState(serial.connected);
+  $("usb").dataset.connected = String(serial.connected);
+  $("usb").title = serial.connected ? `USB connected · ${usbIdentity()} (${boardLabel()}) · connection options` : "USB disconnected · connection options";
+  $("usb").setAttribute("aria-label", $("usb").title);
+  if ($("arduinoEditorStatus")) $("arduinoEditorStatus").dataset.usb = serial.connected ? "connected" : "disconnected";
   bridge.updateState(
     {},
     api !== "none" && (running || (mode === "usb" && serial.connected)),
@@ -1376,7 +1389,7 @@ $("clearLog").onclick = () => {
 serial.addEventListener("bytes", (e) => receive(e.detail));
 serial.addEventListener("connect", () => {
   mode = "usb";
-  status("Connected · physical Uno");
+  status(`Connected · ${usbIdentity()} (${boardLabel()})`);
   updateConnection();
   runP5();
 });
@@ -1385,35 +1398,58 @@ serial.addEventListener("disconnect", () => {
   updateConnection();
 });
 serial.addEventListener("error", (e) => notice(e.detail.message));
-$("usb").onclick = async () => {
-  try {
-    if (serial.connected) {
-      await serial.disconnect();
-      mode = "simulation";
-      $("usb").textContent = "Connect USB Arduino";
-      return;
-    }
-    stop();
-    const grantedPorts = await navigator.serial.getPorts();
-    await serial.connect({
-      baudRate: Number($("monitorBaud").value),
-      port: grantedPorts.length === 1 ? grantedPorts[0] : null,
-    });
-    $("usb").textContent = "Disconnect USB Arduino";
-  } catch (e) {
-    notice(e.message);
+let usbBusy = false;
+async function connectUSB(port = null) {
+  stop();
+  await serial.connect({ baudRate: Number($("monitorBaud").value), port });
+}
+const usbMenu = document.createElement("div");
+usbMenu.className = "usb-connection-menu";
+usbMenu.setAttribute("popover", "auto");
+document.body.append(usbMenu);
+$("usb").onclick = () => {
+  usbMenu.replaceChildren();
+  const add = (label, action) => {
+    const button = document.createElement("button");
+    button.textContent = label;
+    button.disabled = usbBusy;
+    button.onclick = async () => {
+      usbMenu.hidePopover();
+      usbBusy = true;
+      try { await action(); } catch (error) { if (error.name !== "NotFoundError") notice(error.message); }
+      finally { usbBusy = false; updateConnection(); }
+    };
+    usbMenu.append(button);
+  };
+  if (serial.connected) {
+    add(`Disconnect ${usbIdentity()}`, async () => { await serial.disconnect(); mode = "simulation"; });
   }
+  add(serial.connected ? "Choose a different USB device…" : "Choose USB device…", async () => {
+    // Request first, within the click gesture; cancelling preserves the active connection.
+    const port = await navigator.serial.requestPort();
+    if (port === serial.port) return;
+    if (serial.connected) await serial.disconnect();
+    await connectUSB(port);
+  });
+  const rect = $("usb").getBoundingClientRect();
+  usbMenu.style.left = Math.min(rect.left, innerWidth - 280) + "px";
+  usbMenu.style.top = rect.bottom + 4 + "px";
+  usbMenu.showPopover();
 };
 async function uploadFirmware() {
-  if (!serial.connected || !artifact) return;
+  if (usbBusy) return;
   if (diagram.parts.some((p) => p.type === "wokwi-arduino-mega")) {
     notice(
       "Mega simulation/compilation is supported; use the reference Code uploader for Mega hardware (STK500v2).",
     );
     return;
   }
+  usbBusy = true;
   $("upload").disabled = true;
+  $("compileUpload").disabled = true;
   try {
+    if (!serial.connected) await connectUSB();
+    await getFirmware();
     const port = await serial.releasePort();
     try {
       await flashUno(port, artifact.hex, (p) => {
@@ -1423,13 +1459,14 @@ async function uploadFirmware() {
     } finally {
       await serial.reconnect(port, Number($("monitorBaud").value));
     }
-    status("Uploaded and verified · physical Uno");
-    log("Uploaded and verified · physical Uno");
+    status(`Uploaded and verified · ${usbIdentity()} (${boardLabel()})`);
+    log(`Uploaded and verified · ${usbIdentity()} (${boardLabel()})`);
   } catch (e) {
     notice(e.message);
     log("Upload failed: " + e.message);
     workbench?.editorStatus("arduino", "Upload failed: " + e.message, "error");
   } finally {
+    usbBusy = false;
     updateConnection();
   }
 }
@@ -1870,3 +1907,6 @@ document.addEventListener("click", (e) => {
 document.addEventListener("p5comp:human-p5-stop", () => { if (!agentMuteActions) agentSurface?.action("runtime", { action: "p5_stop" }); });
 
 circuitAudio.mount(document.getElementById("globalSettings"));
+
+updateConnection();
+status(`Ready · (${boardLabel()} sim)`);

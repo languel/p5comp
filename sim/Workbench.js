@@ -131,6 +131,11 @@ export class Workbench {
         node(
           "label",
           "",
+          'Word wrap (Alt+Z) <input id="editorWordWrap" type="checkbox" aria-label="Editor word wrap">',
+        ),
+        node(
+          "label",
+          "",
           'Icon size <input id="uiIconSize" type="number" min="12" max="28" step="1" aria-label="Interface icon size">',
         ),
       );
@@ -187,6 +192,7 @@ export class Workbench {
       );
       $("editorTheme").value = editorPreferences().theme;
       $("editorFontSize").value = editorPreferences().fontSize;
+      $("editorWordWrap").checked = Boolean(editorPreferences().wordWrap);
       document.dispatchEvent(new Event("p5comp:refresh-selects"));
     };
     $("appThemeButton").onclick = () => $("themeToggle").click();
@@ -197,6 +203,8 @@ export class Workbench {
     };
     $("editorTheme").onchange = () =>
       setEditorPreferences({ theme: $("editorTheme").value });
+    $("editorWordWrap").onchange = () =>
+      setEditorPreferences({ wordWrap: $("editorWordWrap").checked });
     $("editorFontSize").onchange = () =>
       setEditorPreferences({ fontSize: $("editorFontSize").value });
     document.addEventListener("p5comp:editor-settings", syncPreferences);
@@ -352,9 +360,8 @@ export class Workbench {
     uploadCode.onclick = () =>
       this.action(async () => {
         this.bottomTab("console");
-        await ctx.compile();
-        ctx.persist();
         await ctx.upload();
+        ctx.persist();
       });
     $("compile").title = "Compile and run";
     $("compile").setAttribute("aria-label", "Compile and run");
@@ -1061,7 +1068,7 @@ export class Workbench {
     if ($("p5Autorun")) $("p5Autorun").setAttribute("aria-pressed", "false");
   }
   uploadState(connected) {
-    if ($("compileUpload")) $("compileUpload").disabled = !connected;
+    if ($("compileUpload")) $("compileUpload").disabled = false;
   }
   syncTransport(arduinoRunning = this.arduinoRunning || false) {
     this.arduinoRunning = arduinoRunning;

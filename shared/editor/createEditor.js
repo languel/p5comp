@@ -29,6 +29,7 @@ export function createEditor({
 }) {
   const theme = new Compartment();
   const syntax = new Compartment();
+  const wrapping = new Compartment();
   const languageSupport = (name) =>
     name === "cpp"
       ? cpp()
@@ -62,7 +63,7 @@ export function createEditor({
     doc: value,
     extensions: [
       basicSetup,
-      ...(lineWrapping ? [EditorView.lineWrapping] : []),
+      wrapping.of((editorPreferences().wordWrap ?? lineWrapping) ? EditorView.lineWrapping : []),
       syntax.of(languageSupport(language)),
       language === "cpp"
         ? cppLanguageData
@@ -84,7 +85,10 @@ export function createEditor({
   const apply = () => {
     const prefs = editorPreferences();
     editor.dom.style.fontSize = prefs.fontSize + "px";
-    editor.dispatch({ effects: theme.reconfigure(editorTheme(prefs)) });
+    editor.dispatch({ effects: [
+      theme.reconfigure(editorTheme(prefs)),
+      wrapping.reconfigure((prefs.wordWrap ?? lineWrapping) ? EditorView.lineWrapping : []),
+    ] });
   };
   editor.tidy = async () => {
     const source = editor.state.doc.toString();
@@ -103,6 +107,12 @@ export function createEditor({
   editor.dom.addEventListener(
     "keydown",
     (e) => {
+      if (e.altKey && !e.metaKey && !e.ctrlKey && !e.shiftKey && e.code === "KeyZ") {
+        e.preventDefault();
+        e.stopPropagation();
+        setEditorPreferences({ wordWrap: !(editorPreferences().wordWrap ?? lineWrapping) });
+        return;
+      }
       if (!(e.metaKey || e.ctrlKey) || !e.shiftKey) return;
       if (e.key.toLowerCase() === "f") {
         e.preventDefault();

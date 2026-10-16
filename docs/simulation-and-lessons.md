@@ -113,3 +113,22 @@ Capture overlays use a compact top control bar, including close, that appears on
 Main Circuit and p5 tabs have independent subtle running glows; reduced-motion preferences use a static glow. The p5 render label is `p5`, and the circuit-code inspector uses the shared chip glyph.
 
 Capture transparency: the half-circle control in a capture bar opens background key settings. Choose **Remove black · SketchCam**, Remove white, or a custom key color; tune threshold/softness and brightness. The WebGL preview generates a transparent matte, removes the overlay's backing/shadow, respects mirror and opacity, and snapshots retain the keyed alpha. Original video remains available. These are saved project attributes (`keyMode`, `keyColor`, `keyThreshold`, `keySoftness`, `keyLift`). Keying estimates transparency after capture; it cannot recover the original alpha once a camera pipeline has flattened it. SketchCam publishes BGRA frames, but camera/browser conversions may flatten that channel. A future direct RGBA transport would preserve it exactly.
+
+
+### Editor wrapping and USB connections
+
+Alt+Z toggles word wrap across code editors. The preference is saved locally and
+is also available in Settings alongside editor font size.
+
+The USB control opens connection options on every click, including choosing a
+different device or disconnecting the current device. Connected USB has a green
+indicator; disconnected USB has a hollow indicator. Device status includes the
+board type; simulation uses `(UNO sim)` (or the selected board). Web Serial does
+not normally expose a macOS device path, so USB vendor/product identifiers are
+shown when a device name/path is unavailable.
+
+Compile and upload can start while disconnected: choose the device first. When
+already connected, it compiles the current sketch, releases the serial monitor
+port, uploads and verifies the firmware, then reopens the runtime connection at
+the selected baud rate. Hardware and simulation remain mutually exclusive.
+Mega hardware upload still requires a separate STK500v2 uploader.

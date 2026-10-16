@@ -3,6 +3,8 @@ export class SerialConnection extends EventTarget {
   reader = null;
   isReading = false;
   readTask = null;
+  writes = new Set();
+  releasing = false;
   buffer = "";
   decoder = new TextDecoder();
 
@@ -41,9 +43,13 @@ export class SerialConnection extends EventTarget {
   async disconnect() {
     const activePort = this.port;
     if (!activePort) return;
-    await this.pauseReading();
-    this.port = null;
-    await activePort.close();
+    this.releasing = true;
+    try {
+      await this.pauseReading();
+      await Promise.allSettled([...this.writes]);
+      await activePort.close();
+      this.port = null;
+    } finally { this.releasing = false; }
     this.buffer = "";
     this.dispatchEvent(new Event("disconnect"));
   }
@@ -51,9 +57,13 @@ export class SerialConnection extends EventTarget {
   async releasePort() {
     const activePort = this.port;
     if (!activePort) throw new Error("There is no connected serial port to release.");
-    await this.pauseReading();
-    this.port = null;
-    await activePort.close();
+    this.releasing = true;
+    try {
+      await this.pauseReading();
+      await Promise.allSettled([...this.writes]);
+      await activePort.close();
+      this.port = null;
+    } finally { this.releasing = false; }
     this.dispatchEvent(new Event("disconnect"));
     return activePort;
   }
@@ -87,13 +97,15 @@ export class SerialConnection extends EventTarget {
   }
 
   async write(data) {
-    if (!this.port?.writable) throw new Error("Connect to a board before sending data.");
+    if (this.releasing || !this.port?.writable) throw new Error("Connect to a board before sending data.");
     const writer = this.port.writable.getWriter();
-    try {
-      await writer.write(typeof data === "string" ? new TextEncoder().encode(data) : data);
-    } finally {
-      writer.releaseLock();
-    }
+    const task = (async () => {
+      try {
+        await writer.write(typeof data === "string" ? new TextEncoder().encode(data) : data);
+      } finally { writer.releaseLock(); }
+    })();
+    this.writes.add(task);
+    try { await task; } finally { this.writes.delete(task); }
   }
 
   async writeLine(text) {

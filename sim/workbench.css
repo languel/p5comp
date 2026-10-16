@@ -1830,3 +1830,14 @@ button[data-running="true"][aria-label="Stop p5"] {
 .capture-key-settings select { width: 145px; min-width: 0; font-size: 11px; }
 .capture-key-settings input[type="color"] { width: 28px; height: 24px; padding: 2px; }
 .camera-overlay.keyed-capture:not(:hover) { outline: none; border-color: transparent; }
+
+/* USB state stays legible independently of hover and keyboard focus. */
+#usb { position: relative; }
+#usb::after { content: ""; position: absolute; right: 2px; bottom: 2px; width: 5px; height: 5px; border: 1px solid currentColor; border-radius: 50%; background: transparent; }
+#usb[data-connected="true"] { color: #79b98b; background: #79b98b12; }
+#usb[data-connected="true"]::after { background: #79b98b; box-shadow: 0 0 5px #79b98680; }
+.usb-connection-menu { position: fixed; margin: 0; padding: 5px; border: 1px solid var(--border, #555); border-radius: 6px; background: var(--panel, #242426); color: var(--text, #ddd); min-width: 260px; }
+.usb-connection-menu:popover-open { display: grid; gap: 3px; }
+.usb-connection-menu button { text-align: left; padding: 8px; }
+#arduinoEditorStatus[data-usb="connected"]::before { color: #79b98b; text-shadow: 0 0 5px #79b98b70; }
+#arduinoEditorStatus[data-usb="disconnected"][data-level="info"]::before { content: "○ "; }
