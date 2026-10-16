@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {keyAlpha,keyColor} from '../sim/videoKey.js';
+test('black key removes background and retains gray SketchCam strokes',()=>{const s={keyMode:'black',keyThreshold:.04,keySoftness:.08};assert.equal(keyAlpha([0,0,0],s),0);assert.equal(keyAlpha([.25,.25,.25],s),1);assert.ok(keyAlpha([.08,.08,.08],s)>0&&keyAlpha([.08,.08,.08],s)<1);});
+test('white/custom keys and no key preserve intended foreground',()=>{assert.equal(keyAlpha([1,1,1],{keyMode:'white'}),0);assert.equal(keyAlpha([0,0,0],{keyMode:'white'}),1);assert.equal(keyAlpha([0,1,0],{keyMode:'color',keyColor:'#00ff00'}),0);assert.equal(keyAlpha([0,0,0],{keyMode:'none'}),1);assert.deepEqual(keyColor({keyMode:'color',keyColor:'bad'}),[0,1,0]);});

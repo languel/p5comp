@@ -1,3 +1,4 @@
+import {createVideoKey} from "./videoKey.js";
 import {listCameras,cameraConstraints} from "./cameraSources.js";
 import { icon } from "./uiIcons.js";
 export function installSceneMedia(wb) {
@@ -290,6 +291,7 @@ export function decorateMedia(wb, ref, scene, content, handle, row) {
     placeholder.textContent = "Camera off";
     placeholder.hidden = !!content.srcObject;
     scene.append(placeholder);
+    const keyRenderer=createVideoKey(content,scene,ref,message=>wb.ctx.notice(message));
     const controls = document.createElement("div");
     controls.onpointerdown = (e) => e.stopPropagation();
     controls.onclick = (e) => e.stopPropagation();
@@ -444,7 +446,7 @@ export function decorateMedia(wb, ref, scene, content, handle, row) {
         context.translate(canvas.width, 0);
         context.scale(-1, 1);
       }
-      context.drawImage(content, 0, 0);
+      context.drawImage(keyRenderer.frame(), 0, 0);
       const src = canvas.toDataURL("image/png"),
         name = "webcam-" + Date.now() + ".png";
       wb.assets[name] = {
@@ -481,7 +483,19 @@ export function decorateMedia(wb, ref, scene, content, handle, row) {
       flip.setAttribute("aria-pressed", String(ref.flipX));
       wb.ctx.persist();
     };
-    controls.append(start,sourceSelect,share,snap,flip,opacity);
+    const keyButton=document.createElement("button");
+    keyButton.className="ui-icon-button";keyButton.append(icon("half"));
+    keyButton.title="Transparency / background key";keyButton.setAttribute("aria-label",keyButton.title);
+    const keyPanel=document.createElement("div");keyPanel.className="capture-key-settings";keyPanel.hidden=true;
+    keyPanel.innerHTML='<label>Background<select aria-label="Capture background key"><option value="none">Original video</option><option value="black">Remove black · SketchCam</option><option value="white">Remove white</option><option value="color">Remove color</option></select></label><label>Key color<input type="color" aria-label="Capture key color"></label><label>Threshold<input type="range" min="0" max="0.8" step="0.005" aria-label="Key threshold"></label><label>Softness<input type="range" min="0.005" max="0.5" step="0.005" aria-label="Key softness"></label><label>Brightness<input type="range" min="0.25" max="4" step="0.05" aria-label="Key brightness"></label>';
+    for(const [label,name,fallback]of [["Capture background key","keyMode","none"],["Capture key color","keyColor","#00ff00"],["Key threshold","keyThreshold",.04],["Key softness","keySoftness",.08],["Key brightness","keyLift",1]]){
+      const input=keyPanel.querySelector(`[aria-label="${label}"]`);input.value=ref[name]??fallback;
+      input.oninput=input.onchange=()=>{ref[name]=input.type==='range'?Number(input.value):input.value;keyRenderer.update();keyButton.setAttribute("aria-pressed",String(!!ref.keyMode&&ref.keyMode!=="none"));wb.ctx.persist();};
+    }
+    keyButton.setAttribute("aria-pressed",String(!!ref.keyMode&&ref.keyMode!=="none"));keyButton.setAttribute("aria-expanded","false");
+    keyButton.onclick=()=>{keyPanel.hidden=!keyPanel.hidden;keyButton.setAttribute("aria-expanded",String(!keyPanel.hidden));};
+    keyPanel.onkeydown=e=>{if(e.key==='Escape'){keyPanel.hidden=true;keyButton.setAttribute("aria-expanded","false");keyButton.focus();e.stopPropagation();}};
+    controls.append(start,sourceSelect,share,snap,flip,keyButton,opacity,keyPanel);
     const close=scene.querySelector(".media-close");
     if(close)controls.append(close);
   }
