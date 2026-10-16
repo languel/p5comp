@@ -480,10 +480,13 @@ body.unified {
   position: relative;
 }
 .unified .bar .brand {
-  font-family: ui-monospace, monospace;
-  font-size: 20px;
-  width: 42px;
-  text-align: center;
+  display: grid;
+  place-items: center;
+  flex: 0 0 36px;
+  width: 36px;
+  height: var(--ui-icon-button-size, 28px);
+  margin: 0;
+  padding: 0;
 }
 .unified .bar .project-name {
   position: absolute;
@@ -716,7 +719,7 @@ input[type="checkbox"]:checked::after {
   line-height: 11px;
 }
 input[type="checkbox"]:focus-visible {
-  outline: 2px solid var(--ui-quiet);
+  outline: 1px dashed var(--ui-focus);
   outline-offset: 2px;
 }
 .arduino-transport,
@@ -1037,10 +1040,10 @@ input[type="checkbox"]:focus-visible {
 }
 .lesson-note {
   padding: 14px;
-  background: var(--ui-panel);
-  color: var(--ui-text);
+  background: var(--note-background, #f6f4ee);
+  color: var(--note-color, #343436);
   cursor: text;
-  font-size: 13px;
+  font-size: var(--note-font-size, 13px);
   overflow-wrap: anywhere;
 }
 .lesson-note > :first-child {
@@ -1130,3 +1133,618 @@ input[type="checkbox"]:focus-visible {
   display: grid;
   gap: 5px;
 }
+
+/* One scale for interface glyphs; labels and editor text keep their own sizes. */
+:root {
+  --ui-icon-size: 18px;
+  --ui-icon-button-size: max(28px, calc(var(--ui-icon-size) + 10px));
+}
+.unified .bar > button,
+.unified .bar summary,
+.unified .canvas-tools > button,
+.unified .canvas-tools > label,
+.unified .canvas-settings > summary,
+.unified .canvas-inspector > button,
+.unified .section-bar > button,
+.unified .arduino-transport button,
+.unified .main-view-tools > button,
+.unified .glyph-select-trigger,
+.unified .wb-tabs[aria-label="Inspector"] > button,
+.unified .wb-tabs[aria-label="Main views"] > button,
+.unified #collapseBottom,
+.unified #appThemeButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  flex-shrink: 0;
+  width: auto;
+  min-width: var(--ui-icon-button-size);
+  height: var(--ui-icon-button-size);
+  padding: 4px;
+  font-size: var(--ui-icon-size);
+  line-height: 1;
+  text-align: center;
+}
+.unified
+  :is(
+    .bar,
+    .canvas-tools,
+    .canvas-inspector,
+    .section-bar,
+    .main-view-tools,
+    .wb-tabs
+  )
+  button
+  svg,
+.unified .canvas-tools label svg {
+  width: var(--ui-icon-size);
+  height: var(--ui-icon-size);
+  flex-shrink: 0;
+  display: block;
+}
+.unified .menu-row-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--ui-icon-button-size);
+  font-size: var(--ui-icon-size);
+  line-height: 1;
+  vertical-align: middle;
+}
+.unified #globalSettings input[type="number"] {
+  width: 64px;
+}
+.unified .bar .wb-menu :is(#workbenchColor, #outputColor) {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  padding: 0;
+  border: 1px solid var(--ui-line);
+  border-radius: 50%;
+  overflow: hidden;
+  cursor: pointer;
+}
+.unified :is(#workbenchColor, #outputColor)::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+.unified :is(#workbenchColor, #outputColor)::-webkit-color-swatch {
+  border: 0;
+  border-radius: 50%;
+}
+.unified :is(#workbenchColor, #outputColor)::-moz-color-swatch {
+  border: 0;
+  border-radius: 50%;
+}
+
+/* Ink, rather than font metrics, defines interface icon size. See docs/interface-icons.md. */
+.unified .ui-icon-button {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 4px;
+  min-width: var(--ui-icon-button-size);
+  height: var(--ui-icon-button-size);
+  line-height: 1;
+}
+.unified .ui-icon-button::before {
+  display: none;
+}
+.unified .ui-icon {
+  display: block;
+  width: var(--ui-icon-size);
+  height: var(--ui-icon-size);
+  flex: 0 0 var(--ui-icon-size);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.unified .ui-wordmark {
+  display: block;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: var(--ui-icon-size);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+.unified .ui-icon-button[hidden] {
+  display: none !important;
+}
+.unified #collapseBottom .ui-icon {
+  transform: rotate(90deg);
+}
+.unified .glyph-select-options > button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.4;
+}
+
+/* Global settings live alongside code, properties, and help. */
+.settings-pane {
+  overflow: auto;
+  padding: 12px;
+}
+#globalSettings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+#globalSettings > label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 34px;
+}
+#globalSettings
+  input:not([type="color"]):not([type="checkbox"]):not([type="number"]) {
+  width: min(60%, 260px);
+  min-width: 0;
+}
+#globalSettings input[type="checkbox"] {
+  accent-color: var(--ui-accent);
+}
+.unified #globalSettings input[type="color"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--ui-line);
+  border-radius: 50%;
+  overflow: hidden;
+  cursor: pointer;
+}
+.unified #run {
+  background: transparent;
+  color: var(--ui-text);
+  margin-left: auto;
+}
+.unified #run:hover {
+  background: var(--ui-hover);
+}
+.unified #run[aria-pressed="true"] {
+  background: var(--ui-accent-fill);
+  box-shadow: inset 0 0 0 1px var(--ui-accent);
+}
+.unified .section-foot #status {
+  display: block;
+  flex: 0 1 auto;
+  max-width: 38%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.unified #pause,
+.unified #reset {
+  display: none !important;
+}
+.wb-bottom .log-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.wb-bottom #sendForm {
+  display: flex;
+  flex: 1 1 360px;
+  gap: 6px;
+}
+.wb-bottom #sendText {
+  flex: 1;
+  min-width: 80px;
+}
+.serial-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.serial-options label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ui-quiet);
+}
+.serial-options select {
+  color: var(--ui-text);
+  background: var(--ui-panel);
+}
+
+/* A shared drawer size keeps the canvas still when changing tool tabs. */
+.unified .wb-bottom {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: clamp(150px, 24dvh, 220px);
+  min-height: 0;
+  max-height: none;
+}
+.unified .wb-bottom > .wb-tabs {
+  grid-row: 1;
+}
+.unified .wb-bottom > [data-tool] {
+  grid-row: 2;
+  min-height: 0;
+  max-height: none;
+  overflow: auto;
+}
+.unified .wb-bottom > .section-foot {
+  grid-row: 3;
+  min-height: 23px;
+}
+.unified .wb-bottom pre {
+  max-height: none;
+}
+.unified .wb-bottom > [data-tool="serial"]:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.unified .wb-bottom #log {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.unified .wb-bottom.collapsed {
+  height: auto;
+  grid-template-rows: auto auto;
+}
+.unified .wb-bottom.collapsed > .section-foot {
+  grid-row: 2;
+}
+.unified .wb-bottom.collapsed > [data-tool] {
+  display: none !important;
+}
+
+/* Main views live in the global toolbar; no extra row above the canvas. */
+.unified .bar .main-view-tools {
+  display: flex;
+  border: 0;
+  padding: 0;
+  gap: 4px;
+}
+.unified .bar .main-view-tools .wb-tabs {
+  margin: 0;
+}
+.unified #settingsPanelToggle[aria-pressed="true"],
+.unified .wb-menu [data-layout][aria-pressed="true"] {
+  background: var(--ui-hover);
+}
+.unified .workspace[data-layout] {
+  grid-template-rows: minmax(0, 1fr);
+}
+.unified .workspace[data-layout] > .circuit-panel,
+.unified .workspace[data-layout] > .preview-panel {
+  grid-row: 1;
+}
+.unified .workspace[data-layout="vertical"] {
+  grid-template-rows: minmax(0, var(--view-first, 1fr)) minmax(
+      0,
+      var(--view-second, 1fr)
+    );
+}
+.unified .workspace[data-layout="vertical"] > .preview-panel {
+  grid-row: 2;
+}
+.unified .workspace[data-layout="horizontal"] > .view-divider {
+  top: 0;
+}
+.unified .workspace[data-layout="vertical"] > .view-divider {
+  top: calc(100% * var(--view-ratio, 0.5) - 3px);
+}
+.note-properties {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.note-source-tools {
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  border-bottom: 1px solid var(--ui-line);
+}
+.note-source-tools input {
+  flex: 1;
+  min-width: 0;
+}
+#noteSourceEditor {
+  flex: 1;
+  min-height: 160px;
+  overflow: auto;
+}
+#noteSourceEditor .cm-editor {
+  height: 100%;
+}
+.wb-right [data-pane="properties"]:has(#noteProperties:not([hidden])) {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.scene-note {
+  z-index: 5;
+}
+.scene-item.selected {
+  outline: 1px dashed var(--ui-accent);
+  outline-offset: 2px;
+}
+.lesson-note .katex-display {
+  margin: 0.5em 0;
+  overflow: auto;
+}
+.element-thumb {
+  display: grid;
+  place-items: center;
+}
+
+.scene-note {
+  display: flex;
+  flex-direction: column;
+  background: var(--note-background);
+  color: var(--note-color);
+  border-color: #8886;
+}
+.scene-note .scene-handle {
+  background: transparent;
+  color: inherit;
+  flex: 0 0 auto;
+}
+.scene-note .lesson-note {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+.note-resize {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: linear-gradient(
+    135deg,
+    transparent 50%,
+    #8888 51%,
+    transparent 60%,
+    #8888 61%,
+    transparent 70%
+  );
+  cursor: nwse-resize;
+}
+.note-appearance {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  padding: 6px;
+  border-bottom: 1px solid var(--ui-line);
+}
+.note-appearance label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+.note-appearance input[type="number"] {
+  width: 65px;
+}
+.note-appearance input[type="color"] {
+  width: 26px;
+  height: 26px;
+  padding: 2px;
+}
+/* Paint translucent note paper once, so alpha is not compounded. */
+.scene-note .lesson-note {
+  background: transparent;
+}
+
+.example-folder > summary {
+  cursor: pointer;
+  padding: 8px 10px;
+  color: var(--ui-text);
+  font-size: 12px;
+}
+.example-folder > summary::marker {
+  color: var(--ui-quiet);
+}
+.example-folder > section {
+  display: flex;
+  flex-direction: column;
+  padding-left: 12px;
+  border-left: 1px solid var(--ui-line);
+  margin-left: 12px;
+}
+.example-folder > section > button {
+  white-space: normal;
+  text-align: left;
+}
+.example-folder:not([open]) > section {
+  display: none;
+}
+
+.unified .bar .example-folder > summary {
+  display: flex;
+  justify-content: flex-start;
+  width: 100%;
+  height: auto;
+  padding: 8px;
+  font-size: 12px;
+  gap: 8px;
+}
+.example-folder-mark {
+  display: inline-block;
+  color: var(--ui-quiet);
+}
+.example-folder[open] > summary .example-folder-mark {
+  transform: rotate(90deg);
+}
+/* Runtime controls share the main transport's active state. */
+#compile[data-running="true"],
+button[data-running="true"][aria-label="Stop p5"] {
+  background: var(--ui-hover);
+  box-shadow: inset 0 0 0 1px var(--ui-quiet);
+}
+.sketch-library {
+  width: min(620px, 90vw);
+  max-height: 80vh;
+  overflow: auto;
+  background: var(--ui-panel);
+  color: var(--ui-text);
+  border: 1px solid var(--ui-line);
+  border-radius: 8px;
+  padding: 16px;
+}
+.sketch-library header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.sketch-library input {
+  width: 100%;
+  margin-bottom: 8px;
+}
+.sketch-library > div > div {
+  display: flex;
+  gap: 6px;
+  border-bottom: 1px solid var(--ui-line);
+}
+.sketch-library > div > div > button:first-child {
+  flex: 1;
+  text-align: left;
+}
+.scene-visual {
+  min-height: 40px;
+}
+.scene-visual .scene-media {
+  max-height: 100%;
+}
+.scene-visual .media-resize {
+  opacity: 0;
+  position: absolute;
+  bottom: 0;
+  right: 0;
+}
+.scene-visual:hover .media-resize,
+.scene-visual:focus-within .media-resize {
+  opacity: 1;
+}
+.webcam-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  background: var(--ui-panel);
+  opacity: 0;
+}
+.scene-visual:hover .webcam-controls,
+.scene-visual:focus-within .webcam-controls {
+  opacity: 1;
+}
+.scene-visual:has(video:not([src])) {
+  background: var(--ui-hover);
+}
+.webcam-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--ui-quiet);
+  pointer-events: none;
+  background: var(--ui-panel);
+}
+.webcam-placeholder[hidden] {
+  display: none;
+}
+.webcam-controls {
+  z-index: 2;
+}
+.webcam-controls.camera-off {
+  opacity: 1;
+}
+.media-resize {
+  z-index: 3;
+}
+#webcamOverlayLayer {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  pointer-events: none;
+}
+.camera-overlay {
+  position: fixed;
+  pointer-events: auto;
+  box-shadow: 0 4px 22px #0005;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.camera-overlay .webcam-controls {
+  right: 0;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+}
+.camera-overlay .webcam-controls input {
+  width: 80px;
+}
+.camera-overlay .webcam-controls button[aria-pressed="true"] {
+  background: var(--ui-hover);
+}
+.camera-overlay .webcam-placeholder {
+  padding: 20px;
+  text-align: center;
+}
+.media-close {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  z-index: 5;
+  background: var(--ui-panel);
+  color: var(--ui-text);
+  opacity: 0.8;
+}
+.media-close:hover {
+  opacity: 1;
+}
+.media-context-menu {
+  position: fixed;
+  z-index: 1200;
+  background: var(--ui-panel);
+  color: var(--ui-text);
+  border: 1px solid var(--ui-line);
+  border-radius: 6px;
+  padding: 5px;
+  box-shadow: 0 4px 14px #0004;
+}
+.media-context-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+}
+
+.agent-settings { display: grid; gap: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.agent-settings h4, .agent-settings p { margin: 0; }
+.agent-settings p, .agent-settings output { font-size: .85rem; color: var(--muted); overflow-wrap: anywhere; }
+.agent-settings label { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.agent-settings input:not([type="checkbox"]), .agent-settings select { min-width: 0; width: 55%; }
+.agent-settings > div { display: flex; flex-wrap: wrap; gap: 6px; }
+.agent-settings > div button { padding: 6px 10px; font-size: .85rem; }
+#agentProcess[aria-pressed="true"] { color: var(--error, #d87a7a); background: var(--selected); }
+
+.unified .bar .brand-glyph { display: block; width: 32px; height: 24px; margin: 0; flex: none; }
+
+.scene-note .lesson-note { min-height: 80px; box-sizing: border-box; }
+.lesson-note[contenteditable] { white-space: pre-wrap; outline: none; }
+.lesson-note:empty::before { content: attr(data-placeholder); opacity: .5; pointer-events: none; }
+.diy-guide { margin: 12px 0; }
+.diy-guide .lesson-note { padding: 10px 0; color: var(--ui-text); background: transparent; font-size: 13px; }
+.diy-guide pre { overflow-x: auto; padding: 10px; background: var(--ui-hover); }
+.audio-settings > div { display: grid; gap: 10px; padding: 10px 0; }
+.audio-settings input, .audio-settings select { max-width: 100%; }

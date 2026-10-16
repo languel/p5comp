@@ -1,4 +1,12 @@
+import foundationGuide from "../docs/electronics-foundations.md?raw";
+import diyGuide from "../docs/diy-elements.md?raw";
+import {releaseReferenceStream} from "./selectionDeletion.js";
+import { installSceneMedia, decorateMedia } from "./sceneMedia.js";
+import { installSketchLibraries } from "./SketchLibrary.js";
+import { installColorFields } from "./ColorPicker.js";
+import { initializeIconSystem } from "./uiIcons.js";
 import { setComponentPresets } from "./elements.js";
+import { isBreadboard, BREADBOARD_COLOR } from "./breadboard.js";
 import { lessonHTML } from "./lessonContent.js";
 import { resistance } from "./passiveStates.js";
 import { isMomentarySwitch } from "./circuit.js";
@@ -14,6 +22,7 @@ import { circuitSVG, svgPNG } from "./exportCircuit.js";
 import { jsPDF } from "jspdf";
 import { basePath } from "../shared/basePath.js";
 import {
+  defaultP5HTML,
   blankArduino,
   blankP5,
   validSourceName,
@@ -52,12 +61,12 @@ export class Workbench {
     document.body.classList.add("unified");
     document.querySelector(".section-nav").remove();
     const legacy = document.querySelector(".app-menu");
-    legacy.querySelector("summary").textContent = "Reference";
+    legacy.remove();
     const toolbar = document.querySelector(".bar");
     const fileMenu = node(
       "details",
       "wb-menu",
-      '<summary>File</summary><div><button id="newProject">New project</button><button id="saveProject">Save project…</button><button id="saveZIP">Download project ZIP</button><button id="openProject">Open project…</button><button id="openFolder">Open folder…</button><button id="saveFolder">Save to folder…</button><hr><button id="addReference">Add image / video…</button><button id="addLessonNote">Add lesson note…</button><button id="componentLibrary">Component editor…</button><button id="exportPNG">Export PNG</button><button id="exportSVG">Export SVG</button><button id="exportPDF">Export PDF with code</button></div>',
+      '<summary>File</summary><div><button id="newProject">New project</button><button id="saveProject">Save project…</button><button id="saveZIP">Download project ZIP</button><button id="openProject">Open project…</button><button id="openFolder">Open folder…</button><button id="saveFolder">Save to folder…</button><hr><button id="addReference">Add image / video…</button><button id="addLessonNote">Add note…</button><button id="componentLibrary">Component editor…</button><button id="exportPNG">Export PNG</button><button id="exportSVG">Export SVG</button><button id="exportPDF">Export PDF with code</button></div>',
     );
     toolbar.querySelector(".brand").after(fileMenu);
     ["save", "open", "lesson"].forEach((id) => ($(id).hidden = true));
@@ -66,15 +75,22 @@ export class Workbench {
     const examples = node(
       "details",
       "wb-menu",
-      '<summary>Examples</summary><div id="exampleLibrary"><button id="classExample">Distance / pot / buttons</button><button id="blinkExample">HelloLED</button><button id="firmataExample">StandardFirmata</button><hr><button id="saveExample">Save current as example</button></div>',
+      '<summary>Examples</summary><div id="exampleLibrary"><details class="example-folder" data-folder="Reference"><summary aria-label="Reference examples"><span class="example-folder-mark">▸</span>Reference</summary><section><button id="classExample">Distance / pot / buttons</button><button id="blinkExample">Built-in LED (legacy)</button><button id="firmataExample">StandardFirmata</button></section></details><hr><button id="saveExample">Save current as example</button></div>',
     );
     this.title.after(examples);
     const viewMenu = node(
       "details",
       "wb-menu",
-      '<summary>View</summary><div><button data-dock="split">p5 split panel</button><button data-dock="overlay">p5 overlay</button><button id="mirrorP5">p5 projection window</button><button id="mirrorCircuit">Circuit projection window</button><button data-dock="hidden">Hide p5 output</button><button id="showInspector">Show inspector</button></div>',
+      '<summary>View</summary><div><button id="viewTabs" data-layout="tabs">Tabs</button><button id="viewHorizontal" data-layout="horizontal">Horizontal split</button><button id="viewVertical" data-layout="vertical">Vertical split</button><hr><button data-dock="overlay">p5 overlay</button><button id="mirrorP5">p5 projection window</button><button id="mirrorCircuit">Circuit projection window</button><button data-dock="hidden">Hide p5 output</button><button id="showInspector">Show inspector</button></div>',
     );
     examples.after(viewMenu);
+    this.viewMenu = viewMenu;
+    viewMenu.querySelectorAll("[data-layout]").forEach((button) => {
+      button.onclick = () => {
+        this.mainView(this.activeView, button.dataset.layout);
+        ctx.persist();
+      };
+    });
     viewMenu.querySelectorAll("[data-dock]").forEach(
       (b) =>
         (b.onclick = () => {
@@ -112,7 +128,53 @@ export class Workbench {
           "",
           'Font size <input id="editorFontSize" type="number" min="8" max="32" aria-label="Editor font size">',
         ),
+        node(
+          "label",
+          "",
+          'Icon size <input id="uiIconSize" type="number" min="12" max="28" step="1" aria-label="Interface icon size">',
+        ),
       );
+    const refreshRow = node(
+      "label",
+      "",
+      `PWM / simulation refresh <input id="pwmRefreshHz" aria-label="PWM refresh rate (Hz)" type="number" min="10" max="120" step="10"> Hz`,
+    );
+    $("globalSettings").append(refreshRow);
+    $("pwmRefreshHz").value =
+      Number(localStorage.getItem("p5comp.pwmRefreshHz")) || 60;
+    $("pwmRefreshHz").title =
+      "Visual updates per second (10–120 Hz). PWM LEDs show averaged duty-cycle brightness.";
+    $("pwmRefreshHz").onchange = () => {
+      const hz = Math.max(
+        10,
+        Math.min(120, Number($("pwmRefreshHz").value) || 60),
+      );
+      $("pwmRefreshHz").value = hz;
+      localStorage.setItem("p5comp.pwmRefreshHz", hz);
+      document.dispatchEvent(
+        new CustomEvent("p5comp:pwm-refresh", { detail: hz }),
+      );
+    };
+    const setIconSize = (value, persist = false) => {
+      const size = Math.max(12, Math.min(28, Number(value) || 18));
+      document.documentElement.style.setProperty("--ui-icon-size", size + "px");
+      $("uiIconSize").value = size;
+      if (persist) {
+        try {
+          localStorage.setItem("p5comp.iconSize", String(size));
+        } catch {}
+      }
+    };
+    let savedIconSize = 18;
+    try {
+      savedIconSize = localStorage.getItem("p5comp.iconSize") || 18;
+    } catch {}
+    setIconSize(savedIconSize);
+    $("uiIconSize").oninput = () => {
+      const size = Number($("uiIconSize").value);
+      if (size >= 12 && size <= 28) setIconSize(size, true);
+    };
+    $("uiIconSize").onchange = () => setIconSize($("uiIconSize").value, true);
     const syncPreferences = () => {
       const dark = document.documentElement.dataset.theme === "dark";
       $("appTheme").value = dark ? "dark" : "light";
@@ -147,7 +209,7 @@ export class Workbench {
     this.editorPanel = node(
       "aside",
       "wb-right",
-      '<nav class="wb-tabs" role="tablist" aria-label="Inspector"><button role="tab" data-tab="arduino" title="Arduino code" aria-label="Arduino code">∞</button><button role="tab" data-tab="p5" title="p5.js code" aria-label="p5.js code">p5.js</button><button role="tab" data-tab="properties" title="Properties" aria-label="Properties">☷</button><button role="tab" data-tab="help" title="Help" aria-label="Help">?</button><button id="closeInspector" title="Hide inspector">×</button></nav><section data-pane="arduino"></section><section data-pane="p5"></section><section data-pane="properties"><div class="section-bar"><span id="propertyTitle">Selection</span><button id="applyProperties" title="Apply properties (⌘/Ctrl Enter)" aria-label="Apply properties">▷</button></div><div id="partAttributes"></div><output id="partState"></output><div id="propertyEditor"></div><div id="referenceProperties"></div></section><section data-pane="help"><div id="helpHome"><p>Select an element and press ? for documentation.</p><p>⌘/Ctrl Enter: run · Shift-click wire: bend · Space-drag: pan</p></div></section>',
+      '<nav class="wb-tabs" role="tablist" aria-label="Inspector"><button role="tab" data-tab="arduino" title="Arduino code" aria-label="Arduino code">∞</button><button role="tab" data-tab="p5" title="p5.js code" aria-label="p5.js code">p5</button><button role="tab" data-tab="properties" title="Properties" aria-label="Properties">☷</button><button role="tab" data-tab="help" title="Help" aria-label="Help">?</button><button role="tab" data-tab="settings" title="Settings" aria-label="Settings">⚙</button><button id="closeInspector" title="Hide inspector">×</button></nav><section data-pane="arduino"></section><section data-pane="p5"></section><section data-pane="properties"><div class="section-bar"><span id="propertyTitle">Selection</span><button id="applyProperties" title="Apply properties (⌘/Ctrl Enter)" aria-label="Apply properties">▷</button></div><div id="partAttributes"></div><output id="partState"></output><div id="propertyEditor"></div><div id="referenceProperties"></div></section><section data-pane="help"><div id="helpHome"><p>Select an element and press ? for documentation.</p><p>⌘/Ctrl Enter: run · Shift-click wire: bend · Space-drag: pan</p></div></section>',
     );
     const editors = document.querySelectorAll("#code .editors > section");
     this.editorPanel.querySelector('[data-pane="arduino"]').append(editors[0]);
@@ -155,8 +217,44 @@ export class Workbench {
     this.editorPanel
       .querySelector('[data-pane="help"]')
       .append(document.querySelector(".part-docs"));
+    const guide = node("details", "diy-guide");
+    guide.innerHTML = '<summary>Make your own element</summary>';
+    const guideBody = node("div", "lesson-note");
+    guideBody.innerHTML = lessonHTML(diyGuide, "markdown");
+    const openPresets=node("button", "", "Open component preset editor");
+    openPresets.type="button";
+    openPresets.onclick=()=>this.editComponents();
+    guide.append(openPresets,guideBody);
+    const electronicsGuide=node("details","diy-guide");
+    electronicsGuide.innerHTML='<summary>Electronics foundations and audio</summary>';
+    const electronicsBody=node("div","lesson-note");
+    electronicsBody.innerHTML=lessonHTML(foundationGuide,"markdown");
+    electronicsGuide.append(electronicsBody);
+    this.editorPanel.querySelector("#helpHome").append(guide,electronicsGuide);
     $("code").hidden = true;
     main.append(this.editorPanel);
+    const settingsButton = this.editorPanel.querySelector(
+      '[data-tab="settings"]',
+    );
+    settingsButton.id = "settingsPanelToggle";
+    settingsButton.removeAttribute("role");
+    settingsButton.removeAttribute("data-tab");
+    settingsButton.setAttribute("aria-pressed", "false");
+    settingsButton.onclick = () => {
+      if (
+        !this.editorPanel.hidden &&
+        !this.editorPanel.querySelector('[data-pane="settings"]').hidden
+      ) {
+        this.editorPanel.hidden = true;
+        settingsButton.setAttribute("aria-pressed", "false");
+      } else this.tab("settings");
+    };
+    $("hideUI").before(settingsButton);
+    const settingsPane = node("section", "settings-pane");
+    settingsPane.dataset.pane = "settings";
+    settingsPane.append($("globalSettings"));
+    this.editorPanel.append(settingsPane);
+    settingsMenu.remove();
     const resize = node("div", "inspector-resize");
     this.editorPanel.prepend(resize);
     resize.title = "Resize inspector";
@@ -174,6 +272,29 @@ export class Workbench {
       language: "javascript",
       onRun: () => this.applyProperties(),
     });
+    const noteProperties = node("section", "note-properties");
+    noteProperties.id = "noteProperties";
+    noteProperties.hidden = true;
+    noteProperties.innerHTML =
+      '<div class="note-source-tools"><input id="noteName" aria-label="Note name"><select id="noteFormat" aria-label="Note format" data-native><option value="markdown">Markdown</option><option value="html">HTML</option><option value="latex">LaTeX / KaTeX</option></select></div><div id="noteAppearance" class="note-appearance"></div><div id="noteSourceEditor"></div>';
+    $("propertyEditor").after(noteProperties);
+    installColorFields();
+    this.noteEditor = createEditor({
+      parent: $("noteSourceEditor"),
+      value: "",
+      language: "markdown",
+      lineWrapping: true,
+      onChange: () => {
+        if (!this.loadingNote) this.applyNote();
+      },
+      onRun: () => this.applyNote(),
+    });
+    this.noteEditor.contentDOM.setAttribute("aria-label", "Note source");
+    $("noteName").oninput = () => this.applyNote();
+    $("noteFormat").onchange = () => {
+      this.noteEditor.setLanguage($("noteFormat").value);
+      this.applyNote();
+    };
     this.arduinoPane = this.editorPanel.querySelector(
       '[data-pane="arduino"] > section',
     );
@@ -192,7 +313,10 @@ export class Workbench {
     this.editorPanel
       .querySelectorAll("[data-tab]")
       .forEach((b) => (b.onclick = () => this.tab(b.dataset.tab)));
-    $("closeInspector").onclick = () => (this.editorPanel.hidden = true);
+    $("closeInspector").onclick = () => {
+      this.editorPanel.hidden = true;
+      settingsButton.setAttribute("aria-pressed", "false");
+    };
     $("toggleCode").onclick = () => {
       this.editorPanel.hidden = !this.editorPanel.hidden;
       this.ctx.canvas.render();
@@ -206,7 +330,9 @@ export class Workbench {
     );
     main.append(this.bottom);
     this.bottom.querySelector('[data-tool="simulation"]').append($("controls"));
-    this.bottom.append(document.querySelector(".section-foot"));
+    const statusLine = document.querySelector(".section-foot");
+    statusLine.prepend($("status"));
+    this.bottom.append(statusLine);
     const transport = node("div", "arduino-transport");
     transport.append(document.querySelector("footer > div"));
     const arduinoTools = this.arduinoPane.querySelector(".section-bar");
@@ -232,6 +358,8 @@ export class Workbench {
       });
     $("compile").title = "Compile and run";
     $("compile").setAttribute("aria-label", "Compile and run");
+    $("compile").onclick = () =>
+      this.arduinoRunning ? ctx.stop() : ctx.runArduino();
     const p5Tools = this.p5Pane.querySelector(".section-bar");
     for (const child of [...p5Tools.childNodes])
       if (child.nodeType === Node.TEXT_NODE) child.remove();
@@ -252,28 +380,26 @@ export class Workbench {
     );
     run.title = "Run p5 (⌘/Ctrl Enter)";
     run.setAttribute("aria-label", "Run p5 sketch");
-    run.onclick = () => ctx.runP5();
-    p5Tools.append(run);
-    const stop = node(
-      "button",
-      "",
-      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4Z"/></svg>',
-    );
-    stop.title = "Stop p5";
-    stop.setAttribute("aria-label", "Stop p5");
-    stop.onclick = () => {
-      ctx.bridge.stop();
-      this.disableAutorun();
+    run.id = "p5EditorRun";
+    this.p5RunButton = run;
+    run.onclick = () => {
+      if (this.p5Running) {
+        document.dispatchEvent(new CustomEvent("p5comp:human-p5-stop"));
+        ctx.bridge.stop();
+        this.disableAutorun();
+      } else ctx.runP5();
     };
-    p5Tools.append(stop);
-    p5Tools.prepend(run, stop, comms);
-    p5Tools.append($("loadExample"));
+    p5Tools.append(run);
+    p5Tools.prepend(run, comms);
+    $("loadExample").hidden = true;
     const auto = node(
       "button",
       "autorun",
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8a8 8 0 0 1 14-2l2 2M20 3v5h-5M20 16a8 8 0 0 1-14 2l-2-2M4 21v-5h5"/></svg>',
     );
     p5Tools.append(auto);
+    installSketchLibraries(this);
+    this.syncTransport(false);
     auto.id = "p5Autorun";
     auto.title = "Auto-run p5 after edits";
     auto.setAttribute("aria-label", "Auto-run p5 after edits");
@@ -386,7 +512,11 @@ export class Workbench {
       "main-view-tools",
       '<nav class="wb-tabs" role="tablist" aria-label="Main views"><button role="tab" data-main-view="circuit" title="Circuit" aria-label="Circuit"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="5" width="14" height="14" rx="1"/><path d="M8 1v4m4-4v4m4-4v4M8 19v4m4-4v4m4-4v4M1 8h4m-4 4h4m-4 4h4m14-8h4m-4 4h4m-4 4h4"/></svg></button><button role="tab" data-main-view="p5" title="p5 render" aria-label="p5 render">p5⋆</button></nav><select id="mainLayout" aria-label="Main layout"><option value="tabs">Tabs</option><option value="horizontal">Horizontal split</option><option value="vertical">Vertical split</option></select><button id="projectCircuit" title="Mirror circuit to projection window" aria-label="Circuit projection window">↗</button><button id="projectP5" title="Mirror p5 to projection window" aria-label="p5 projection window">↗</button>',
     );
-    document.querySelector(".workspace").prepend(mainViews);
+    // Main view navigation shares the global toolbar; the canvas keeps the full height.
+    const layoutSelect = mainViews.querySelector("#mainLayout");
+    layoutSelect.hidden = true;
+    viewMenu.querySelector("div").append(layoutSelect);
+    viewMenu.before(mainViews);
     mainViews.querySelectorAll("[data-main-view]").forEach(
       (b) =>
         (b.onclick = () => {
@@ -426,7 +556,7 @@ export class Workbench {
       divider.setPointerCapture(event.pointerId);
       divider.onpointermove = (e) => {
         const rect = workspace.getBoundingClientRect();
-        const top = document.body.classList.contains("ui-hidden") ? 0 : 34;
+        const top = 0;
         setSplit(
           this.layout === "vertical"
             ? (e.clientY - rect.top - top) / (rect.height - top)
@@ -470,6 +600,10 @@ export class Workbench {
     });
     ctx.bridge.addEventListener("status", (e) => {
       this.editorStatus("p5", e.detail);
+      this.p5Running = /p5 running|Loading p5|Starting p5|Recovering p5/.test(
+        e.detail,
+      );
+      this.syncTransport();
     });
     ctx.bridge.addEventListener("runtimeError", (e) => {
       this.editorStatus("p5", e.detail.message, "error");
@@ -509,7 +643,7 @@ export class Workbench {
         if (html && !/src=["'](?:\.\/)?p5\.webserial\.js/.test(html))
           project.workbench.files["index.html"] = html.replace(
             /<\/head>/i,
-            '<script src="p5.webserial.js"></script></head>',
+            '  <script src="p5.webserial.js"></script>\n  </head>',
           );
         await download(
           this.name + ".zip",
@@ -544,6 +678,7 @@ export class Workbench {
     this.imageInput.hidden = true;
     document.body.append(this.imageInput);
     $("addReference").onclick = () => this.imageInput.click();
+    installSceneMedia(this);
     $("addLessonNote").onclick = () => this.editLessonNote();
     $("componentLibrary").onclick = () => this.editComponents();
     this.imageInput.onchange = () => this.action(() => this.loadImages());
@@ -608,6 +743,9 @@ export class Workbench {
       ctx.persist();
     };
     const rowGlyphs = {
+      viewTabs: "▣",
+      viewHorizontal: "◫",
+      viewVertical: "⬒",
       newProject: "+",
       saveProject: "↓",
       saveZIP: "⇩",
@@ -627,7 +765,8 @@ export class Workbench {
       showInspector: "☷",
     };
     for (const button of toolbar.querySelectorAll(".wb-menu button")) {
-      if (button.closest(".glyph-select")) continue;
+      if (button.closest(".glyph-select") || button.id === "appThemeButton")
+        continue;
       const label = button.textContent.trim();
       button.setAttribute("aria-label", label);
       const icon = node("span", "menu-row-glyph", rowGlyphs[button.id] || "◫");
@@ -663,7 +802,10 @@ export class Workbench {
         .forEach((d) => (d.open = false));
     });
     const brand = toolbar.querySelector(".brand");
-    brand.textContent = "〈±〉";
+    brand.innerHTML = `<svg class="brand-glyph" viewBox="0 0 32 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8 4 3 12l5 8M24 4l5 8-5 8M12 10h8M16 6v8M12 18h8"/>
+    </svg>`;
+    brand.href = basePath() + location.search;
     brand.setAttribute("aria-label", "p5comp");
     brand.title = "p5comp";
     const menuGlyphs = {
@@ -674,6 +816,7 @@ export class Workbench {
       Reference: "⋯",
     };
     toolbar.querySelectorAll("summary").forEach((summary) => {
+      if (summary.closest(".example-folder")) return;
       const caption = summary.textContent.trim();
       if (!menuGlyphs[caption]) return;
       summary.dataset.caption = caption;
@@ -681,7 +824,10 @@ export class Workbench {
       summary.title = caption;
       summary.setAttribute("aria-label", caption);
     });
-    document.querySelectorAll("select:not([hidden])").forEach(glyphSelect);
+    document
+      .querySelectorAll("select:not([hidden]):not([data-native])")
+      .forEach(glyphSelect);
+    initializeIconSystem();
     const circuitSettings = document.querySelector(".canvas-settings");
     circuitSettings.addEventListener("toggle", () => {
       if (!circuitSettings.open) return;
@@ -705,6 +851,12 @@ export class Workbench {
       const response = await fetch(basePath("examples/index.json"));
       if (!response.ok) return;
       const entries = await response.json();
+      const order = ["Getting started", "Inputs", "Outputs", "Boards"];
+      entries.sort(
+        (a, b) =>
+          (order.indexOf(a.folder) < 0 ? 99 : order.indexOf(a.folder)) -
+          (order.indexOf(b.folder) < 0 ? 99 : order.indexOf(b.folder)),
+      );
       for (const entry of entries) {
         if (
           !entry.name ||
@@ -720,7 +872,7 @@ export class Workbench {
             if (!response.ok) throw new Error("Example could not load.");
             ctx.openProject(await response.json());
           });
-        $("exampleLibrary").append(button);
+        this.exampleFolder(entry.folder || "Other").append(button);
       }
     });
   }
@@ -734,6 +886,10 @@ export class Workbench {
   }
   tab(name) {
     this.editorPanel.hidden = false;
+    $("settingsPanelToggle")?.setAttribute(
+      "aria-pressed",
+      String(name === "settings"),
+    );
     this.editorPanel
       .querySelectorAll("[data-pane]")
       .forEach((p) => (p.hidden = p.dataset.pane !== name));
@@ -826,7 +982,7 @@ export class Workbench {
                 if (kind === "p5") this.scheduleP5();
               },
               onRun: () =>
-                kind === "p5" ? this.ctx.runP5() : $("compile").click(),
+                kind === "p5" ? this.ctx.runP5() : this.ctx.runArduino(),
               onUpload: () => kind === "arduino" && $("compileUpload").click(),
             }),
           );
@@ -872,7 +1028,7 @@ export class Workbench {
       this.files["index.html"] = html.includes("</head>")
         ? html.replace(
             "</head>",
-            '<script src="p5.webserial.js"></script></head>',
+            '  <script src="p5.webserial.js"></script>\n  </head>',
           )
         : '<script src="p5.webserial.js"></script>\n' + html;
     const editor = this.extra.get("index.html");
@@ -904,6 +1060,22 @@ export class Workbench {
   }
   uploadState(connected) {
     if ($("compileUpload")) $("compileUpload").disabled = !connected;
+  }
+  syncTransport(arduinoRunning = this.arduinoRunning || false) {
+    this.arduinoRunning = arduinoRunning;
+    for (const [button, on, label] of [
+      [$("compile"), arduinoRunning, "Arduino"],
+      [this.p5RunButton, !!this.p5Running, "p5"],
+    ]) {
+      if (!button) continue;
+      button.setAttribute("aria-pressed", String(on));
+      button.dataset.running = String(on);
+      button.title = on ? `Stop ${label}` : `Run ${label}`;
+      button.setAttribute("aria-label", button.title);
+      button.innerHTML = on
+        ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14v14H5Z"/></svg>'
+        : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4l14 8-14 8Z"/></svg>';
+    }
   }
   editorStatus(kind, message, level = "info") {
     const bar = $(kind + "EditorStatus");
@@ -959,11 +1131,37 @@ export class Workbench {
       label.textContent =
         name + " · " + (asset.type || "file") + " · " + asset.size + " B";
       row.append(label);
-      if (ref.kind === "note") {
-        const edit = node("button", "", "✎");
-        edit.title = "Edit lesson note";
-        edit.onclick = () => this.editLessonNote(ref);
-        row.append(edit);
+      if (/^(image|video)\//.test(asset.type || "")) {
+        row.draggable = true;
+        row.title = "Drag asset onto circuit canvas";
+        row.ondragstart = (e) => {
+          e.dataTransfer.setData("application/x-p5comp-asset", name);
+          e.dataTransfer.effectAllowed = "copy";
+        };
+        const place = node("button", "", "↗");
+        place.title = "Add asset to canvas";
+        place.onclick = () => {
+          const bounds = $("stage").getBoundingClientRect(),
+            p = this.ctx.canvas.toWorld({
+              clientX: bounds.left + 80,
+              clientY: bounds.top + 80,
+            });
+          this.references.push({
+            id: crypto.randomUUID(),
+            kind: asset.type.startsWith("video/") ? "video" : "image",
+            name,
+            src: asset.src,
+            x: p.x,
+            y: p.y,
+            width: 320,
+            opacity: 1,
+            blend: "normal",
+            showLabel: false,
+          });
+          this.renderReferences();
+          this.ctx.persist();
+        };
+        row.append(place);
       }
       if (asset.type?.startsWith("image/")) {
         const image = node("img", "");
@@ -1020,6 +1218,8 @@ export class Workbench {
     };
   }
   restore(d) {
+    this.selectedReferenceId = null;
+    this.selectedNoteId = null;
     this.setSplit?.(Number.isFinite(d.splitRatio) ? d.splitRatio : 0.5);
     this.name = d.name || "Classroom";
     this.title.textContent = this.name;
@@ -1028,11 +1228,10 @@ export class Workbench {
     this.disableAutorun();
     this.arduinoName = d.arduinoName || "sketch.ino";
     this.p5Name = d.p5Name || "sketch.js";
-    this.files["index.html"] ??=
-      '<!doctype html>\n<html><head><meta charset="utf-8"><script src="p5.js"></script><link rel="stylesheet" href="style.css"></head><body><main id="canvas"></main><script src="' +
-      this.p5Name +
-      '"></script></body></html>\n';
-    this.files["style.css"] ??= "body { margin: 0; }\n";
+    this.files["index.html"] ??= defaultP5HTML(this.p5Name);
+    for (const stream of this.cameraStreams?.values() || [])
+      stream.getTracks().forEach((t) => t.stop());
+    this.cameraStreams?.clear();
     this.references = d.references || [];
     this.components = d.components || [];
     setComponentPresets(this.components);
@@ -1042,6 +1241,7 @@ export class Workbench {
     this.renderAssets();
     this.applySettings();
     this.renderReferences();
+    this.selectPart();
     this.mainView(
       d.activeView || "circuit",
       ["tabs", "horizontal", "vertical"].includes(d.layout) ? d.layout : "tabs",
@@ -1056,6 +1256,19 @@ export class Workbench {
     $("exportCode").checked = this.settings.exportCode !== false;
   }
   selectPart() {
+    this.selectedReferenceId = null;
+    document.querySelectorAll(".scene-item.selected").forEach(el=>el.classList.remove("selected"));
+    this.selectedNoteId = null;
+    $("noteProperties").hidden = true;
+    $("propertyEditor").hidden = false;
+    $("partAttributes").hidden = false;
+    $("partState").hidden = false;
+    $("referenceProperties").hidden = false;
+    $("referenceProperties")
+      .querySelectorAll(".reference-row")
+      .forEach((row) => (row.hidden = false));
+    $("applyProperties").title = "Apply properties (⌘/Ctrl Enter)";
+    $("applyProperties").setAttribute("aria-label", "Apply properties");
     const part = this.ctx.selected();
     this.ctx.setCode(this.propertyEditor, JSON.stringify(part || {}, null, 2));
     $("propertyTitle").textContent = part?.label || part?.id || "Selection";
@@ -1065,13 +1278,39 @@ export class Workbench {
   editValue(wrapper, part) {
     const element = wrapper.querySelector(".part-body")?.firstElementChild;
     const hasValue = element?.constructor.elementProperties?.has("value");
-    if (!hasValue || part.type === "wokwi-led")
-      return this.editLabel(wrapper, part);
+    if (!hasValue || part.type === "wokwi-led") return this.tab("properties");
+    this.closeValueEditor?.();
     document.querySelector(".part-value-editor")?.remove();
     const form = node("form", "part-value-editor");
+    const listeners = new AbortController();
+    const close = () => {
+      listeners.abort();
+      form.remove();
+      if (this.closeValueEditor === close) this.closeValueEditor = null;
+    };
+    this.closeValueEditor = close;
+    form.dataset.partId = part.id;
+    document.addEventListener(
+      "pointerdown",
+      (e) => {
+        if (!form.contains(e.target)) close();
+      },
+      { capture: true, signal: listeners.signal },
+    );
+    document.addEventListener(
+      "keydown",
+      (e) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          close();
+        }
+      },
+      { capture: true, signal: listeners.signal },
+    );
     const input = node("input", "");
     input.type = "text";
-    input.value = part.attrs?.value ?? element.value ?? "";
+    input.value = element.value ?? part.attrs?.value ?? "";
     input.setAttribute("aria-label", "Component value");
     const units = node("span", "");
     units.textContent = part.type === "wokwi-resistor" ? "Ω" : "";
@@ -1085,7 +1324,7 @@ export class Workbench {
     form.ondblclick = (e) => e.stopPropagation();
     form.onkeydown = (e) => {
       e.stopPropagation();
-      if (e.key === "Escape") form.remove();
+      if (e.key === "Escape") close();
     };
     form.onsubmit = async (e) => {
       e.preventDefault();
@@ -1095,8 +1334,28 @@ export class Workbench {
             ? String(resistance(input.value.replace(/Ω|ohms?/gi, "").trim()))
             : input.value.trim();
         if (!value) throw new Error("Enter a value.");
-        await this.ctx.updatePart({ ...part, attrs: { ...part.attrs, value } });
-        form.remove();
+        if (
+          ["wokwi-slide-switch", "p5comp-toggle-switch"].includes(part.type) &&
+          !["0", "1"].includes(value)
+        )
+          throw new Error("Switch position must be 0 or 1.");
+        await this.ctx.updatePart(
+          { ...part, attrs: { ...part.attrs, value } },
+          part.id,
+        );
+        if (
+          [
+            "wokwi-slide-switch",
+            "p5comp-toggle-switch",
+            "p5comp-photoresistor",
+            "p5comp-potentiometer",
+            "p5comp-slide-potentiometer",
+          ].includes(part.type) ||
+          part.type === "wokwi-potentiometer" ||
+          part.type === "wokwi-slide-potentiometer"
+        )
+          this.ctx.setControl(part.id, Number(value));
+        close();
       } catch (e) {
         error.textContent = e.message;
         input.setAttribute("aria-invalid", "true");
@@ -1140,7 +1399,8 @@ export class Workbench {
       const label = node("span", "");
       label.textContent = caption;
       const input = node("input", "");
-      input.type = type;
+      input.type = type === "color" ? "text" : type;
+      if (type === "color") input.dataset.colorField = "";
       input.setAttribute("aria-label", caption);
       if (type === "checkbox") input.checked = !!value;
       else input.value = value;
@@ -1163,6 +1423,40 @@ export class Workbench {
     field("Label", part.label || part.attrs?.label || "", (value) =>
       this.ctx.updatePart({ ...part, label: value }),
     );
+    if (isBreadboard(part.type))
+      field(
+        "Board color",
+        part.attrs?.color || BREADBOARD_COLOR,
+        (value) =>
+          this.ctx.updatePart({
+            ...part,
+            attrs: { ...part.attrs, color: value },
+          }),
+        "color",
+      );
+    if (
+      ["p5comp-potentiometer", "p5comp-slide-potentiometer"].includes(part.type)
+    )
+      field("Max resistance (Ω)", part.attrs?.maxResistance ?? 10000, (value) =>
+        this.ctx.updatePart({
+          ...part,
+          attrs: {
+            ...part.attrs,
+            maxResistance: resistance(value.replace(/Ω|ohms?/gi, "").trim()),
+          },
+        }),
+      );
+    if (isBreadboard(part.type))
+      field(
+        "X-ray connections",
+        !!part.attrs?.xray,
+        (value) =>
+          this.ctx.updatePart({
+            ...part,
+            attrs: { ...part.attrs, xray: value },
+          }),
+        "checkbox",
+      );
     const seats = this.ctx.seated?.(part.id) || [];
     if (seats.length) {
       const mounted = node("details", "switch-pin-help");
@@ -1222,10 +1516,16 @@ export class Workbench {
       properties = element?.constructor.elementProperties || new Map();
     for (const [name] of properties) {
       if (
-        /^(on|innerHTML|outerHTML|style|src|href)/i.test(name) ||
-        ["pinInfo", "label", "ledPower", "led13", "ledTX", "ledRX"].includes(
-          name,
-        )
+        /^(_|on|innerHTML|outerHTML|style|src|href)/i.test(name) ||
+        [
+          "pinInfo",
+          "label",
+          "maxResistance",
+          "ledPower",
+          "led13",
+          "ledTX",
+          "ledRX",
+        ].includes(name)
       )
         continue;
       if (part.type === "wokwi-led" && name === "value") continue;
@@ -1242,7 +1542,9 @@ export class Workbench {
       )
         continue;
       field(
-        name,
+        name === "color" && part.type === "p5comp-potentiometer"
+          ? "Primary color"
+          : name,
         Array.isArray(current) ? JSON.stringify(current) : current,
         (value) => {
           const parsed = Array.isArray(current)
@@ -1259,11 +1561,13 @@ export class Workbench {
             attrs: { ...part.attrs, [name]: parsed },
           });
         },
-        typeof current === "boolean"
-          ? "checkbox"
-          : typeof current === "number"
-            ? "number"
-            : "text",
+        name === "color" && part.type === "p5comp-potentiometer"
+          ? "color"
+          : typeof current === "boolean"
+            ? "checkbox"
+            : typeof current === "number"
+              ? "number"
+              : "text",
       );
     }
   }
@@ -1281,11 +1585,35 @@ export class Workbench {
       : "";
   }
   applyProperties() {
+    if (this.selectedNoteId) return this.applyNote();
     this.action(() => {
       const next = JSON.parse(this.propertyEditor.state.doc.toString());
       this.ctx.updatePart(next);
       this.ctx.notice("Properties applied.");
     });
+  }
+  exampleFolder(name) {
+    const root = $("exampleLibrary");
+    let folder = [...root.querySelectorAll(":scope > .example-folder")].find(
+      (el) => el.dataset.folder === name,
+    );
+    if (!folder) {
+      folder = node("details", "example-folder");
+      folder.dataset.folder = name;
+      const summary = node("summary", "");
+      summary.setAttribute("aria-label", name + " examples");
+      summary.append(
+        node("span", "example-folder-mark", "▸"),
+        document.createTextNode(name),
+      );
+      folder.append(summary, node("section", ""));
+      root.insertBefore(
+        folder,
+        root.querySelector('[data-folder="Reference"]') ||
+          root.querySelector("hr"),
+      );
+    }
+    return folder.querySelector("section");
   }
   examples() {
     try {
@@ -1302,7 +1630,7 @@ export class Workbench {
       const b = node("button", "saved-example");
       b.textContent = "▦  " + (p.workbench?.name || "Example");
       b.onclick = () => this.action(() => this.ctx.openProject(p));
-      $("exampleLibrary").append(b);
+      this.exampleFolder("My examples").append(b);
     }
   }
   dock(mode) {
@@ -1345,6 +1673,26 @@ export class Workbench {
         ),
       );
     $("mainLayout").value = this.layout;
+    const viewSummary = this.viewMenu.querySelector("summary");
+    viewSummary.textContent = { tabs: "▣", horizontal: "◫", vertical: "⬒" }[
+      this.layout
+    ];
+    viewSummary.title =
+      "View · " +
+      {
+        tabs: "Tabs",
+        horizontal: "Horizontal split",
+        vertical: "Vertical split",
+      }[this.layout];
+    viewSummary.setAttribute("aria-label", viewSummary.title);
+    this.viewMenu
+      .querySelectorAll("[data-layout]")
+      .forEach((button) =>
+        button.setAttribute(
+          "aria-pressed",
+          String(button.dataset.layout === this.layout),
+        ),
+      );
     document
       .querySelector(".view-divider")
       ?.setAttribute(
@@ -1431,55 +1779,228 @@ export class Workbench {
     dialog.showModal();
     source.focus();
   }
-  editLessonNote(existing = null) {
-    const dialog = node("dialog", "lesson-note-editor");
-    dialog.setAttribute("aria-label", "Lesson note editor");
-    dialog.innerHTML =
-      '<form><header><input aria-label="Note title" placeholder="Title"><select aria-label="Note format"><option value="markdown">Markdown</option><option value="html">HTML</option></select></header><textarea aria-label="Note source" spellcheck="false"></textarea><footer><button type="button" aria-label="Cancel note">×</button><button type="submit" aria-label="Save note">✓</button></footer></form>';
-    const title = dialog.querySelector("input"),
-      format = dialog.querySelector("select"),
-      source = dialog.querySelector("textarea");
-    title.value = existing?.name || "Lesson note";
-    format.value = existing?.format || "markdown";
-    source.value =
-      existing?.source ||
-      "## Button → LED\n\nPress the **button** to light the LED.\n\n```cpp\ndigitalWrite(ledPin, !digitalRead(buttonPin));\n```";
-    const close = () => {
-      dialog.close();
-      dialog.remove();
-    };
-    dialog.querySelector('[type="button"]').onclick = close;
-    dialog.oncancel = () => dialog.remove();
-    dialog.querySelector("form").onsubmit = (e) => {
-      e.preventDefault();
-      const bounds = $("stage").getBoundingClientRect();
-      const position = this.ctx.canvas.toWorld({
+  addNote(point = null) {
+    const bounds = $("stage").getBoundingClientRect();
+    const position =
+      point ||
+      this.ctx.canvas.toWorld({
         clientX: bounds.left + 24,
         clientY: bounds.top + 24,
       });
-      const ref = existing || {
-        id: crypto.randomUUID(),
-        kind: "note",
-        x: position.x,
-        y: position.y,
-        width: 320,
-        opacity: 1,
-        blend: "normal",
-      };
-      Object.assign(ref, {
-        name: title.value || "Lesson note",
-        format: format.value,
-        source: source.value,
-      });
-      if (!existing) this.references.push(ref);
-      this.renderReferences();
-      this.ctx.persist();
-      this.tab("properties");
-      close();
+    const ref = {
+      id: crypto.randomUUID(),
+      kind: "note",
+      name: "",
+      format: "markdown",
+      source: "",
+      x: position.x,
+      y: position.y,
+      width: 320,
+      background: "#f6f4ee",
+      color: "#343436",
+      fontSize: 13,
+      opacity: 1,
+      blend: "normal",
     };
-    document.body.append(dialog);
-    dialog.showModal();
-    source.focus();
+    this.references.push(ref);
+    this.renderReferences();
+    this.ctx.persist();
+    this.selectNote(ref);
+    this.editNoteInline(ref);
+  }
+  editLessonNote(existing = null) {
+    if (!existing) return this.addNote();
+    this.selectNote(existing, true);
+  }
+  selectReference(ref) {
+    this.ctx.clearSelection();
+    this.selectedReferenceId = ref.id;
+    if (ref.kind !== "note") this.selectedNoteId = null;
+    for (const scene of document.querySelectorAll(".scene-item")) {
+      scene.classList.toggle("selected",scene.dataset.reference === ref.id);
+      if (scene.dataset.reference === ref.id) { scene.tabIndex = -1; scene.focus({preventScroll:true}); }
+    }
+  }
+  removeReference(id) {
+    if (!this.references.some(ref=>ref.id === id)) return false;
+    releaseReferenceStream(this.cameraStreams,id);
+    this.references = this.references.filter(ref=>ref.id !== id);
+    for (const el of document.querySelectorAll(".scene-item,.reference-row"))
+      if (el.dataset.reference === id) el.remove();
+    if (this.selectedReferenceId === id || this.selectedNoteId === id) this.selectPart();
+    this.ctx.persist();
+    return true;
+  }
+  duplicateReference(ref, offset=20) {
+    const clone={...structuredClone(ref),id:crypto.randomUUID(),x:ref.x+offset,y:ref.y+offset};
+    if(ref.overlayX!=null)clone.overlayX+=offset;
+    if(ref.overlayY!=null)clone.overlayY+=offset;
+    this.references.push(clone);this.renderReferences();this.selectReference(clone);this.ctx.persist();return clone;
+  }
+  deleteSelectedReference() {
+    return !!this.selectedReferenceId && this.removeReference(this.selectedReferenceId);
+  }
+  selectNote(ref, focus = false) {
+    this.selectReference(ref);
+    const changed = this.selectedNoteId !== ref.id;
+    this.selectedNoteId = ref.id;
+    $("propertyEditor").hidden = true;
+    $("partAttributes").hidden = true;
+    $("partState").hidden = true;
+    $("referenceProperties").hidden = false;
+    $("referenceProperties")
+      .querySelectorAll(".reference-row")
+      .forEach((row) => (row.hidden = row.dataset.reference !== ref.id));
+    $("noteProperties").hidden = false;
+    $("propertyTitle").textContent = ref.name || "Note";
+    $("applyProperties").title = "Apply note (⌘/Ctrl Enter)";
+    $("applyProperties").setAttribute("aria-label", "Apply note");
+    if (changed) {
+      this.renderNoteAppearance(ref);
+      this.loadingNote = true;
+      $("noteName").value = ref.name || "";
+      $("noteFormat").value = ref.format || "markdown";
+      this.noteEditor.setLanguage($("noteFormat").value);
+      this.ctx.setCode(this.noteEditor, ref.source || "");
+      this.loadingNote = false;
+    }
+    document
+      .querySelectorAll(".scene-item")
+      .forEach((el) =>
+        el.classList.toggle("selected", el.dataset.reference === ref.id),
+      );
+    this.tab("properties");
+    this.noteEditor.requestMeasure();
+    if (focus) this.noteEditor.focus();
+  }
+  editNoteInline(ref) {
+    const scene = [...document.querySelectorAll(".scene-item")].find(el => el.dataset.reference === ref.id);
+    const content = scene?.querySelector(".lesson-note");
+    if (!content || content.hasAttribute("contenteditable")) return;
+    this.selectNote(ref);
+    const original = ref.source || "";
+    content.textContent = original;
+    content.setAttribute("contenteditable", "plaintext-only");
+    content.setAttribute("role", "textbox");
+    content.setAttribute("aria-label", "Note content");
+    content.setAttribute("aria-multiline", "true");
+    const sync = () => {
+      ref.source = content.innerText.replace(/\r\n/g, "\n");
+      if (this.selectedNoteId === ref.id) {
+        this.loadingNote = true;
+        this.ctx.setCode(this.noteEditor, ref.source);
+        this.loadingNote = false;
+      }
+      this.ctx.persist();
+    };
+    let finished = false;
+    const finish = (cancel = false) => {
+      if (finished) return;
+      if (!cancel) sync();
+      else { ref.source = original; if (this.selectedNoteId === ref.id) { this.loadingNote=true; this.ctx.setCode(this.noteEditor,original); this.loadingNote=false; } this.ctx.persist(); }
+      finished = true;
+      content.oninput = content.onblur = content.onkeydown = null;
+      content.removeAttribute("contenteditable");
+      content.removeAttribute("role");
+      content.removeAttribute("aria-multiline");
+      content.innerHTML = lessonHTML(ref.source, ref.format);
+    };
+    content.oninput = sync;
+    content.onblur = () => finish();
+    content.onkeydown = e => {
+      e.stopPropagation();
+      if (e.key === "Escape") { e.preventDefault(); finish(true); scene.focus(); }
+      else if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); finish(); scene.focus(); }
+    };
+    content.focus();
+  }
+  paintNote(ref, scene) {
+    scene.style.setProperty("--note-background", ref.background || "#f6f4ee");
+    scene.style.setProperty("--note-color", ref.color || "#343436");
+    scene.style.setProperty("--note-font-size", (ref.fontSize || 13) + "px");
+    scene.style.height = ref.height ? ref.height + "px" : "auto";
+    scene.style.width = ref.width + "px";
+  }
+  renderNoteAppearance(ref) {
+    const panel = $("noteAppearance");
+    panel.replaceChildren();
+    for (const [prop, caption, type, fallback] of [
+      ["background", "Background", "color", "#f6f4ee"],
+      ["color", "Text color", "color", "#343436"],
+      ["fontSize", "Font size", "number", 13],
+      ["width", "Width", "number", 320],
+      ["height", "Height", "number", ""],
+    ]) {
+      const label = node("label", "");
+      const input = node("input", "");
+      label.append(document.createTextNode(caption));
+      input.type = type === "color" ? "text" : type;
+      if (type === "color") input.dataset.colorField = "";
+      input.setAttribute("aria-label", "Note " + caption.toLowerCase());
+      input.dataset.noteProperty = prop;
+      input.value = ref[prop] ?? fallback;
+      if (type === "number") {
+        input.min = prop === "fontSize" ? 6 : 80;
+        input.placeholder = "Auto";
+      }
+      input.oninput = () => {
+        if (
+          type === "number" &&
+          input.value &&
+          Number(input.value) < Number(input.min)
+        )
+          return;
+        ref[prop] =
+          type === "number"
+            ? input.value
+              ? Number(input.value)
+              : undefined
+            : input.value;
+        const scene = [...document.querySelectorAll(".scene-note")].find(
+          (el) => el.dataset.reference === ref.id,
+        );
+        if (scene) this.paintNote(ref, scene);
+        this.ctx.persist();
+      };
+      label.append(input);
+      panel.append(label);
+    }
+  }
+  applyNote() {
+    const ref = this.references.find((ref) => ref.id === this.selectedNoteId);
+    if (!ref) return;
+    ref.name = $("noteName").value;
+    ref.format = $("noteFormat").value;
+    ref.source = this.noteEditor.state.doc.toString();
+    const scene = [...document.querySelectorAll(".scene-item")].find(
+      (el) => el.dataset.reference === ref.id,
+    );
+    if (scene) {
+      scene.querySelector(".lesson-note").innerHTML = lessonHTML(
+        ref.source,
+        ref.format,
+      );
+      scene.querySelector(".scene-handle").textContent = ref.name;
+      scene.querySelector(".scene-handle").hidden = !ref.name;
+      scene
+        .querySelector(".scene-handle")
+        .setAttribute("aria-label", "Move " + ref.name);
+    }
+    $("propertyTitle").textContent = ref.name || "Note";
+    const row = [
+      ...$("referenceProperties").querySelectorAll(".reference-row"),
+    ].find((el) => el.dataset.reference === ref.id);
+    if (row) {
+      row.querySelector("span").textContent = ref.name;
+      row.querySelectorAll("input").forEach((input) => {
+        const property = input.getAttribute("aria-label").split(" ").at(-1);
+        input.setAttribute("aria-label", ref.name + " " + property);
+      });
+      row
+        .querySelector("select")
+        .setAttribute("aria-label", ref.name + " blend");
+    }
+    this.ctx.persist();
   }
   async loadImages() {
     const bounds = $("stage").getBoundingClientRect();
@@ -1508,7 +2029,8 @@ export class Workbench {
         x: position.x,
         y: position.y,
         width: 400,
-        opacity: 0.5,
+        opacity: 1,
+        showLabel: false,
         blend: "normal",
       });
     }
@@ -1518,6 +2040,7 @@ export class Workbench {
   }
   renderReferences() {
     document.querySelector("#referenceLayer")?.remove();
+    document.getElementById("webcamOverlayLayer")?.remove();
     const layer = node("div", "");
     layer.id = "referenceLayer";
     $("world").prepend(layer);
@@ -1527,20 +2050,27 @@ export class Workbench {
       img.dataset.reference = ref.id;
       const handle = node("button", "scene-handle");
       handle.textContent = ref.name;
-      handle.title = "Drag to move · double-click to edit note";
+      if (ref.kind === "note") handle.hidden = !ref.name;
+      handle.title = "Drag to move · double-click to rename";
       handle.setAttribute("aria-label", "Move " + ref.name);
       img.append(handle);
       let content;
       if (ref.kind === "note") {
         content = node("article", "lesson-note");
         content.innerHTML = lessonHTML(ref.source, ref.format);
-        content.ondblclick = (e) => {
+        content.dataset.placeholder = "Write a note…";
+        content.title = "Double-click to edit on the canvas";
+        img.classList.add("scene-note");
+        img.onpointerdown = (e) => {
           e.stopPropagation();
-          this.editLessonNote(ref);
+          if (!e.target.closest("[contenteditable]")) this.selectNote(ref);
         };
       } else {
-        content = node(ref.kind === "video" ? "video" : "img", "scene-media");
-        content.src = ref.src;
+        content = node(
+          ["video", "webcam"].includes(ref.kind) ? "video" : "img",
+          "scene-media",
+        );
+        if (ref.src) content.src = ref.src;
         content.alt = ref.name;
         content.draggable = false;
         if (ref.kind === "video") {
@@ -1551,10 +2081,71 @@ export class Workbench {
       }
       img.append(content);
       img.style.cssText = `left:${ref.x}px;top:${ref.y}px;width:${ref.width}px;opacity:${ref.opacity};mix-blend-mode:${ref.blend}`;
+      if (ref.kind === "note") {
+        this.paintNote(ref, img);
+        const resize = node("button", "note-resize");
+        resize.title = "Resize note";
+        resize.setAttribute("aria-label", "Resize " + ref.name);
+        img.append(resize);
+        resize.onpointerdown = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          this.selectNote(ref);
+          const start = {
+            x: e.clientX,
+            y: e.clientY,
+            width: img.offsetWidth,
+            height: img.offsetHeight,
+          };
+          resize.setPointerCapture(e.pointerId);
+          resize.onpointermove = (e) => {
+            const zoom = this.ctx.canvas.camera.zoom;
+            ref.width = Math.max(
+              120,
+              start.width + (e.clientX - start.x) / zoom,
+            );
+            ref.height = Math.max(
+              80,
+              start.height + (e.clientY - start.y) / zoom,
+            );
+            this.paintNote(ref, img);
+            for (const prop of ["width", "height"])
+              $("noteAppearance").querySelector(
+                `[data-note-property="${prop}"]`,
+              ).value = Math.round(ref[prop]);
+          };
+          resize.onpointerup = resize.onpointercancel = () => {
+            resize.onpointermove = null;
+            this.ctx.persist();
+          };
+        };
+      }
       layer.append(img);
-      img.addEventListener("dblclick", (e) => e.stopPropagation());
+      img.addEventListener("dblclick", (e) => {
+        if (e.target.closest("[contenteditable]")) { e.stopPropagation(); return; }
+        e.preventDefault();
+        e.stopPropagation();
+        if (ref.kind === "note") {
+          const label = e.target.closest(".scene-handle");
+          if (!label) this.editNoteInline(ref);
+          else {
+            this.selectNote(ref);
+            $("noteName").focus();
+            $("noteName").select();
+          }
+        }
+      });
+      handle.ondblclick = (e) => {
+        if (ref.kind !== "note") return;
+        e.preventDefault();
+        e.stopPropagation();
+        this.selectNote(ref);
+        $("noteName").focus();
+        $("noteName").select();
+      };
       handle.onpointerdown = (e) => {
         e.stopPropagation();
+        if (ref.kind === "note") this.selectNote(ref);
         const start = { x: e.clientX, y: e.clientY, rx: ref.x, ry: ref.y };
         handle.setPointerCapture(e.pointerId);
         handle.onpointermove = (e) => {
@@ -1571,12 +2162,13 @@ export class Workbench {
         };
       };
       const row = node("div", "reference-row");
+      row.dataset.reference = ref.id;
       const label = node("span", "");
       label.textContent = ref.name;
       row.append(label);
       if (ref.kind === "note") {
         const edit = node("button", "", "✎");
-        edit.title = "Edit lesson note";
+        edit.title = "Edit note";
         edit.onclick = () => this.editLessonNote(ref);
         row.append(edit);
       }
@@ -1586,8 +2178,10 @@ export class Workbench {
         ["x", "number"],
         ["y", "number"],
       ]) {
+        if (ref.kind === "note" && prop === "width") continue;
         const input = node("input", "");
-        input.type = type;
+        input.type = type === "color" ? "text" : type;
+        if (type === "color") input.dataset.colorField = "";
         input.setAttribute("aria-label", ref.name + " " + prop);
         if (type === "range") {
           input.min = 0;
@@ -1623,12 +2217,9 @@ export class Workbench {
       row.append(blend);
       const del = node("button", "", "×");
       del.title = "Remove reference";
-      del.onclick = () => {
-        this.references = this.references.filter((r) => r !== ref);
-        this.renderReferences();
-        this.ctx.persist();
-      };
+      del.onclick = () => this.removeReference(ref.id);
       row.append(del);
+      decorateMedia(this, ref, img, content, handle, row);
       $("referenceProperties").append(row);
     }
   }

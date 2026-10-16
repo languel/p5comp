@@ -4,7 +4,10 @@
     "name": "Peripheral lab",
     "layout": "tabs",
     "activeView": "circuit",
-    "arduinoName": "PeripheralLab.ino"
+    "arduinoName": "PeripheralLab.ino",
+    "files": {
+      "index.html": "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"utf-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <title>p5 sketch</title>\n    <script src=\"p5.js\"></script>\n    <style>\n      html,\n      body {\n        margin: 0;\n        padding: 0;\n      }\n      canvas {\n        display: block;\n      }\n    </style>\n  </head>\n  <body>\n    <main id=\"canvas\"></main>\n    <script src=\"sketch.js\"></script>\n  </body>\n</html>\n"
+    }
   },
   "diagram": {
     "version": 1,
@@ -116,7 +119,7 @@
       [
         "nano:GND.1",
         "lcd:VSS",
-        null,
+        "#000000",
         [
           {
             "x": 184.5,
@@ -131,7 +134,7 @@
       [
         "nano:GND.1",
         "lcd:RW",
-        null,
+        "#000000",
         [
           {
             "x": 184.5,
@@ -292,7 +295,7 @@
       [
         "nano:GND.1",
         "rgb:COM",
-        null,
+        "#000000",
         [
           {
             "x": 184.5,
@@ -350,7 +353,7 @@
       [
         "nano:GND.1",
         "servo:GND",
-        null,
+        "#000000",
         [
           {
             "x": 184.5,
@@ -427,7 +430,7 @@
       [
         "nano:GND.1",
         "buzzer:2",
-        null,
+        "#000000",
         [
           {
             "x": 184.5,
@@ -450,7 +453,7 @@
       [
         "nano:GND.1",
         "segment:COM.2",
-        null,
+        "#000000",
         [
           {
             "x": 184.5,

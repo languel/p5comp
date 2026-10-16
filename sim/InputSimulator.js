@@ -69,9 +69,14 @@ export class InputSimulator {
           values[i] = on ? 1 : 0;
           this.set(part.id, values);
         });
-    else if (part.type === "wokwi-slide-switch")
-      add("Position 2–3 (off: 2–1)", "checkbox", value, (v) =>
-        this.set(part.id, Number(v)),
+    else if (["wokwi-slide-switch", "p5comp-toggle-switch"].includes(part.type))
+      add(
+        part.type === "p5comp-toggle-switch"
+          ? "Closed"
+          : "Position 2–3 (off: 2–1)",
+        "checkbox",
+        value,
+        (v) => this.set(part.id, Number(v)),
       );
     else if (part.type === "wokwi-pir-motion-sensor") {
       const b = document.createElement("button");

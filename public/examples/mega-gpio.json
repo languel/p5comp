@@ -15,10 +15,13 @@
     "gridBetween": false
   },
   "workbench": {
-    "name": "Mega \u00b7 high pins / A15 / LED bar",
+    "name": "Mega · high pins / A15 / LED bar",
     "arduinoName": "mega-gpio.ino",
     "layout": "tabs",
-    "activeView": "circuit"
+    "activeView": "circuit",
+    "files": {
+      "index.html": "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"utf-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <title>p5 sketch</title>\n    <script src=\"p5.js\"></script>\n    <style>\n      html,\n      body {\n        margin: 0;\n        padding: 0;\n      }\n      canvas {\n        display: block;\n      }\n    </style>\n  </head>\n  <body>\n    <main id=\"canvas\"></main>\n    <script src=\"sketch.js\"></script>\n  </body>\n</html>\n"
+    }
   },
   "diagram": {
     "version": 1,
@@ -107,7 +110,7 @@
       [
         "board:GND.1",
         "slider:GND",
-        "#121415",
+        "#000000",
         [
           {
             "x": 149,
@@ -183,7 +186,7 @@
       [
         "board:GND.1",
         "bar:C1",
-        "#121415",
+        "#000000",
         [
           {
             "x": 149,
@@ -240,7 +243,7 @@
       [
         "bar:C1",
         "bar:C2",
-        "#121415",
+        "#000000",
         [
           {
             "x": 740,
@@ -285,7 +288,7 @@
       [
         "bar:C2",
         "bar:C3",
-        "#121415",
+        "#000000",
         [
           {
             "x": 740,
@@ -338,7 +341,7 @@
       [
         "bar:C3",
         "bar:C4",
-        "#121415",
+        "#000000",
         [
           {
             "x": 740,

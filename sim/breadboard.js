@@ -62,16 +62,42 @@ export function breadboardContacts(
   }
   return contacts;
 }
+export const BREADBOARD_COLOR = "#eeefea";
+export function breadboardPalette(value) {
+  const color = /^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(value || "")
+    ? value
+    : BREADBOARD_COLOR;
+  const rgb = [1, 3, 5].map((i) => parseInt(color.slice(i, i + 2), 16));
+  const dark = rgb[0] * 0.299 + rgb[1] * 0.587 + rgb[2] * 0.114 < 135;
+  return {
+    color,
+    hole: dark ? "#a4a6a8" : "#858987",
+    label: dark ? "#c1c3c5" : "#676b69",
+    border: dark ? "#707274" : "#c5c7c3",
+  };
+}
 export function breadboardSVG(part) {
   const s = boardSpec(part),
     w = s.width,
     h = s.height;
+  const palette = breadboardPalette(part.attrs?.color);
   const holes = breadboardPins(part)
     .map(
       (p) =>
         `<circle class="breadboard-hole" cx="${p.x}" cy="${p.y}" r="${BREADBOARD_HOLE_RADIUS}"/>`,
     )
     .join("");
+  const strips = part.attrs?.xray
+    ? `<g class="breadboard-contacts" fill="none" stroke="#b28a45" stroke-width="5.5" stroke-linecap="round" opacity=".65">${Array.from(
+        { length: s.columns },
+        (_, i) => {
+          const x = 18 + i * 9.5;
+          return `<path d="M${x} ${s.top}v38M${x} ${s.bottom}v38"/>`;
+        },
+      ).join(
+        "",
+      )}${s.rails ? [12, 21.5, 165.4, 174.9].map((y) => `<path d="M18 ${y}H${18 + (s.columns - 1) * 9.5}"/>`).join("") : ""}</g>`
+    : "";
   const columns = Array.from({ length: s.columns }, (_, i) => i + 1)
     .filter((n) => n === 1 || n % 5 === 0 || n === s.columns)
     .map(
@@ -85,7 +111,7 @@ export function breadboardSVG(part) {
         `<text class="breadboard-label" x="5" y="${(i < 5 ? s.top + i * 9.5 : s.bottom + (i - 5) * 9.5) + 3}">${r}</text>`,
     )
     .join("");
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><rect class="breadboard" x="1" y="1" width="${w - 2}" height="${h - 2}" rx="5"/><path d="M8 ${s.top + 52.25}H${w - 8}" stroke="#888" opacity=".2"/>${holes}${s.rails ? `<path class="breadboard-rail" stroke="#bc7770" d="M12 6H${w - 13}M12 160.4H${w - 13}"/><path class="breadboard-rail" stroke="#99a4aa" d="M12 28H${w - 13}M12 181.9H${w - 13}"/>` : ""}${columns}${rows}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="--board-color:${palette.color};--board-hole:${palette.hole};--board-label:${palette.label};--board-border:${palette.border}"><rect class="breadboard" x="1" y="1" width="${w - 2}" height="${h - 2}" rx="5"/><path d="M8 ${s.top + 52.25}H${w - 8}" stroke="#888" opacity=".2"/>${strips}${holes}${s.rails ? `<path class="breadboard-rail" stroke="#bc7770" d="M12 6H${w - 13}M12 160.4H${w - 13}"/><path class="breadboard-rail" stroke="#99a4aa" d="M12 28H${w - 13}M12 181.9H${w - 13}"/>` : ""}${columns}${rows}</svg>`;
 }
 
 export const breadboardName = (p) =>

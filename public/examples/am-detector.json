@@ -1,0 +1,355 @@
+{
+  "version": 2,
+  "canvas": {
+    "camera": {
+      "x": 30,
+      "y": 80,
+      "zoom": 1
+    },
+    "snap": true,
+    "orthogonal": true,
+    "labels": true,
+    "gridReference": "breadboard"
+  },
+  "workbench": {
+    "name": "AM · detect an audio envelope",
+    "layout": "tabs",
+    "activeView": "circuit",
+    "splitRatio": 0.6,
+    "files": {}
+  },
+  "diagram": {
+    "version": 1,
+    "parts": [
+      {
+        "id": "gen",
+        "type": "p5comp-signal-generator",
+        "left": 40,
+        "top": 80,
+        "attrs": {
+          "waveform": "am",
+          "frequency": 1000,
+          "amplitude": 2,
+          "offset": 0,
+          "modulationFrequency": 100,
+          "modulationDepth": 0.7
+        }
+      },
+      {
+        "id": "d",
+        "type": "p5comp-diode",
+        "left": 210,
+        "top": 170,
+        "attrs": {
+          "forwardVoltage": 0.2
+        }
+      },
+      {
+        "id": "r",
+        "type": "wokwi-resistor",
+        "left": 290,
+        "top": 240,
+        "attrs": {
+          "value": "10k"
+        }
+      },
+      {
+        "id": "c",
+        "type": "p5comp-capacitor",
+        "left": 210,
+        "top": 310,
+        "attrs": {
+          "value": "47nF"
+        }
+      },
+      {
+        "id": "g",
+        "type": "p5comp-ground",
+        "left": 125,
+        "top": 360,
+        "attrs": {}
+      },
+      {
+        "id": "scope",
+        "type": "p5comp-oscilloscope",
+        "left": 450,
+        "top": 80,
+        "attrs": {
+          "timeWindow": 0.03,
+          "voltsPerDiv": 1,
+          "triggerLevel": 0,
+          "triggerMode": "auto"
+        }
+      },
+      {
+        "id": "speaker",
+        "type": "p5comp-speaker",
+        "left": 450,
+        "top": 330,
+        "attrs": {
+          "resistance": 1000000,
+          "volume": 0.3
+        },
+        "label": "High-impedance audio monitor"
+      }
+    ],
+    "connections": [
+      [
+        "gen:GND",
+        "g:GND",
+        "#000000",
+        [
+          {
+            "x": 140,
+            "y": 348
+          },
+          {
+            "x": 145,
+            "y": 348
+          }
+        ]
+      ],
+      [
+        "gen:OUT",
+        "d:A",
+        "#8796a6",
+        [
+          {
+            "x": 65,
+            "y": 174
+          },
+          {
+            "x": 198,
+            "y": 174
+          },
+          {
+            "x": 198,
+            "y": 194
+          }
+        ]
+      ],
+      [
+        "d:K",
+        "r:1",
+        "#8796a6",
+        [
+          {
+            "x": 360.8,
+            "y": 194
+          },
+          {
+            "x": 360.8,
+            "y": 263.3
+          },
+          {
+            "x": 278,
+            "y": 263.3
+          },
+          {
+            "x": 278,
+            "y": 245.65
+          }
+        ]
+      ],
+      [
+        "r:2",
+        "g:GND",
+        "#000000",
+        [
+          {
+            "x": 368.8,
+            "y": 245.65
+          },
+          {
+            "x": 368.8,
+            "y": 298
+          },
+          {
+            "x": 145,
+            "y": 298
+          }
+        ]
+      ],
+      [
+        "d:K",
+        "c:1",
+        "#8796a6",
+        [
+          {
+            "x": 298,
+            "y": 194
+          },
+          {
+            "x": 298,
+            "y": 158
+          },
+          {
+            "x": 190,
+            "y": 158
+          },
+          {
+            "x": 190,
+            "y": 328
+          }
+        ]
+      ],
+      [
+        "c:2",
+        "g:GND",
+        "#000000",
+        [
+          {
+            "x": 282,
+            "y": 328
+          },
+          {
+            "x": 282,
+            "y": 358
+          },
+          {
+            "x": 177,
+            "y": 358
+          },
+          {
+            "x": 177,
+            "y": 348
+          },
+          {
+            "x": 145,
+            "y": 348
+          }
+        ]
+      ],
+      [
+        "scope:GND",
+        "g:GND",
+        "#000000",
+        [
+          {
+            "x": 470,
+            "y": 284
+          },
+          {
+            "x": 148,
+            "y": 284
+          },
+          {
+            "x": 148,
+            "y": 348
+          },
+          {
+            "x": 145,
+            "y": 348
+          }
+        ]
+      ],
+      [
+        "scope:CH1",
+        "gen:OUT",
+        "#8796a6",
+        [
+          {
+            "x": 570,
+            "y": 290
+          },
+          {
+            "x": 65,
+            "y": 290
+          }
+        ]
+      ],
+      [
+        "scope:CH2",
+        "d:K",
+        "#7ba9ca",
+        [
+          {
+            "x": 670,
+            "y": 298
+          },
+          {
+            "x": 376.8,
+            "y": 298
+          },
+          {
+            "x": 376.8,
+            "y": 202
+          },
+          {
+            "x": 298,
+            "y": 202
+          },
+          {
+            "x": 298,
+            "y": 194
+          }
+        ]
+      ],
+      [
+        "speaker:+",
+        "d:K",
+        "#8796a6",
+        [
+          {
+            "x": 438,
+            "y": 354
+          },
+          {
+            "x": 438,
+            "y": 210
+          },
+          {
+            "x": 298,
+            "y": 210
+          },
+          {
+            "x": 298,
+            "y": 194
+          }
+        ]
+      ],
+      [
+        "speaker:-",
+        "g:GND",
+        "#000000",
+        [
+          {
+            "x": 538,
+            "y": 354
+          },
+          {
+            "x": 538,
+            "y": 402
+          },
+          {
+            "x": 182,
+            "y": 402
+          },
+          {
+            "x": 182,
+            "y": 340
+          },
+          {
+            "x": 137,
+            "y": 340
+          },
+          {
+            "x": 137,
+            "y": 346
+          },
+          {
+            "x": 145,
+            "y": 346
+          }
+        ]
+      ]
+    ]
+  },
+  "controls": {},
+  "api": "none",
+  "arduino": "// Analog-only lesson: no Arduino firmware required.\n",
+  "p5": {
+    "none": "function setup() {\n  createCanvas(400, 150);\n  background(30);\n  fill(230);\n  text(\"A low-frequency AM teaching signal, diode and RC envelope detector. Audio monitor is high impedance; this is not an RF radio or antenna model.\", 20, 40, 360, 100);\n  noLoop();\n}\n"
+  },
+  "artifact": null
+}

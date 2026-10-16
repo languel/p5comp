@@ -55,6 +55,8 @@ export class P5Bridge extends EventTarget {
   async run(source, project = {}) {
     const generation = ++this.generation;
     clearTimeout(this.startupTimer);
+    if (this.loaded) await this.closeSerial();
+    if (generation !== this.generation) return;
     this.project = project;
     this.source = source;
     this.loaded = false;
@@ -183,6 +185,23 @@ export class P5Bridge extends EventTarget {
       }),
     );
   }
+  closeSerial() {
+    if (!this.loaded) return Promise.resolve();
+    this.serialClosePending?.resolve();
+    return new Promise((resolve) => {
+      const requestId = (this.serialCloseSequence || 0) + 1;
+      this.serialCloseSequence = requestId;
+      const finish = () => {
+        clearTimeout(timer);
+        if (this.serialClosePending?.requestId === requestId)
+          this.serialClosePending = null;
+        resolve();
+      };
+      const timer = setTimeout(finish, 750);
+      this.serialClosePending = { requestId, resolve: finish };
+      this.#post({ type: "closeSerial", requestId });
+    });
+  }
   stop() {
     ++this.generation;
     clearTimeout(this.startupTimer);
@@ -231,6 +250,11 @@ export class P5Bridge extends EventTarget {
   #handleMessage(event) {
     if (event.source !== this.frame.contentWindow || !event.data) return;
     const message = event.data;
+    if (message.type === "serialClosed") {
+      if (this.serialClosePending?.requestId === message.requestId)
+        this.serialClosePending.resolve();
+      return;
+    }
     if (message.type === "loaded") {
       this.loaded = true;
       this.#status("Starting p5…");

@@ -1,0 +1,293 @@
+{
+  "version": 2,
+  "canvas": {
+    "camera": {
+      "x": 30,
+      "y": 80,
+      "zoom": 1
+    },
+    "snap": true,
+    "orthogonal": true,
+    "labels": true,
+    "gridReference": "breadboard"
+  },
+  "workbench": {
+    "name": "NPN · transistor switching",
+    "layout": "tabs",
+    "activeView": "circuit",
+    "splitRatio": 0.6,
+    "files": {}
+  },
+  "diagram": {
+    "version": 1,
+    "parts": [
+      {
+        "id": "bat",
+        "type": "p5comp-battery",
+        "left": 30,
+        "top": 80,
+        "attrs": {
+          "voltage": 5
+        }
+      },
+      {
+        "id": "gen",
+        "type": "p5comp-signal-generator",
+        "left": 20,
+        "top": 220,
+        "attrs": {
+          "waveform": "square",
+          "frequency": 2,
+          "amplitude": 2.5,
+          "offset": 2.5,
+          "duty": 0.5
+        }
+      },
+      {
+        "id": "rb",
+        "type": "wokwi-resistor",
+        "left": 150,
+        "top": 250,
+        "attrs": {
+          "value": "10k"
+        },
+        "label": "Base · 10 kΩ"
+      },
+      {
+        "id": "load",
+        "type": "wokwi-resistor",
+        "left": 330,
+        "top": 200,
+        "attrs": {
+          "value": "1k"
+        },
+        "label": "Load · 1 kΩ"
+      },
+      {
+        "id": "q",
+        "type": "p5comp-npn",
+        "left": 220,
+        "top": 180,
+        "attrs": {}
+      },
+      {
+        "id": "g",
+        "type": "p5comp-ground",
+        "left": 280,
+        "top": 390,
+        "attrs": {}
+      },
+      {
+        "id": "scope",
+        "type": "p5comp-oscilloscope",
+        "left": 470,
+        "top": 100,
+        "attrs": {
+          "timeWindow": 1,
+          "voltsPerDiv": 1,
+          "triggerLevel": 2.5,
+          "triggerMode": "auto"
+        }
+      }
+    ],
+    "connections": [
+      [
+        "bat:-",
+        "g:GND",
+        "#000000",
+        [
+          {
+            "x": 308,
+            "y": 104
+          },
+          {
+            "x": 308,
+            "y": 378
+          },
+          {
+            "x": 300,
+            "y": 378
+          }
+        ]
+      ],
+      [
+        "gen:GND",
+        "g:GND",
+        "#000000",
+        [
+          {
+            "x": 120,
+            "y": 378
+          },
+          {
+            "x": 300,
+            "y": 378
+          }
+        ]
+      ],
+      [
+        "gen:OUT",
+        "rb:1",
+        "#8796a6",
+        [
+          {
+            "x": 45,
+            "y": 314
+          },
+          {
+            "x": 138,
+            "y": 314
+          },
+          {
+            "x": 138,
+            "y": 255.65
+          }
+        ]
+      ],
+      [
+        "rb:2",
+        "q:B",
+        "#8796a6",
+        [
+          {
+            "x": 220.8,
+            "y": 255.65
+          },
+          {
+            "x": 208,
+            "y": 255.65
+          },
+          {
+            "x": 208,
+            "y": 218
+          }
+        ]
+      ],
+      [
+        "q:C",
+        "load:1",
+        "#8796a6",
+        [
+          {
+            "x": 277,
+            "y": 168
+          },
+          {
+            "x": 318,
+            "y": 168
+          },
+          {
+            "x": 318,
+            "y": 205.65
+          }
+        ]
+      ],
+      [
+        "scope:GND",
+        "g:GND",
+        "#000000",
+        [
+          {
+            "x": 490,
+            "y": 304
+          },
+          {
+            "x": 300,
+            "y": 304
+          }
+        ]
+      ],
+      [
+        "scope:CH1",
+        "gen:OUT",
+        "#8796a6",
+        [
+          {
+            "x": 590,
+            "y": 322
+          },
+          {
+            "x": 45,
+            "y": 322
+          }
+        ]
+      ],
+      [
+        "scope:CH2",
+        "q:C",
+        "#7ba9ca",
+        [
+          {
+            "x": 690,
+            "y": 310
+          },
+          {
+            "x": 400.8,
+            "y": 310
+          },
+          {
+            "x": 400.8,
+            "y": 160
+          },
+          {
+            "x": 277,
+            "y": 160
+          }
+        ]
+      ],
+      [
+        "q:E",
+        "g:GND",
+        "#000000",
+        [
+          {
+            "x": 277,
+            "y": 268
+          },
+          {
+            "x": 297,
+            "y": 268
+          },
+          {
+            "x": 297,
+            "y": 378
+          },
+          {
+            "x": 300,
+            "y": 378
+          }
+        ]
+      ],
+      [
+        "load:2",
+        "bat:+",
+        "#c77770",
+        [
+          {
+            "x": 408.8,
+            "y": 205.65
+          },
+          {
+            "x": 408.8,
+            "y": 152
+          },
+          {
+            "x": 18,
+            "y": 152
+          },
+          {
+            "x": 18,
+            "y": 104
+          }
+        ]
+      ]
+    ]
+  },
+  "controls": {},
+  "api": "none",
+  "arduino": "// Analog-only lesson: no Arduino firmware required.\n",
+  "p5": {
+    "none": "function setup() {\n  createCanvas(400, 150);\n  background(30);\n  fill(230);\n  text(\"Compare base drive and collector voltage. This is a simplified transistor model, not a device-specific SPICE model.\", 20, 40, 360, 100);\n  noLoop();\n}\n"
+  },
+  "artifact": null
+}

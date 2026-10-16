@@ -8,7 +8,7 @@
   </head>
   <body>
     <header class="bar">
-      <a class="brand" href="/sim/">p5comp</a>
+      <a class="brand" href="/">p5comp</a>
       <nav class="section-nav" aria-label="Sections">
         <a href="/sim/" class="active" aria-current="page">circuit</a
         ><a href="/ide">code</a><a href="/firmata/">firmata</a>
@@ -29,8 +29,8 @@
       </button>
       <span id="status" role="status">Ready · simulated Uno</span>
       <button id="run" class="primary">Run Arduino + p5</button
-      ><button id="pause" disabled>Pause</button
-      ><button id="reset">Reset</button>
+      ><button id="pause" hidden disabled>Pause</button
+      ><button id="reset" hidden>Reset</button>
       <button id="toggleCode">Code editors</button
       ><button id="toggleControls" aria-pressed="true">Input controls</button
       ><button id="hideUI">Hide interface</button>
@@ -178,6 +178,10 @@
           <div class="section-bar">
             <span>p5 sketch</span
             ><select id="comms" aria-label="Communication API">
+              <option value="none">None</option>
+              <option value="firmata">
+                Firmata (StandardFirmata required)
+              </option>
               <option value="webserial">p5.webserial</option>
               <option value="native">navigator.serial</option></select
             ><button id="runP5">Run p5</button>
@@ -221,14 +225,59 @@
       <details class="serial-panel" id="monitor">
         <summary>Console <span title="9600 baud UART">9600</span></summary>
         <div class="log-tools">
-          <button id="clearLog">Clear</button>
           <form id="sendForm">
             <input
               id="sendText"
               aria-label="Serial command"
               value="PING"
-            /><button>Send to Uno</button>
+              placeholder="Message (Enter to send)"
+            /><button type="submit">Send</button>
           </form>
+          <div class="serial-options">
+            <label
+              >Baud
+              <select
+                id="monitorBaud"
+                data-native
+                aria-label="Serial monitor baud rate"
+              >
+                <option>300</option>
+                <option>1200</option>
+                <option>2400</option>
+                <option>4800</option>
+                <option selected>9600</option>
+                <option>19200</option>
+                <option>38400</option>
+                <option>57600</option>
+                <option>115200</option>
+                <option>230400</option>
+                <option>250000</option>
+                <option>500000</option>
+                <option>1000000</option>
+                <option>2000000</option>
+              </select></label
+            >
+            <label
+              >Line ending
+              <select
+                id="monitorEnding"
+                data-native
+                aria-label="Serial monitor line ending"
+              >
+                <option value="none">No line ending</option>
+                <option value="lf" selected>Newline (LF)</option>
+                <option value="cr">Carriage return (CR)</option>
+                <option value="crlf">Both (CR + LF)</option>
+              </select></label
+            >
+            <button
+              id="clearLog"
+              title="Clear serial monitor"
+              aria-label="Clear serial monitor"
+            >
+              Clear
+            </button>
+          </div>
         </div>
         <pre id="log"></pre>
       </details>

@@ -923,7 +923,7 @@ h2 {
 .button:focus-visible,
 input:focus-visible,
 select:focus-visible {
-  outline: 2px solid var(--ui-focus);
+  outline: 1px dashed var(--ui-focus);
   outline-offset: 2px;
 }
 
@@ -1141,4 +1141,16 @@ select:focus-visible {
 .log-line.warn,
 .log-line.error {
   color: var(--ui-warning);
+}
+
+:where(button, a, summary, input, select, textarea, [tabindex]):focus:not(
+    :focus-visible
+  ) {
+  outline: none !important;
+}
+summary:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 1px dashed var(--ui-focus);
+  outline-offset: 2px;
 }

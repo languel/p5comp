@@ -1,3 +1,38 @@
+// Opacity/8-digit hex behavior adapted from Artist Model Studio's workbench/colorPicker.js.
+export function parseColor(value, fallback = "#788fa5") {
+  let s = String(value || fallback).trim();
+  if (/^#[0-9a-f]{3}$/i.test(s))
+    s = "#" + [...s.slice(1)].map((c) => c + c).join("");
+  if (/^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(s))
+    return {
+      hex: s.slice(0, 7),
+      alpha: s.length === 9 ? parseInt(s.slice(7), 16) / 255 : 1,
+    };
+  const m = s.match(/^rgba?\(([^)]+)\)$/i);
+  if (m) {
+    const [r, g, b, a = 1] = m[1].split(",").map(Number);
+    return {
+      hex:
+        "#" +
+        [r, g, b]
+          .map((x) =>
+            Math.round(Math.max(0, Math.min(255, x)))
+              .toString(16)
+              .padStart(2, "0"),
+          )
+          .join(""),
+      alpha: Math.max(0, Math.min(1, a)),
+    };
+  }
+  return parseColor(fallback, "#788fa5");
+}
+export const formatColor = (hex, alpha) =>
+  alpha >= 0.999
+    ? hex
+    : hex +
+      Math.round(Math.max(0, Math.min(1, alpha)) * 255)
+        .toString(16)
+        .padStart(2, "0");
 export function hsvHex(h, s, v) {
   const f = (n) => {
     const k = (n + h / 60) % 6;
@@ -31,10 +66,23 @@ export class ColorPicker {
     this.panel.hidden = true;
     this.panel.setAttribute("aria-label", "Custom color picker");
     this.panel.innerHTML =
-      '<div class="color-field" role="button" tabindex="0" aria-label="Color saturation and brightness"><i></i></div><input type="range" min="0" max="360" step="1" aria-label="Color hue"><div class="color-entry"><span class="color-preview"></span><input type="text" maxlength="7" aria-label="Hex color" spellcheck="false"><button title="Apply color" aria-label="Apply color">✓</button></div>';
+      '<div class="color-field" role="button" tabindex="0" aria-label="Color saturation and brightness"><i></i></div><input type="range" min="0" max="360" step="1" aria-label="Color hue"><label class="color-opacity">Opacity <input type="range" min="0" max="100" step="1" aria-label="Color opacity"><input type="number" min="0" max="100" aria-label="Color opacity percent">%</label><div class="color-entry"><span class="color-preview"></span><input type="text" maxlength="9" aria-label="Hex color" spellcheck="false"><button title="Apply color" aria-label="Apply color">✓</button></div>';
     document.body.append(this.panel);
     this.field = this.panel.querySelector(".color-field");
     this.hue = this.panel.querySelector("input[type=range]");
+    this.alpha = this.panel.querySelector('[aria-label="Color opacity"]');
+    this.percent = this.panel.querySelector(
+      '[aria-label="Color opacity percent"]',
+    );
+    this.a = 1;
+    this.alpha.oninput = () => {
+      this.a = Number(this.alpha.value) / 100;
+      this.change();
+    };
+    this.percent.oninput = () => {
+      this.a = Math.max(0, Math.min(100, Number(this.percent.value))) / 100;
+      this.change();
+    };
     this.hex = this.panel.querySelector("input[type=text]");
     this.preview = this.panel.querySelector(".color-preview");
     let dragging = false;
@@ -74,18 +122,20 @@ export class ColorPicker {
     };
     this.hex.oninput = () => {
       const val = this.hex.value;
-      if (/^#[0-9a-f]{6}$/i.test(val)) {
-        Object.assign(this, fromHex(val));
+      if (/^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(val)) {
+        const parsed = parseColor(val);
+        Object.assign(this, fromHex(parsed.hex));
+        this.a = parsed.alpha;
         this.paint();
         this.fn(val);
       }
       this.hex.setAttribute(
         "aria-invalid",
-        String(!/^#[0-9a-f]{6}$/i.test(val)),
+        String(!/^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(val)),
       );
     };
     const close = () => {
-      if (/^#[0-9a-f]{6}$/i.test(this.hex.value)) {
+      if (/^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(this.hex.value)) {
         this.fn(this.hex.value);
         this.panel.hidden = true;
         this.anchor?.focus();
@@ -114,21 +164,16 @@ export class ColorPicker {
   open(anchor, value, fn) {
     this.anchor = anchor;
     this.fn = fn;
-    const context = document.createElement("canvas").getContext("2d");
-    context.fillStyle = "#788fa5";
-    context.fillStyle = value || "#788fa5";
-    const normalized = context.fillStyle;
-    Object.assign(
-      this,
-      fromHex(/^#[0-9a-f]{6}$/i.test(normalized) ? normalized : "#788fa5"),
-    );
+    const parsed = parseColor(value);
+    Object.assign(this, fromHex(parsed.hex));
+    this.a = parsed.alpha;
     this.paint();
     this.panel.hidden = false;
     const r = anchor.getBoundingClientRect();
     this.panel.style.left =
       Math.max(8, Math.min(r.left, innerWidth - 200)) + "px";
     this.panel.style.top =
-      Math.max(8, Math.min(r.bottom + 6, innerHeight - 220)) + "px";
+      Math.max(8, Math.min(r.bottom + 6, innerHeight - 290)) + "px";
     this.hex.focus();
     this.hex.select();
   }
@@ -137,7 +182,9 @@ export class ColorPicker {
     this.fn(this.hex.value);
   }
   paint() {
-    const color = hsvHex(this.h, this.s, this.v);
+    const color = formatColor(hsvHex(this.h, this.s, this.v), this.a);
+    this.alpha.value = Math.round(this.a * 100);
+    this.percent.value = Math.round(this.a * 100);
     this.hex.value = color;
     this.hex.setAttribute("aria-invalid", "false");
     this.preview.style.background = color;
@@ -146,4 +193,62 @@ export class ColorPicker {
     this.field.querySelector("i").style.top = (1 - this.v) * 100 + "%";
     this.hue.value = this.h;
   }
+}
+
+// Keep existing input IDs/events and saved values while replacing native color wells.
+export function installColorFields(root = document) {
+  const picker = new ColorPicker();
+  const upgrade = () =>
+    root
+      .querySelectorAll('input[type="color"],input[data-color-field]')
+      .forEach((input) => {
+        input.removeAttribute("data-color-field");
+        input.type = "text";
+        input.hidden = true;
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "alpha-color-swatch";
+        const label =
+          input.getAttribute("aria-label") ||
+          input.closest("label")?.textContent.trim() ||
+          "Color";
+        button.setAttribute("aria-label", label);
+        button.title = label + " · color and opacity";
+        const chip = document.createElement("span");
+        button.append(chip);
+        input.after(button);
+        const descriptor = Object.getOwnPropertyDescriptor(
+          HTMLInputElement.prototype,
+          "value",
+        );
+        const paint = () => {
+          chip.style.background = input.value;
+          button.title = label + " · " + input.value + " · color and opacity";
+          button.disabled = input.disabled;
+        };
+        Object.defineProperty(input, "value", {
+          configurable: true,
+          get() {
+            return descriptor.get.call(this);
+          },
+          set(v) {
+            descriptor.set.call(this, v);
+            paint();
+          },
+        });
+        button.onclick = (e) => {
+          e.preventDefault();
+          picker.open(button, input.value, (value) => {
+            input.value = value;
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+            input.dispatchEvent(new Event("change", { bubbles: true }));
+          });
+        };
+        paint();
+      });
+  upgrade();
+  new MutationObserver(upgrade).observe(root.documentElement || root, {
+    childList: true,
+    subtree: true,
+  });
 }

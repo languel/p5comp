@@ -1,0 +1,423 @@
+{
+  "version": 2,
+  "canvas": {
+    "camera": {
+      "x": 30,
+      "y": 80,
+      "zoom": 1
+    },
+    "snap": true,
+    "orthogonal": true,
+    "labels": true,
+    "gridReference": "breadboard"
+  },
+  "workbench": {
+    "name": "555 · oscillator and timing capacitor",
+    "layout": "tabs",
+    "activeView": "circuit",
+    "splitRatio": 0.6,
+    "files": {}
+  },
+  "diagram": {
+    "version": 1,
+    "parts": [
+      {
+        "id": "bat",
+        "type": "p5comp-battery",
+        "left": 40,
+        "top": 90,
+        "attrs": {
+          "voltage": 5
+        }
+      },
+      {
+        "id": "ic",
+        "type": "p5comp-555",
+        "left": 220,
+        "top": 120,
+        "attrs": {}
+      },
+      {
+        "id": "r1",
+        "type": "wokwi-resistor",
+        "left": 120,
+        "top": 60,
+        "attrs": {
+          "value": "1k"
+        },
+        "label": "1 kΩ"
+      },
+      {
+        "id": "r2",
+        "type": "wokwi-resistor",
+        "left": 340,
+        "top": 170,
+        "attrs": {
+          "value": "10k"
+        },
+        "label": "10 kΩ"
+      },
+      {
+        "id": "c",
+        "type": "p5comp-capacitor",
+        "left": 340,
+        "top": 280,
+        "attrs": {
+          "value": "1uF"
+        },
+        "label": "1 µF"
+      },
+      {
+        "id": "g",
+        "type": "p5comp-ground",
+        "left": 125,
+        "top": 360,
+        "attrs": {}
+      },
+      {
+        "id": "scope",
+        "type": "p5comp-oscilloscope",
+        "left": 470,
+        "top": 80,
+        "attrs": {
+          "timeWindow": 0.05,
+          "voltsPerDiv": 1,
+          "triggerLevel": 2.5,
+          "triggerMode": "auto"
+        }
+      },
+      {
+        "id": "speaker",
+        "type": "p5comp-speaker",
+        "left": 470,
+        "top": 340,
+        "attrs": {
+          "resistance": 100000,
+          "volume": 0.1
+        },
+        "label": "Audio monitor · high impedance"
+      }
+    ],
+    "connections": [
+      [
+        "bat:-",
+        "g:GND",
+        "#000000",
+        [
+          {
+            "x": 128,
+            "y": 114
+          },
+          {
+            "x": 128,
+            "y": 348
+          },
+          {
+            "x": 145,
+            "y": 348
+          }
+        ]
+      ],
+      [
+        "bat:+",
+        "ic:VCC",
+        "#c77770",
+        [
+          {
+            "x": 28,
+            "y": 114
+          },
+          {
+            "x": 28,
+            "y": 48
+          },
+          {
+            "x": 332,
+            "y": 48
+          },
+          {
+            "x": 332,
+            "y": 145
+          }
+        ]
+      ],
+      [
+        "bat:+",
+        "ic:RESET",
+        "#c77770",
+        [
+          {
+            "x": 28,
+            "y": 114
+          },
+          {
+            "x": 28,
+            "y": 202
+          }
+        ]
+      ],
+      [
+        "bat:+",
+        "r1:1",
+        "#c77770",
+        [
+          {
+            "x": 20,
+            "y": 114
+          },
+          {
+            "x": 20,
+            "y": 65.65
+          }
+        ]
+      ],
+      [
+        "r1:2",
+        "ic:DISCH",
+        "#8796a6",
+        [
+          {
+            "x": 332,
+            "y": 65.65
+          },
+          {
+            "x": 332,
+            "y": 164
+          }
+        ]
+      ],
+      [
+        "ic:DISCH",
+        "r2:1",
+        "#8796a6",
+        [
+          {
+            "x": 332,
+            "y": 164
+          },
+          {
+            "x": 328,
+            "y": 164
+          },
+          {
+            "x": 328,
+            "y": 175.65
+          }
+        ]
+      ],
+      [
+        "r2:2",
+        "ic:THRESH",
+        "#8796a6",
+        [
+          {
+            "x": 410.8,
+            "y": 175.65
+          },
+          {
+            "x": 332,
+            "y": 175.65
+          },
+          {
+            "x": 332,
+            "y": 183
+          }
+        ]
+      ],
+      [
+        "ic:TRIG",
+        "ic:THRESH",
+        "#8796a6",
+        [
+          {
+            "x": 208,
+            "y": 164
+          },
+          {
+            "x": 332,
+            "y": 164
+          },
+          {
+            "x": 332,
+            "y": 183
+          }
+        ]
+      ],
+      [
+        "ic:THRESH",
+        "c:1",
+        "#8796a6",
+        [
+          {
+            "x": 332,
+            "y": 183
+          },
+          {
+            "x": 328,
+            "y": 183
+          },
+          {
+            "x": 328,
+            "y": 298
+          }
+        ]
+      ],
+      [
+        "ic:GND",
+        "g:GND",
+        "#000000",
+        [
+          {
+            "x": 145,
+            "y": 145
+          }
+        ]
+      ],
+      [
+        "c:2",
+        "g:GND",
+        "#000000",
+        [
+          {
+            "x": 412,
+            "y": 298
+          },
+          {
+            "x": 412,
+            "y": 348
+          },
+          {
+            "x": 145,
+            "y": 348
+          }
+        ]
+      ],
+      [
+        "scope:GND",
+        "g:GND",
+        "#000000",
+        [
+          {
+            "x": 490,
+            "y": 284
+          },
+          {
+            "x": 418.8,
+            "y": 284
+          },
+          {
+            "x": 418.8,
+            "y": 340
+          },
+          {
+            "x": 145,
+            "y": 340
+          }
+        ]
+      ],
+      [
+        "scope:CH1",
+        "ic:OUT",
+        "#8796a6",
+        [
+          {
+            "x": 590,
+            "y": 290
+          },
+          {
+            "x": 412,
+            "y": 290
+          },
+          {
+            "x": 412,
+            "y": 238
+          },
+          {
+            "x": 208,
+            "y": 238
+          },
+          {
+            "x": 208,
+            "y": 183
+          }
+        ]
+      ],
+      [
+        "scope:CH2",
+        "c:1",
+        "#7ba9ca",
+        [
+          {
+            "x": 690,
+            "y": 328
+          },
+          {
+            "x": 328,
+            "y": 328
+          },
+          {
+            "x": 328,
+            "y": 298
+          }
+        ]
+      ],
+      [
+        "speaker:+",
+        "ic:OUT",
+        "#8796a6",
+        [
+          {
+            "x": 200,
+            "y": 364
+          },
+          {
+            "x": 200,
+            "y": 183
+          }
+        ]
+      ],
+      [
+        "speaker:-",
+        "g:GND",
+        "#000000",
+        [
+          {
+            "x": 558,
+            "y": 364
+          },
+          {
+            "x": 558,
+            "y": 320
+          },
+          {
+            "x": 426.8,
+            "y": 320
+          },
+          {
+            "x": 426.8,
+            "y": 344
+          },
+          {
+            "x": 153,
+            "y": 344
+          },
+          {
+            "x": 153,
+            "y": 348
+          },
+          {
+            "x": 145,
+            "y": 348
+          }
+        ]
+      ]
+    ]
+  },
+  "controls": {},
+  "api": "none",
+  "arduino": "// Analog-only lesson: no Arduino firmware required.\n",
+  "p5": {
+    "none": "function setup() {\n  createCanvas(400, 150);\n  background(30);\n  fill(230);\n  text(\"OUT is square; the capacitor charges between one-third and two-thirds supply. Enable speaker audio in Settings.\", 20, 40, 360, 100);\n  noLoop();\n}\n"
+  },
+  "artifact": null
+}

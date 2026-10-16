@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "p5comp": {
+      "command": "node",
+      "args": ["/Users/liuboto/dev/arduino/p5comp/server/mcp.js"],
+      "env": { "P5COMP_URL": "http://127.0.0.1:3001" }
+    }
+  }
+}

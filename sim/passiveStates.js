@@ -1,3 +1,4 @@
+import { networkResistors } from "./resistiveNetwork.js";
 import { contactClosed } from "./inputModels.js";
 export function resistance(value) {
   const match = String(value ?? 1000)
@@ -13,13 +14,18 @@ export function resistance(value) {
   return n;
 }
 // Classroom series-path model: fixed rails/digital outputs, resistors and LEDs.
-export function passiveStates(network = {}, pins = [], controls = {}) {
+export function passiveStates(
+  network = {},
+  pins = [],
+  controls = {},
+  pwm = [],
+) {
   const sources = new Map(
     (network.sources || [])
       .filter((s) => s.volts != null || pins[s.pin] != null)
-      .map((s) => [s.net, { volts: s.volts ?? pins[s.pin] }]),
+      .map((s) => [s.net, { volts: s.volts ?? pins[s.pin], duty: pwm[s.pin] }]),
   );
-  const resistors = network.resistors || [],
+  const resistors = networkResistors(network, controls),
     adj = new Map();
   const closed = (network.switches || [])
     .filter((s) => contactClosed(s, controls))
@@ -60,11 +66,16 @@ export function passiveStates(network = {}, pins = [], controls = {}) {
   for (const led of network.leds || []) {
     const a = find(led.a),
       c = find(led.c),
-      voltage = a && c ? a.volts - c.volts : 0,
+      voltage =
+        a && c
+          ? (a.duty != null ? 5 : a.volts) - (c.duty != null ? 0 : c.volts)
+          : 0,
+      duty = a?.duty ?? (c?.duty != null ? 1 - c.duty : 1),
       total = (a?.ohms || 0) + (c?.ohms || 0),
       current =
         voltage > led.forwardVoltage
-          ? Math.min(0.05, (voltage - led.forwardVoltage) / Math.max(1, total))
+          ? duty *
+            Math.min(0.05, (voltage - led.forwardVoltage) / Math.max(1, total))
           : 0;
     result[led.id] = {
       lit: current > 0,

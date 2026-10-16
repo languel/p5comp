@@ -45,7 +45,7 @@ button:focus-visible,
 a:focus-visible,
 select:focus-visible,
 input:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 1px dashed var(--ui-focus);
   outline-offset: 2px;
 }
 button.primary {
@@ -199,7 +199,7 @@ h1 {
   font-size: 11px;
   cursor: grab;
   color: #727d77;
-  padding: 3px 0;
+  padding: 3px 6px;
   touch-action: none;
 }
 .part-handle:active {
@@ -336,12 +336,12 @@ summary {
   display: flex;
   gap: 14px;
   padding: 14px 0;
-  color: #657469;
+  color: var(--ui-quiet);
   font-size: 11px;
 }
 summary:before {
   content: "›";
-  color: #929895;
+  color: var(--ui-quiet);
 }
 details[open] > summary:before {
   content: "⌄";
@@ -444,18 +444,18 @@ footer button {
   font-size: 11px;
 }
 .breadboard {
-  fill: var(--ui-hover);
-  stroke: var(--ui-line);
+  fill: var(--board-color, #eeefea);
+  stroke: var(--board-border, #c5c7c3);
   stroke-width: 1;
 }
 .breadboard-hole {
-  fill: var(--ui-quiet);
+  fill: var(--board-hole, #858987);
 }
 .breadboard-label {
   font:
     8px ui-monospace,
     monospace;
-  fill: #929895;
+  fill: var(--board-label, #676b69);
 }
 .breadboard-rail {
   stroke-width: 1;
@@ -745,12 +745,10 @@ footer button {
   height: 65vh;
   min-height: 480px;
 }
-:root[data-theme="dark"] .part-body {
+:root[data-theme="dark"] .part-body:not(:has(.breadboard)) {
   opacity: 0.78;
 }
-:root[data-theme="dark"] .breadboard-label {
-  fill: var(--ui-quiet);
-}
+
 :root[data-theme="dark"] .control label,
 :root[data-theme="dark"] .readings output {
   color: var(--ui-quiet);
@@ -1439,9 +1437,35 @@ footer button {
 }
 .color-picker input[type="range"] {
   width: 100%;
-  height: 15px;
-  margin: 8px 0;
-  accent-color: var(--ui-accent);
+  height: 2px;
+  min-height: 0;
+  margin: 10px 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  appearance: none;
+  background: var(--ui-line);
+  cursor: pointer;
+}
+.color-picker input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 8px;
+  height: 14px;
+  border: 0;
+  border-radius: 1px;
+  background: var(--ui-accent);
+}
+.color-picker input[type="range"]::-moz-range-thumb {
+  width: 8px;
+  height: 14px;
+  border: 0;
+  border-radius: 1px;
+  background: var(--ui-accent);
+}
+.color-picker input[type="range"]::-moz-range-track {
+  height: 2px;
+  border: 0;
+  background: var(--ui-line);
 }
 .color-entry {
   display: flex;
@@ -1698,4 +1722,144 @@ footer button {
 
 #wires:not(.wiring) .terminal.covered {
   pointer-events: none;
+}
+
+.alpha-color-swatch {
+  display: inline-grid;
+  place-items: stretch;
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  padding: 3px;
+  border: 1px solid var(--ui-line);
+  border-radius: 50%;
+  background: repeating-conic-gradient(#aaa 0% 25%, #eee 0% 50%) 50% / 8px 8px;
+  vertical-align: middle;
+}
+.alpha-color-swatch > span {
+  border-radius: 50%;
+}
+.color-opacity {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+}
+.color-opacity input[type="range"] {
+  min-width: 0;
+  flex: 1;
+  width: 70px;
+}
+.color-opacity input[type="number"] {
+  width: 44px;
+  padding: 3px;
+}
+.color-preview {
+  background-image: repeating-conic-gradient(#aaa 0% 25%, #eee 0% 50%);
+}
+
+.element-result-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.element-result-row .element-option {
+  flex: 1;
+  min-width: 0;
+}
+.element-favorite {
+  display: grid;
+  place-items: center;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  margin-right: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--ui-quiet);
+  font-size: var(--ui-icon-size, 18px);
+}
+.element-favorite:hover,
+.element-favorite:focus-visible {
+  background: var(--ui-hover);
+  color: var(--ui-text);
+}
+.element-favorite[aria-pressed="true"] {
+  color: var(--ui-text);
+}
+
+/* Shared native slider: the same geometry and theme tokens as simulation controls. */
+:root input[type="range"] {
+  appearance: none;
+  height: 2px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: var(--ui-line);
+  accent-color: var(--ui-accent);
+  cursor: pointer;
+}
+:root input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 8px;
+  height: 14px;
+  border: 0;
+  border-radius: 1px;
+  background: var(--ui-accent);
+}
+:root input[type="range"]::-moz-range-thumb {
+  width: 8px;
+  height: 14px;
+  border: 0;
+  border-radius: 1px;
+  background: var(--ui-accent);
+}
+:root input[type="range"]::-moz-range-track {
+  height: 2px;
+  background: var(--ui-line);
+  border: 0;
+}
+:root input[type="range"]:focus-visible {
+  outline: none;
+}
+:root input[type="range"]:focus-visible::-webkit-slider-thumb {
+  outline: 1px solid var(--ui-focus);
+  outline-offset: 2px;
+}
+:root input[type="range"]:focus-visible::-moz-range-thumb {
+  outline: 1px solid var(--ui-focus);
+  outline-offset: 2px;
+}
+
+/* Pointer focus stays quiet; keyboard focus uses one subdued indicator. */
+:where(
+    button,
+    a,
+    summary,
+    select,
+    input,
+    textarea,
+    [tabindex],
+    [role="button"],
+    [role="tab"],
+    [role="option"]
+  ):focus:not(:focus-visible) {
+  outline: none !important;
+}
+:where(
+  button,
+  a,
+  summary,
+  select,
+  input,
+  textarea,
+  [tabindex],
+  [role="button"],
+  [role="tab"],
+  [role="option"]
+):focus-visible {
+  outline: 1px dashed var(--ui-focus);
+  outline-offset: 2px;
 }

@@ -1,3 +1,4 @@
+import { foundationCatalog } from "../sim/foundationCatalog.js";
 import { extraCatalog } from "../sim/extraCatalog.js";
 import { isBreadboard } from "../sim/breadboard.js";
 import test from "node:test";
@@ -32,7 +33,7 @@ test("catalog includes every registered Wokwi element and searches labels, types
     ELEMENTS.filter((e) => !isBreadboard(e.type))
       .map((e) => e.type)
       .sort(),
-    [...types, ...extraCatalog.map((e) => e.type)].sort(),
+    [...types, ...[...extraCatalog,...foundationCatalog].map((e) => e.type)].sort(),
   );
   assert.equal(searchElements("oled")[0].type, "wokwi-ssd1306");
   assert.equal(searchElements("lcd i2c").length, 2);

@@ -1,3 +1,4 @@
+import { glyphIcon } from "./uiIcons.js";
 const glyphs = {
   tabs: "▣",
   horizontal: "◫",
@@ -57,8 +58,15 @@ export function glyphSelect(select) {
       item.type = "button";
       item.setAttribute("role", "option");
       item.setAttribute("aria-selected", String(option.selected));
-      item.textContent =
-        (glyphs[option.value] || "·") + "  " + option.textContent;
+      const glyph = glyphs[option.value] || "·";
+      const symbol = glyphIcon(glyph) || document.createElement("span");
+      if (!symbol.classList.contains("ui-icon")) {
+        symbol.className = "menu-row-glyph";
+        symbol.textContent = glyph;
+      }
+      const label = document.createElement("span");
+      label.textContent = option.textContent;
+      item.append(symbol, label);
       item.onclick = () => {
         select.value = option.value;
         list.hidden = true;

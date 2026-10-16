@@ -1,0 +1,298 @@
+{
+  "version": 2,
+  "canvas": {
+    "camera": {
+      "x": 30,
+      "y": 80,
+      "zoom": 1
+    },
+    "snap": true,
+    "orthogonal": true,
+    "labels": true,
+    "gridReference": "breadboard"
+  },
+  "workbench": {
+    "name": "Capacitor · smooth a square wave",
+    "layout": "tabs",
+    "activeView": "circuit",
+    "splitRatio": 0.6,
+    "files": {}
+  },
+  "diagram": {
+    "version": 1,
+    "parts": [
+      {
+        "id": "gen",
+        "type": "p5comp-signal-generator",
+        "left": 40,
+        "top": 80,
+        "attrs": {
+          "waveform": "square",
+          "frequency": 5,
+          "amplitude": 2.5,
+          "offset": 2.5,
+          "duty": 0.5
+        }
+      },
+      {
+        "id": "r",
+        "type": "wokwi-resistor",
+        "left": 210,
+        "top": 162,
+        "attrs": {
+          "value": "1k"
+        },
+        "label": "1 kΩ"
+      },
+      {
+        "id": "c",
+        "type": "p5comp-capacitor",
+        "left": 280,
+        "top": 240,
+        "attrs": {
+          "value": "10uF"
+        },
+        "label": "10 µF"
+      },
+      {
+        "id": "g",
+        "type": "p5comp-ground",
+        "left": 125,
+        "top": 360,
+        "attrs": {}
+      },
+      {
+        "id": "scope",
+        "type": "p5comp-oscilloscope",
+        "left": 380,
+        "top": 80,
+        "attrs": {
+          "timeWindow": 0.4,
+          "voltsPerDiv": 1,
+          "triggerLevel": 2.5,
+          "triggerMode": "auto"
+        }
+      },
+      {
+        "id": "plot",
+        "type": "p5comp-plotter",
+        "left": 380,
+        "top": 320,
+        "attrs": {
+          "timeWindow": 3,
+          "layout": "overlay",
+          "autoNormalize": false,
+          "min": 0,
+          "max": 5
+        }
+      }
+    ],
+    "connections": [
+      [
+        "gen:GND",
+        "g:GND",
+        "#000000",
+        [
+          {
+            "x": 140,
+            "y": 348
+          },
+          {
+            "x": 145,
+            "y": 348
+          }
+        ]
+      ],
+      [
+        "gen:OUT",
+        "r:1",
+        "#8796a6",
+        [
+          {
+            "x": 65,
+            "y": 174
+          },
+          {
+            "x": 198,
+            "y": 174
+          },
+          {
+            "x": 198,
+            "y": 167.65
+          }
+        ]
+      ],
+      [
+        "r:2",
+        "c:1",
+        "#8796a6",
+        [
+          {
+            "x": 280.8,
+            "y": 167.65
+          },
+          {
+            "x": 280.8,
+            "y": 228
+          },
+          {
+            "x": 268,
+            "y": 228
+          },
+          {
+            "x": 268,
+            "y": 258
+          }
+        ]
+      ],
+      [
+        "c:2",
+        "g:GND",
+        "#000000",
+        [
+          {
+            "x": 352,
+            "y": 258
+          },
+          {
+            "x": 352,
+            "y": 348
+          },
+          {
+            "x": 145,
+            "y": 348
+          }
+        ]
+      ],
+      [
+        "scope:GND",
+        "g:GND",
+        "#000000",
+        [
+          {
+            "x": 400,
+            "y": 308
+          },
+          {
+            "x": 145,
+            "y": 308
+          }
+        ]
+      ],
+      [
+        "scope:CH1",
+        "gen:OUT",
+        "#c9a26b",
+        [
+          {
+            "x": 500,
+            "y": 288
+          },
+          {
+            "x": 65,
+            "y": 288
+          }
+        ]
+      ],
+      [
+        "scope:CH2",
+        "c:1",
+        "#7ba9ca",
+        [
+          {
+            "x": 600,
+            "y": 296
+          },
+          {
+            "x": 268,
+            "y": 296
+          },
+          {
+            "x": 268,
+            "y": 258
+          }
+        ]
+      ],
+      [
+        "plot:GND",
+        "g:GND",
+        "#000000",
+        [
+          {
+            "x": 395,
+            "y": 540
+          },
+          {
+            "x": 177,
+            "y": 540
+          },
+          {
+            "x": 177,
+            "y": 340
+          },
+          {
+            "x": 148,
+            "y": 340
+          },
+          {
+            "x": 148,
+            "y": 348
+          },
+          {
+            "x": 145,
+            "y": 348
+          }
+        ]
+      ],
+      [
+        "plot:CH1",
+        "gen:OUT",
+        "#c9a26b",
+        [
+          {
+            "x": 428,
+            "y": 548
+          },
+          {
+            "x": 57,
+            "y": 548
+          },
+          {
+            "x": 57,
+            "y": 174
+          },
+          {
+            "x": 65,
+            "y": 174
+          }
+        ]
+      ],
+      [
+        "plot:CH2",
+        "c:1",
+        "#7ba9ca",
+        [
+          {
+            "x": 464,
+            "y": 556
+          },
+          {
+            "x": 260.8,
+            "y": 556
+          },
+          {
+            "x": 260.8,
+            "y": 258
+          }
+        ]
+      ]
+    ]
+  },
+  "controls": {},
+  "api": "none",
+  "arduino": "// Analog-only lesson: no Arduino firmware required.\n",
+  "p5": {
+    "none": "function setup() {\n  createCanvas(400, 150);\n  background(30);\n  fill(230);\n  text(\"Compare raw CH1 with filtered CH2. Change resistance, capacitance or generator frequency.\", 20, 40, 360, 100);\n  noLoop();\n}\n"
+  },
+  "artifact": null
+}

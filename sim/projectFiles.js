@@ -1,3 +1,28 @@
+export function defaultP5HTML(sketch = "sketch.js", serial = false) {
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>p5 sketch</title>
+    <script src="p5.js"></script>
+${serial ? '    <script src="p5.webserial.js"></script>\n' : ""}    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+      }
+      canvas {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="canvas"></main>
+    <script src="${sketch}"></script>
+  </body>
+</html>
+`;
+}
 export const blankArduino = "void setup() {\n}\n\nvoid loop() {\n}\n";
 export const blankP5 =
   "function setup() {\n  createCanvas(600, 400);\n}\n\nfunction draw() {\n  background(240);\n}\n";

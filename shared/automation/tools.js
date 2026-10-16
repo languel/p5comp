@@ -1,0 +1,273 @@
+export const PROTOCOL_VERSION = "1.0";
+const str = { type: "string" },
+  obj = { type: "object" },
+  num = { type: "number" },
+  bool = { type: "boolean" };
+const tool = (
+  name,
+  description,
+  properties = {},
+  required = [],
+  readOnlyHint = false,
+) => ({
+  name: "p5comp_" + name,
+  description,
+  inputSchema: {
+    type: "object",
+    properties,
+    required,
+    additionalProperties: false,
+  },
+  annotations: {
+    readOnlyHint,
+    destructiveHint: !readOnlyHint,
+    openWorldHint: false,
+  },
+});
+export const TOOLS = [
+  tool(
+    "export",
+    "Export a project JSON, ZIP, SVG or PNG as text/base64, or download a PDF with code.",
+    {
+      format: { enum: ["json", "zip", "svg", "png", "pdf"] },
+      includeCode: bool,
+    },
+    ["format"],
+  ),
+  tool(
+    "library",
+    "List/get/save/remove user Arduino and p5 sketches. Export by reading an item; import with save.",
+    {
+      action: { enum: ["list", "get", "save", "remove"] },
+      id: str,
+      kind: { enum: ["arduino", "p5"] },
+      name: str,
+      item: obj,
+    },
+    ["action"],
+  ),
+  tool(
+    "settings",
+    "Read or set global theme, editor theme/font size, icon size and PWM refresh. Project backgrounds are in workbench.settings.",
+    {
+      theme: { enum: ["dark", "light"] },
+      editorTheme: {
+        enum: [
+          "subdued",
+          "subdued-light",
+          "subdued-dark",
+          "github-light",
+          "github-dark",
+        ],
+      },
+      fontSize: { type: "number", minimum: 8, maximum: 32 },
+      iconSize: { type: "number", minimum: 12, maximum: 28 },
+      pwmRefreshHz: { type: "number", minimum: 10, maximum: 120 },
+    },
+  ),
+  tool(
+    "describe",
+    "Discover the versioned p5comp command surface and replay limitations.",
+    {},
+    [],
+    true,
+  ),
+  tool(
+    "state",
+    "Read runtime, selection, diagnostics, and revision.",
+    {},
+    [],
+    true,
+  ),
+  tool(
+    "catalog",
+    "List searchable component definitions, terminal names, attributes and simulation support.",
+    { query: str },
+    [],
+    true,
+  ),
+  tool(
+    "project_get",
+    "Read the complete portable project (code, diagram, media, assets, layout and firmware).",
+    {},
+    [],
+    true,
+  ),
+  tool(
+    "project_open",
+    "Validate and replace the current project. Stops simulation; does not request devices.",
+    { project: obj },
+    ["project"],
+  ),
+  tool(
+    "project_patch",
+    "Apply an atomic RFC6902 add/replace/remove/test patch with optional optimistic revision.",
+    {
+      patches: { type: "array", items: obj, maxItems: 500 },
+      expectedRevision: { type: "integer" },
+    },
+    ["patches"],
+  ),
+  tool(
+    "part_put",
+    "Create or replace a component. IDs, types, positions, rotation, flips, labels and attrs are explicit.",
+    { part: obj, expectedRevision: { type: "integer" } },
+    ["part"],
+  ),
+  tool(
+    "part_remove",
+    "Remove a component and its attached wires.",
+    { id: str },
+    ["id"],
+  ),
+  tool(
+    "wire_put",
+    "Append or replace a connection [from,to,color,bends]. Terminals are partId:pinName.",
+    {
+      connection: { type: "array", minItems: 2, maxItems: 4 },
+      index: { type: "integer", minimum: 0 },
+    },
+    ["connection"],
+  ),
+  tool(
+    "wire_remove",
+    "Remove a wire by zero-based index.",
+    { index: { type: "integer", minimum: 0 } },
+    ["index"],
+  ),
+  tool(
+    "code_set",
+    "Set a source file; main Arduino and active p5 files update their live editors.",
+    { language: { enum: ["arduino", "p5"] }, name: str, source: str },
+    ["language", "source"],
+  ),
+  tool(
+    "control_set",
+    "Set a simulated input value (button, pot, sensor, keypad, switch).",
+    { id: str, value: {} },
+    ["id", "value"],
+  ),
+  tool(
+    "runtime",
+    "Control simulated Arduino/p5. Physical connect, upload and media acquisition require the human UI.",
+    {
+      action: {
+        enum: [
+          "start",
+          "stop",
+          "pause",
+          "resume",
+          "p5_start",
+          "p5_stop",
+          "compile",
+        ],
+      },
+    },
+    ["action"],
+  ),
+  tool(
+    "canvas",
+    "Manipulate routing, history, camera and selection using semantic actions.",
+    {
+      action: {
+        enum: [
+          "fit",
+          "cleanup",
+          "autoroute",
+          "undo",
+          "redo",
+          "view",
+          "select",
+          "group",
+          "ungroup",
+          "unplug",
+        ],
+      },
+      index: { type: "integer", minimum: 0 },
+      mode: { enum: ["simple", "careful"] },
+      view: obj,
+      ids: { type: "array", items: str },
+    },
+    ["action"],
+  ),
+  tool(
+    "media_put",
+    "Create/update a note, image, video or inactive capture frame. Sources can be data URLs; no automatic camera permissions.",
+    { media: obj },
+    ["media"],
+  ),
+  tool(
+    "media_remove",
+    "Remove scene media and release its active stream.",
+    { id: str },
+    ["id"],
+  ),
+  tool(
+    "asset",
+    "List/get/put/remove portable project assets.",
+    {
+      action: { enum: ["list", "get", "put", "remove"] },
+      name: str,
+      asset: obj,
+    },
+    ["action"],
+  ),
+  tool(
+    "view",
+    "Select an inspector tab, bottom tool tab, main view/layout, or p5 docking mode.",
+    {
+      inspector: { enum: ["arduino", "p5", "properties", "help", "settings"] },
+      bottom: { enum: ["simulation", "serial", "console"] },
+      main: { enum: ["circuit", "p5"] },
+      layout: { enum: ["tabs", "horizontal", "vertical"] },
+      dock: str,
+    },
+  ),
+  tool(
+    "examples",
+    "List bundled examples or load one by its catalog path.",
+    { path: str },
+    [],
+    false,
+  ),
+  tool(
+    "serial",
+    "Read serial/console or write text to the active simulated connection.",
+    { action: { enum: ["read", "write"] }, text: str },
+    ["action"],
+  ),
+  tool(
+    "recording",
+    "Start/stop/export/list/import/delete a semantic recording, or annotate the sequence.",
+    {
+      action: {
+        enum: ["start", "stop", "get", "list", "import", "remove", "mark"],
+      },
+      id: str,
+      title: str,
+      note: str,
+      recording: obj,
+    },
+    ["action"],
+  ),
+  tool(
+    "replay",
+    "Load a recording for ordered replay; step, play, cancel or inspect it. Timing is optional.",
+    {
+      action: { enum: ["load", "step", "play", "cancel", "state"] },
+      id: str,
+      recording: obj,
+      timed: bool,
+      speed: num,
+    },
+    ["action"],
+  ),
+  tool(
+    "events",
+    "Read bounded ordered event history after a sequence number.",
+    { since: { type: "integer", minimum: 0 } },
+    [],
+    true,
+  ),
+];
+export const TOOL_MAP = new Map(TOOLS.map((t) => [t.name, t]));

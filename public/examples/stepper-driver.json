@@ -15,20 +15,24 @@
     "gridBetween": false
   },
   "workbench": {
-    "name": "Stepper \u00b7 A4988 STEP / DIR",
+    "name": "Stepper · A4988 STEP / DIR",
     "arduinoName": "stepper-driver.ino",
     "layout": "tabs",
-    "activeView": "circuit"
+    "activeView": "circuit",
+    "files": {
+      "index.html": "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"utf-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <title>p5 sketch</title>\n    <script src=\"p5.js\"></script>\n    <style>\n      html,\n      body {\n        margin: 0;\n        padding: 0;\n      }\n      canvas {\n        display: block;\n      }\n    </style>\n  </head>\n  <body>\n    <main id=\"canvas\"></main>\n    <script src=\"sketch.js\"></script>\n  </body>\n</html>\n"
+    }
   },
   "diagram": {
     "version": 1,
     "parts": [
       {
         "id": "board",
-        "type": "wokwi-arduino-nano",
-        "left": 45,
+        "type": "wokwi-arduino-uno",
+        "left": -280,
         "top": 210,
-        "attrs": {}
+        "attrs": {},
+        "label": "Uno"
       },
       {
         "id": "driver",
@@ -51,6 +55,18 @@
         "driver:VDD",
         "#cf6868",
         [
+          {
+            "x": -120,
+            "y": 431.5
+          },
+          {
+            "x": 75,
+            "y": 431.5
+          },
+          {
+            "x": 75,
+            "y": 339
+          },
           {
             "x": 170.3,
             "y": 339
@@ -76,8 +92,20 @@
       [
         "board:GND.1",
         "driver:GND.2",
-        "#121415",
+        "#000000",
         [
+          {
+            "x": -164.5,
+            "y": 189
+          },
+          {
+            "x": 87,
+            "y": 189
+          },
+          {
+            "x": 87,
+            "y": 331
+          },
           {
             "x": 189.5,
             "y": 331
@@ -97,6 +125,18 @@
         "driver:VMOT",
         "#cf6868",
         [
+          {
+            "x": -120,
+            "y": 431.5
+          },
+          {
+            "x": 99,
+            "y": 431.5
+          },
+          {
+            "x": 99,
+            "y": 292
+          },
           {
             "x": 170.3,
             "y": 292
@@ -122,7 +162,7 @@
       [
         "driver:GND.2",
         "driver:GND.1",
-        "#121415",
+        "#000000",
         [
           {
             "x": 472,
@@ -194,6 +234,18 @@
         "#d8c85a",
         [
           {
+            "x": -43.5,
+            "y": 189
+          },
+          {
+            "x": 147,
+            "y": 189
+          },
+          {
+            "x": 147,
+            "y": 198
+          },
+          {
             "x": 160.7,
             "y": 198
           },
@@ -212,6 +264,18 @@
         "driver:DIR",
         "#a583b9",
         [
+          {
+            "x": -53,
+            "y": 189
+          },
+          {
+            "x": 159,
+            "y": 189
+          },
+          {
+            "x": 159,
+            "y": 192
+          },
           {
             "x": 151.1,
             "y": 192
@@ -312,7 +376,7 @@
   "arduino": "// Ideal A4988 driver: ENABLE defaults LOW; RESET and SLEEP must be HIGH.\n// Real motors need a suitable motor supply and driver current limit.\nvoid setup() { pinMode(2, OUTPUT); pinMode(3, OUTPUT); }\nvoid loop() {\n  for (byte direction = 0; direction < 2; direction++) {\n    digitalWrite(3, direction);\n    for (int step = 0; step < 200; step++) {\n      digitalWrite(2, HIGH); delayMicroseconds(5);\n      digitalWrite(2, LOW); delay(5);\n    }\n    delay(400);\n  }\n}\n",
   "artifact": {
     "source": "// Ideal A4988 driver: ENABLE defaults LOW; RESET and SLEEP must be HIGH.\n// Real motors need a suitable motor supply and driver current limit.\nvoid setup() { pinMode(2, OUTPUT); pinMode(3, OUTPUT); }\nvoid loop() {\n  for (byte direction = 0; direction < 2; direction++) {\n    digitalWrite(3, direction);\n    for (int step = 0; step < 200; step++) {\n      digitalWrite(2, HIGH); delayMicroseconds(5);\n      digitalWrite(2, LOW); delay(5);\n    }\n    delay(400);\n  }\n}\n",
-    "buildKey": "// Ideal A4988 driver: ENABLE defaults LOW; RESET and SLEEP must be HIGH.\n// Real motors need a suitable motor supply and driver current limit.\nvoid setup() { pinMode(2, OUTPUT); pinMode(3, OUTPUT); }\nvoid loop() {\n  for (byte direction = 0; direction < 2; direction++) {\n    digitalWrite(3, direction);\n    for (int step = 0; step < 200; step++) {\n      digitalWrite(2, HIGH); delayMicroseconds(5);\n      digitalWrite(2, LOW); delay(5);\n    }\n    delay(400);\n  }\n}\n{}nano",
+    "buildKey": "// Ideal A4988 driver: ENABLE defaults LOW; RESET and SLEEP must be HIGH.\n// Real motors need a suitable motor supply and driver current limit.\nvoid setup() { pinMode(2, OUTPUT); pinMode(3, OUTPUT); }\nvoid loop() {\n  for (byte direction = 0; direction < 2; direction++) {\n    digitalWrite(3, direction);\n    for (int step = 0; step < 200; step++) {\n      digitalWrite(2, HIGH); delayMicroseconds(5);\n      digitalWrite(2, LOW); delay(5);\n    }\n    delay(400);\n  }\n}\n{}",
     "hex": ":100000000C945C000C946E000C946E000C946E00CA\r\n:100010000C946E000C946E000C946E000C946E00A8\r\n:100020000C946E000C946E000C946E000C946E0098\r\n:100030000C946E000C946E000C946E000C946E0088\r\n:100040000C9432010C946E000C946E000C946E00B3\r\n:100050000C946E000C946E000C946E000C946E0068\r\n:100060000C946E000C946E00000000080002010069\r\n:100070000003040700000000000000000000000072\r\n:10008000250028002B0000000000240027002A0083\r\n:10009000040404040404040402020202020203032E\r\n:1000A0000303030301020408102040800102040836\r\n:1000B000102001020408102011241FBECFEFD8E049\r\n:1000C000DEBFCDBF21E0A0E0B1E001C01D92A930AC\r\n:1000D000B207E1F70E947C010C94F7010C94000038\r\n:1000E00090E0FC01EC55FF4F249180579F4FFC019D\r\n:1000F0008491882399F090E0880F991FFC01EA57BA\r\n:10010000FF4FA591B491FC01E458FF4F8591949164\r\n:100110008FB7F894EC91E22BEC938FBF089590E0A9\r\n:10012000FC01E859FF4F2491FC01EC55FF4F34913D\r\n:10013000FC01E057FF4FE491EE23C9F0222339F090\r\n:10014000233001F1A8F4213019F1223029F1F0E037\r\n:10015000EE0FFF1FE458FF4FA591B4918FB7F894AD\r\n:10016000EC91611126C030953E233C938FBF0895DA\r\n:100170002730A9F02830C9F0243049F78091800059\r\n:100180008F7D03C0809180008F7780938000DFCFC8\r\n:1001900084B58F7784BDDBCF84B58F7DFBCF809115\r\n:1001A000B0008F778093B000D2CF8091B0008F7D68\r\n:1001B000F9CF3E2BDACF3FB7F894809105019091AB\r\n:1001C0000601A0910701B091080126B5A89B05C0C2\r\n:1001D0002F3F19F00196A11DB11D3FBFBA2FA92FC6\r\n:1001E000982F8827BC01CD01620F711D811D911DC3\r\n:1001F00042E0660F771F881F991F4A95D1F708952F\r\n:100200008F929F92AF92BF92CF92DF92EF92FF9226\r\n:100210004B015C010E94DB006B017C010E94DB0052\r\n:100220006C197D098E099F09683E7340810591050F\r\n:10023000A8F321E0821A9108A108B10888EEC80E3F\r\n:1002400083E0D81EE11CF11C81149104A104B104C7\r\n:1002500029F7FF90EF90DF90CF90BF90AF909F90E5\r\n:100260008F9008951F920F920FB60F9211242F9323\r\n:100270003F938F939F93AF93BF9380910101909190\r\n:100280000201A0910301B09104013091000123E02B\r\n:10029000230F2D3758F50196A11DB11D20930001A4\r\n:1002A0008093010190930201A0930301B093040194\r\n:1002B0008091050190910601A0910701B09108017C\r\n:1002C0000196A11DB11D8093050190930601A09395\r\n:1002D0000701B0930801BF91AF919F918F913F911A\r\n:1002E0002F910F900FBE0F901F90189526E8230FA7\r\n:1002F0000296A11DB11DD2CF789484B5826084BDD1\r\n:1003000084B5816084BD85B5826085BD85B5816019\r\n:1003100085BD80916E00816080936E001092810097\r\n:100320008091810082608093810080918100816052\r\n:100330008093810080918000816080938000809113\r\n:10034000B10084608093B1008091B000816080939F\r\n:10035000B00080917A00846080937A0080917A0066\r\n:10036000826080937A0080917A00816080937A0025\r\n:1003700080917A00806880937A001092C10082E0B8\r\n:100380000E94700083E00E9470008FE0E82EF12C44\r\n:1003900090E0C92E90E0D92EC0E06C2F83E00E943F\r\n:1003A0008F0008EC10E061E082E00E948F00C7013E\r\n:1003B0000197F1F760E082E00E948F0065E070E055\r\n:1003C00080E090E00E9400010150110961F760E9AE\r\n:1003D00071E080E090E00E940001C13031F4C1146E\r\n:1003E000D104D1F20E940000D7CFC1E0D6CFF8945B\r\n:0203F000FFCF3D\r\n:00000001FF\r\n"
   }
 }

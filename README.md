@@ -414,9 +414,22 @@ The p5 code toolbar orders Run / Stop first, followed by communications. Its **�
 The classic Nano now shares the ATmega328P simulator with Uno. The bundled
 **Nano · displays / RGB / servo / buzzer** example exercises RGB LEDs, a
 single-digit seven-segment display, parallel LCD text, servo pulses and buzzer
-activity using compiled AVR firmware. Mega 2560, DIP/keypad/slider/switch inputs, sound/photo/PIR sensors, NeoPixels, LED bars, relays and A4988 steppers now have dedicated catalog lessons. Each includes cached firmware and routed wires. I2C/SPI display protocols, mechanical/acoustic models and live microphone input remain future work.
+activity using compiled AVR firmware. Mega 2560, DIP/keypad/slider/switch inputs, sound/photo/PIR sensors, NeoPixels, LED bars, relays and A4988 steppers now have dedicated catalog lessons. Each includes cached firmware and routed wires. I2C/SPI display protocols and detailed mechanical/acoustic models remain future work. Sound sensors can now receive live microphone, test-tone or file RMS levels through Settings → Audio input and output.
 
-File contains **Add image / video**, **Add lesson note** (Markdown/HTML), and a
+File contains **Add image / video**, **Add note** (Markdown/HTML/LaTeX, also in the element picker), and a
 **Component editor** for reusable part presets. See
 [simulation and lesson canvas](docs/simulation-and-lessons.md) for supported
 protocols, media storage limits and the custom-model extension path.
+
+### Agents and recorded lessons
+
+p5comp exposes a shared browser API, WebMCP tools and a local stdio MCP/HTTP
+bridge. Record ordered circuit/code/input changes with annotations, export a
+portable process and replay it step by step or with optional original timing.
+See [Agent API and process recording](docs/agents.md) for setup, coverage and
+replay limitations. MCP configuration example: [mcp.example.json](mcp.example.json).
+
+- [Electronics foundation models and audio](docs/electronics-foundations.md)
+- [Make your own element](docs/diy-elements.md)
+
+Fresh workspaces start with **HelloLED**, including the minimal Uno + inserted LED circuit, editable Arduino/p5 code and cached firmware. Valid saved workspaces are restored. All 24 catalog demos and their source/firmware data ship with the static Pages build; analog-only lessons require no compiler service.

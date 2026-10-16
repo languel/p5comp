@@ -15,20 +15,24 @@
     "gridBetween": false
   },
   "workbench": {
-    "name": "Keypad \u00b7 scan rows and columns",
+    "name": "Keypad · scan rows and columns",
     "arduinoName": "keypad-scan.ino",
     "layout": "tabs",
-    "activeView": "circuit"
+    "activeView": "circuit",
+    "files": {
+      "index.html": "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"utf-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <title>p5 sketch</title>\n    <script src=\"p5.js\"></script>\n    <style>\n      html,\n      body {\n        margin: 0;\n        padding: 0;\n      }\n      canvas {\n        display: block;\n      }\n    </style>\n  </head>\n  <body>\n    <main id=\"canvas\"></main>\n    <script src=\"sketch.js\"></script>\n  </body>\n</html>\n"
+    }
   },
   "diagram": {
     "version": 1,
     "parts": [
       {
         "id": "board",
-        "type": "wokwi-arduino-nano",
-        "left": 45,
+        "type": "wokwi-arduino-uno",
+        "left": -280,
         "top": 210,
-        "attrs": {}
+        "attrs": {},
+        "label": "Uno"
       },
       {
         "id": "keypad",
@@ -44,6 +48,18 @@
         "keypad:R1",
         "#658eac",
         [
+          {
+            "x": -43.5,
+            "y": 189
+          },
+          {
+            "x": 75,
+            "y": 189
+          },
+          {
+            "x": 75,
+            "y": 198
+          },
           {
             "x": 160.7,
             "y": 198
@@ -67,6 +83,18 @@
         "keypad:C1",
         "#789e83",
         [
+          {
+            "x": -81.5,
+            "y": 189
+          },
+          {
+            "x": 87,
+            "y": 189
+          },
+          {
+            "x": 87,
+            "y": 186
+          },
           {
             "x": 122.3,
             "y": 186
@@ -95,6 +123,18 @@
         "#658eac",
         [
           {
+            "x": -53,
+            "y": 189
+          },
+          {
+            "x": 99,
+            "y": 189
+          },
+          {
+            "x": 99,
+            "y": 190
+          },
+          {
             "x": 151.1,
             "y": 190
           },
@@ -121,6 +161,18 @@
         "keypad:C2",
         "#789e83",
         [
+          {
+            "x": -91,
+            "y": 189
+          },
+          {
+            "x": 111,
+            "y": 189
+          },
+          {
+            "x": 111,
+            "y": 194
+          },
           {
             "x": 112.7,
             "y": 194
@@ -149,6 +201,18 @@
         "#658eac",
         [
           {
+            "x": -62.5,
+            "y": 189
+          },
+          {
+            "x": 123,
+            "y": 189
+          },
+          {
+            "x": 123,
+            "y": 182
+          },
+          {
             "x": 141.5,
             "y": 182
           },
@@ -175,6 +239,18 @@
         "keypad:C3",
         "#789e83",
         [
+          {
+            "x": -107,
+            "y": 189
+          },
+          {
+            "x": 135,
+            "y": 189
+          },
+          {
+            "x": 135,
+            "y": 174
+          },
           {
             "x": 103.1,
             "y": 174
@@ -203,6 +279,18 @@
         "#658eac",
         [
           {
+            "x": -72,
+            "y": 189
+          },
+          {
+            "x": 147,
+            "y": 189
+          },
+          {
+            "x": 147,
+            "y": 178
+          },
+          {
             "x": 131.9,
             "y": 178
           },
@@ -229,6 +317,18 @@
         "keypad:C4",
         "#789e83",
         [
+          {
+            "x": -117,
+            "y": 189
+          },
+          {
+            "x": 159,
+            "y": 189
+          },
+          {
+            "x": 159,
+            "y": 170
+          },
           {
             "x": 93.5,
             "y": 170
@@ -263,7 +363,7 @@
   "arduino": "// Drive one row LOW, release other rows, and read pulled-up columns.\n// Real matrix contacts: simultaneous keys can produce ghosting (no diodes).\nconst char keys[4][4] = {\n  {'1','2','3','A'}, {'4','5','6','B'},\n  {'7','8','9','C'}, {'*','0','#','D'}\n};\nvoid setup() {\n  Serial.begin(9600);\n  pinMode(LED_BUILTIN, OUTPUT);\n  for (int col = 0; col < 4; col++) pinMode(6 + col, INPUT_PULLUP);\n}\nvoid loop() {\n  bool pressed = false;\n  for (int row = 0; row < 4; row++) {\n    pinMode(2 + row, OUTPUT);\n    digitalWrite(2 + row, LOW);\n    delayMicroseconds(10);\n    for (int col = 0; col < 4; col++) {\n      if (digitalRead(6 + col) == LOW) { Serial.println(keys[row][col]); pressed = true; }\n    }\n    pinMode(2 + row, INPUT);\n  }\n  digitalWrite(LED_BUILTIN, pressed);\n  delay(80);\n}\n",
   "artifact": {
     "source": "// Drive one row LOW, release other rows, and read pulled-up columns.\n// Real matrix contacts: simultaneous keys can produce ghosting (no diodes).\nconst char keys[4][4] = {\n  {'1','2','3','A'}, {'4','5','6','B'},\n  {'7','8','9','C'}, {'*','0','#','D'}\n};\nvoid setup() {\n  Serial.begin(9600);\n  pinMode(LED_BUILTIN, OUTPUT);\n  for (int col = 0; col < 4; col++) pinMode(6 + col, INPUT_PULLUP);\n}\nvoid loop() {\n  bool pressed = false;\n  for (int row = 0; row < 4; row++) {\n    pinMode(2 + row, OUTPUT);\n    digitalWrite(2 + row, LOW);\n    delayMicroseconds(10);\n    for (int col = 0; col < 4; col++) {\n      if (digitalRead(6 + col) == LOW) { Serial.println(keys[row][col]); pressed = true; }\n    }\n    pinMode(2 + row, INPUT);\n  }\n  digitalWrite(LED_BUILTIN, pressed);\n  delay(80);\n}\n",
-    "buildKey": "// Drive one row LOW, release other rows, and read pulled-up columns.\n// Real matrix contacts: simultaneous keys can produce ghosting (no diodes).\nconst char keys[4][4] = {\n  {'1','2','3','A'}, {'4','5','6','B'},\n  {'7','8','9','C'}, {'*','0','#','D'}\n};\nvoid setup() {\n  Serial.begin(9600);\n  pinMode(LED_BUILTIN, OUTPUT);\n  for (int col = 0; col < 4; col++) pinMode(6 + col, INPUT_PULLUP);\n}\nvoid loop() {\n  bool pressed = false;\n  for (int row = 0; row < 4; row++) {\n    pinMode(2 + row, OUTPUT);\n    digitalWrite(2 + row, LOW);\n    delayMicroseconds(10);\n    for (int col = 0; col < 4; col++) {\n      if (digitalRead(6 + col) == LOW) { Serial.println(keys[row][col]); pressed = true; }\n    }\n    pinMode(2 + row, INPUT);\n  }\n  digitalWrite(LED_BUILTIN, pressed);\n  delay(80);\n}\n{}nano",
+    "buildKey": "// Drive one row LOW, release other rows, and read pulled-up columns.\n// Real matrix contacts: simultaneous keys can produce ghosting (no diodes).\nconst char keys[4][4] = {\n  {'1','2','3','A'}, {'4','5','6','B'},\n  {'7','8','9','C'}, {'*','0','#','D'}\n};\nvoid setup() {\n  Serial.begin(9600);\n  pinMode(LED_BUILTIN, OUTPUT);\n  for (int col = 0; col < 4; col++) pinMode(6 + col, INPUT_PULLUP);\n}\nvoid loop() {\n  bool pressed = false;\n  for (int row = 0; row < 4; row++) {\n    pinMode(2 + row, OUTPUT);\n    digitalWrite(2 + row, LOW);\n    delayMicroseconds(10);\n    for (int col = 0; col < 4; col++) {\n      if (digitalRead(6 + col) == LOW) { Serial.println(keys[row][col]); pressed = true; }\n    }\n    pinMode(2 + row, INPUT);\n  }\n  digitalWrite(LED_BUILTIN, pressed);\n  delay(80);\n}\n{}",
     "hex": ":100000000C9462000C948A000C948A000C948A0070\r\n:100010000C948A000C948A000C948A000C948A0038\r\n:100020000C948A000C948A000C948A000C948A0028\r\n:100030000C948A000C948A000C948A000C948A0018\r\n:100040000C9451020C948A000C94C1020C949B02F3\r\n:100050000C948A000C948A000C948A000C948A00F8\r\n:100060000C948A000C948A000000000023002600F3\r\n:10007000290000000000240027002A0000000000E2\r\n:10008000250028002B0004040404040404040202D4\r\n:100090000202020203030303030301020408102007\r\n:1000A0004080010204081020010204081020000012\r\n:1000B0000008000201000003040700000000000027\r\n:1000C00000000A0411241FBECFEFD8E0DEBFCDBF71\r\n:1000D00011E0A0E0B1E0EEE7F8E002C005900D927B\r\n:1000E000A632B107D9F721E0A6E2B1E001C01D9226\r\n:1000F000AC3CB207E1F710E0C2E6D0E004C02197C3\r\n:10010000FE010E943704C136D107C9F70E94F302ED\r\n:100110000C943D040C940000833081F028F481306D\r\n:1001200099F08230A9F008958730A9F08830C9F09D\r\n:100130008430B1F4809180008F7D03C08091800075\r\n:100140008F7780938000089584B58F7784BD08955C\r\n:1001500084B58F7DFBCF8091B0008F778093B00006\r\n:1001600008958091B0008F7DF9CF1F93CF93DF93D7\r\n:10017000282F30E0F901E255FF4F8491F901E6564E\r\n:10018000FF4FD491F901EA57FF4FC491CC23A9F056\r\n:10019000162F81110E948C00EC2FF0E0EE0FFF1F54\r\n:1001A000E458FF4FA591B4918FB7F894EC911111D9\r\n:1001B00008C0D095DE23DC938FBFDF91CF911F91D4\r\n:1001C0000895DE2BF8CFCF93DF9390E0FC01E65645\r\n:1001D000FF4F24918A579F4FFC0184918823C9F0D7\r\n:1001E00090E0880F991FFC01EE58FF4FA591B49144\r\n:1001F000FC01E458FF4FC591D49161110DC09FB728\r\n:10020000F8948C91209582238C93888128232883CD\r\n:100210009FBFDF91CF910895623051F49FB7F8945A\r\n:100220003C91822F809583238C93E8812E2BEFCFF6\r\n:100230008FB7F894EC912E2B2C938FBFEACF3FB75A\r\n:10024000F8948091C8019091C901A091CA01B09120\r\n:10025000CB0126B5A89B05C02F3F19F00196A11D23\r\n:10026000B11D3FBFBA2FA92F982F8827BC01CD0100\r\n:10027000620F711D811D911D42E0660F771F881F5F\r\n:10028000991F4A95D1F70895AF92BF92CF92DF920E\r\n:10029000EF92FF920F931F93CF93DF936C017B013B\r\n:1002A0008B01040F151FEB015E01AE18BF08C017CC\r\n:1002B000D10759F06991D601ED91FC910190F0813F\r\n:1002C000E02DC6010995892B79F7C501DF91CF9102\r\n:1002D0001F910F91FF90EF90DF90CF90BF90AF9064\r\n:1002E0000895FC01538D448D252F30E0842F90E03C\r\n:1002F000821B930B541710F0CF9608950197089521\r\n:10030000FC01918D828D981761F0A28DAE0FBF2FE9\r\n:10031000B11D5D968C91928D9F5F9F73928F90E03F\r\n:1003200008958FEF9FEF0895FC01918D828D9817AE\r\n:1003300031F0828DE80FF11D858D90E008958FEFEB\r\n:100340009FEF0895FC01918D228D892F90E0805CB4\r\n:100350009F4F821B91098F739927089586E291E040\r\n:100360000E94A20121E0892B09F420E0822F089548\r\n:1003700080E090E0892B29F00E94AE0181110C945D\r\n:1003800000000895FC01A48DA80FB92FB11DA35A38\r\n:10039000BF4F2C91848D90E001968F739927848FA5\r\n:1003A000A689B7892C93A089B1898C9183708064C8\r\n:1003B0008C93938D848D981306C00288F389E02D69\r\n:1003C00080818F7D80830895EF92FF920F931F931A\r\n:1003D000CF93DF93EC0181E0888F9B8D8C8D9813F8\r\n:1003E0001AC0E889F989808185FF15C09FB7F89404\r\n:1003F000EE89FF896083E889F98980818370806450\r\n:1004000080839FBF81E090E0DF91CF911F910F919A\r\n:10041000FF90EF900895F62E0B8D10E00F5F1F4FA9\r\n:100420000F731127E02E8C8D8E110CC00FB607FCB8\r\n:10043000FACFE889F989808185FFF5CFCE010E9446\r\n:10044000C201F1CFEB8DEC0FFD2FF11DE35AFF4FF1\r\n:10045000F0829FB7F8940B8FEA89FB8980818062D4\r\n:10046000CFCFCF93DF93EC01888D8823B9F0AA8991\r\n:10047000BB89E889F9898C9185FD03C0808186FD5F\r\n:100480000DC00FB607FCF7CF8C9185FFF2CF8081AE\r\n:1004900085FFEDCFCE010E94C201E9CFDF91CF9160\r\n:1004A00008951F920F920FB60F9211242F933F932E\r\n:1004B0008F939F93AF93BF938091C4019091C50197\r\n:1004C000A091C601B091C7013091C30123E0230F71\r\n:1004D0002D3758F50196A11DB11D2093C3018093BE\r\n:1004E000C4019093C501A093C601B093C701809148\r\n:1004F000C8019091C901A091CA01B091CB010196A8\r\n:10050000A11DB11D8093C8019093C901A093CA0198\r\n:10051000B093CB01BF91AF919F918F913F912F915C\r\n:100520000F900FBE0F901F90189526E8230F02968C\r\n:10053000A11DB11DD2CF1F920F920FB60F921124A1\r\n:100540002F933F934F935F936F937F938F939F93DB\r\n:10055000AF93BF93EF93FF9386E291E00E94C201B5\r\n:10056000FF91EF91BF91AF919F918F917F916F918B\r\n:100570005F914F913F912F910F900FBE0F901F9061\r\n:1005800018951F920F920FB60F9211242F938F93ED\r\n:100590009F93EF93FF93E0913601F09137018081B3\r\n:1005A000E0913C01F0913D0182FD1BC09081809162\r\n:1005B0003F018F5F8F7320914001821741F0E091DE\r\n:1005C0003F01F0E0EA5DFE4F958F80933F01FF9180\r\n:1005D000EF919F918F912F910F900FBE0F901F90D1\r\n:1005E00018958081F4CF789484B5826084BD84B5F9\r\n:1005F000816084BD85B5826085BD85B5816085BD1E\r\n:1006000080916E00816080936E00109281008091D5\r\n:10061000810082608093810080918100816080935D\r\n:100620008100809180008160809380008091B10082\r\n:1006300084608093B1008091B00081608093B000AD\r\n:1006400080917A00846080937A0080917A00826041\r\n:1006500080937A0080917A00816080937A00809103\r\n:100660007A00806880937A001092C100E091360190\r\n:10067000F091370182E08083E0913201F091330103\r\n:100680001082E0913401F09135018FEC808310925B\r\n:100690003E01E0913A01F0913B0186E08083E091D8\r\n:1006A0003801F0913901808180618083E0913801C7\r\n:1006B000F0913901808188608083E0913801F09168\r\n:1006C0003901808180688083E0913801F09139019F\r\n:1006D00080818F7D808361E08DE00E94E30062E095\r\n:1006E00086E00E94E30062E087E00E94E30062E0AF\r\n:1006F00088E00E94E30062E089E00E94E30033E2C8\r\n:10070000E32EF12C40E0C42E40E0D42E02E111E0B3\r\n:1007100022E0B22E912C61E08B2D0E94E30060E07C\r\n:100720008B2D0E94B500C7010197F1F7D0E0C0E022\r\n:10073000FE01EC54FF4F8491FE01E056FF4FA49060\r\n:10074000FE01E457FF4F8490811054C0F801EC0F74\r\n:10075000FD1F608186E291E00E94E40142E050E0EA\r\n:1007600062E271E086E291E00E9444019924939450\r\n:100770002196C430D105E1F660E08B2D0E94E300A4\r\n:10078000B3940C5F1F4F26E0B212C5CF692D8DE0E8\r\n:100790000E94B5000E941F012B013C0180E5882EBC\r\n:1007A000912CA12CB12C0E941F0164197509860996\r\n:1007B0009709683E734081059105A8F381E0881A86\r\n:1007C0009108A108B10828EE420E23E0521E611CD8\r\n:1007D000711C81149104A104B10429F7C114D1043E\r\n:1007E00009F494CF0E94AE01882309F48FCF0E94B0\r\n:1007F00000008CCF81110E948C00E82DF0E0EE0FFC\r\n:10080000FF1FE859FF4FA591B491EC91AE2209F476\r\n:100810009DCFAECFE6E2F1E01382128288EE93E044\r\n:10082000A0E0B0E084839583A683B78384E091E061\r\n:100830009183808385EC90E09587848784EC90E0B9\r\n:100840009787868780EC90E0918B808B81EC90E09D\r\n:10085000938B828B82EC90E0958B848B86EC90E07E\r\n:10086000978B868B118E128E138E148E0895EE0F39\r\n:0E087000FF1F0590F491E02D0994F894FFCF3E\r\n:10087E0000000000E401440171013102A201800177\r\n:10088E0094013132334134353642373839432A30C8\r\n:06089E0023440D0A0000D6\r\n:00000001FF\r\n"
   }
 }

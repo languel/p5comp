@@ -1,46 +1,122 @@
 [
   {
-    "name": "Nano · displays / RGB / servo / buzzer",
-    "project": "examples/peripheral-lab.json"
+    "name": "HelloLED",
+    "project": "examples/one-led.json",
+    "folder": "Getting started"
+  },
+  {
+    "name": "Four signals · input and output",
+    "project": "examples/four-signals.json",
+    "folder": "Getting started"
   },
   {
     "name": "DIP switches · eight digital inputs",
-    "project": "examples/dip-inputs.json"
+    "project": "examples/dip-inputs.json",
+    "folder": "Inputs"
   },
   {
     "name": "Keypad · scan rows and columns",
-    "project": "examples/keypad-scan.json"
+    "project": "examples/keypad-scan.json",
+    "folder": "Inputs"
   },
   {
     "name": "Slider and switch · analog + digital",
-    "project": "examples/slider-switch.json"
+    "project": "examples/slider-switch.json",
+    "folder": "Inputs"
   },
   {
     "name": "Light and motion · photoresistor + PIR",
-    "project": "examples/light-motion.json"
+    "project": "examples/light-motion.json",
+    "folder": "Inputs"
   },
   {
     "name": "Sound sensors · analog level and threshold",
-    "project": "examples/sound-levels.json"
+    "project": "examples/sound-levels.json",
+    "folder": "Inputs"
+  },
+  {
+    "name": "Nano · displays / RGB / servo / buzzer",
+    "project": "examples/peripheral-lab.json",
+    "folder": "Boards"
   },
   {
     "name": "NeoPixels · ring → strip → single LED",
-    "project": "examples/neopixel-chain.json"
+    "project": "examples/neopixel-chain.json",
+    "folder": "Outputs"
   },
   {
     "name": "NeoPixel matrix · row-major pixels",
-    "project": "examples/neopixel-matrix.json"
+    "project": "examples/neopixel-matrix.json",
+    "folder": "Outputs"
   },
   {
     "name": "Relay · normally open / normally closed",
-    "project": "examples/relay-contacts.json"
+    "project": "examples/relay-contacts.json",
+    "folder": "Outputs"
   },
   {
     "name": "Stepper · A4988 STEP / DIR",
-    "project": "examples/stepper-driver.json"
+    "project": "examples/stepper-driver.json",
+    "folder": "Outputs"
   },
   {
     "name": "Mega · high pins / A15 / LED bar",
-    "project": "examples/mega-gpio.json"
+    "project": "examples/mega-gpio.json",
+    "folder": "Boards"
+  },
+  {
+    "name": "Uno · HelloLED",
+    "project": "examples/one-led.json",
+    "folder": "Boards"
+  },
+  {
+    "name": "PWM · meter and signal probe",
+    "project": "examples/pwm-instruments.json",
+    "folder": "Instruments"
+  },
+  {
+    "name": "Plotter · multiple signals",
+    "project": "examples/plotter.json",
+    "folder": "Instruments"
+  },
+  {
+    "name": "Capacitor · smooth a square wave",
+    "project": "examples/rc-smoothing.json",
+    "folder": "Electronics foundations"
+  },
+  {
+    "name": "555 · oscillator and timing capacitor",
+    "project": "examples/555-astable.json",
+    "folder": "Electronics foundations"
+  },
+  {
+    "name": "NPN · transistor switching",
+    "project": "examples/npn-switch.json",
+    "folder": "Electronics foundations"
+  },
+  {
+    "name": "PNP · transistor switching",
+    "project": "examples/pnp-switch.json",
+    "folder": "Electronics foundations"
+  },
+  {
+    "name": "Diode · rectify and smooth",
+    "project": "examples/diode-rectifier.json",
+    "folder": "Electronics foundations"
+  },
+  {
+    "name": "LC · find resonance",
+    "project": "examples/lc-resonance.json",
+    "folder": "Electronics foundations"
+  },
+  {
+    "name": "AM · detect an audio envelope",
+    "project": "examples/am-detector.json",
+    "folder": "Electronics foundations"
+  },
+  {
+    "name": "Op-amp buffer and comparator",
+    "project": "examples/opamp-comparator.json",
+    "folder": "Electronics foundations"
   }
 ]

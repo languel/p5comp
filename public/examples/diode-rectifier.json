@@ -1,0 +1,300 @@
+{
+  "version": 2,
+  "canvas": {
+    "camera": {
+      "x": 30,
+      "y": 80,
+      "zoom": 1
+    },
+    "snap": true,
+    "orthogonal": true,
+    "labels": true,
+    "gridReference": "breadboard"
+  },
+  "workbench": {
+    "name": "Diode · rectify and smooth",
+    "layout": "tabs",
+    "activeView": "circuit",
+    "splitRatio": 0.6,
+    "files": {}
+  },
+  "diagram": {
+    "version": 1,
+    "parts": [
+      {
+        "id": "gen",
+        "type": "p5comp-signal-generator",
+        "left": 40,
+        "top": 90,
+        "attrs": {
+          "waveform": "sine",
+          "frequency": 50,
+          "amplitude": 4,
+          "offset": 0
+        }
+      },
+      {
+        "id": "d",
+        "type": "p5comp-diode",
+        "left": 210,
+        "top": 170,
+        "attrs": {
+          "forwardVoltage": 0.65
+        }
+      },
+      {
+        "id": "r",
+        "type": "wokwi-resistor",
+        "left": 290,
+        "top": 250,
+        "attrs": {
+          "value": "1k"
+        }
+      },
+      {
+        "id": "c",
+        "type": "p5comp-capacitor",
+        "left": 210,
+        "top": 310,
+        "attrs": {
+          "value": "10uF"
+        }
+      },
+      {
+        "id": "g",
+        "type": "p5comp-ground",
+        "left": 125,
+        "top": 360,
+        "attrs": {}
+      },
+      {
+        "id": "scope",
+        "type": "p5comp-oscilloscope",
+        "left": 450,
+        "top": 100,
+        "attrs": {
+          "timeWindow": 0.08,
+          "voltsPerDiv": 1,
+          "triggerLevel": 0,
+          "triggerMode": "auto"
+        }
+      }
+    ],
+    "connections": [
+      [
+        "gen:GND",
+        "g:GND",
+        "#000000",
+        [
+          {
+            "x": 140,
+            "y": 348
+          },
+          {
+            "x": 145,
+            "y": 348
+          }
+        ]
+      ],
+      [
+        "gen:OUT",
+        "d:A",
+        "#8796a6",
+        [
+          {
+            "x": 65,
+            "y": 184
+          },
+          {
+            "x": 198,
+            "y": 184
+          },
+          {
+            "x": 198,
+            "y": 194
+          }
+        ]
+      ],
+      [
+        "d:K",
+        "r:1",
+        "#8796a6",
+        [
+          {
+            "x": 360.8,
+            "y": 194
+          },
+          {
+            "x": 360.8,
+            "y": 273.3
+          },
+          {
+            "x": 278,
+            "y": 273.3
+          },
+          {
+            "x": 278,
+            "y": 255.65
+          }
+        ]
+      ],
+      [
+        "r:2",
+        "g:GND",
+        "#000000",
+        [
+          {
+            "x": 368.8,
+            "y": 255.65
+          },
+          {
+            "x": 368.8,
+            "y": 298
+          },
+          {
+            "x": 145,
+            "y": 298
+          }
+        ]
+      ],
+      [
+        "d:K",
+        "c:1",
+        "#8796a6",
+        [
+          {
+            "x": 298,
+            "y": 194
+          },
+          {
+            "x": 298,
+            "y": 158
+          },
+          {
+            "x": 190,
+            "y": 158
+          },
+          {
+            "x": 190,
+            "y": 328
+          }
+        ]
+      ],
+      [
+        "c:2",
+        "g:GND",
+        "#000000",
+        [
+          {
+            "x": 282,
+            "y": 328
+          },
+          {
+            "x": 282,
+            "y": 358
+          },
+          {
+            "x": 177,
+            "y": 358
+          },
+          {
+            "x": 177,
+            "y": 348
+          },
+          {
+            "x": 145,
+            "y": 348
+          }
+        ]
+      ],
+      [
+        "scope:GND",
+        "g:GND",
+        "#000000",
+        [
+          {
+            "x": 470,
+            "y": 304
+          },
+          {
+            "x": 282,
+            "y": 304
+          },
+          {
+            "x": 282,
+            "y": 290
+          },
+          {
+            "x": 148,
+            "y": 290
+          },
+          {
+            "x": 148,
+            "y": 348
+          },
+          {
+            "x": 145,
+            "y": 348
+          }
+        ]
+      ],
+      [
+        "scope:CH1",
+        "gen:OUT",
+        "#8796a6",
+        [
+          {
+            "x": 570,
+            "y": 312
+          },
+          {
+            "x": 286,
+            "y": 312
+          },
+          {
+            "x": 286,
+            "y": 281.3
+          },
+          {
+            "x": 65,
+            "y": 281.3
+          }
+        ]
+      ],
+      [
+        "scope:CH2",
+        "d:K",
+        "#7ba9ca",
+        [
+          {
+            "x": 670,
+            "y": 320
+          },
+          {
+            "x": 376.8,
+            "y": 320
+          },
+          {
+            "x": 376.8,
+            "y": 202
+          },
+          {
+            "x": 298,
+            "y": 202
+          },
+          {
+            "x": 298,
+            "y": 194
+          }
+        ]
+      ]
+    ]
+  },
+  "controls": {},
+  "api": "none",
+  "arduino": "// Analog-only lesson: no Arduino firmware required.\n",
+  "p5": {
+    "none": "function setup() {\n  createCanvas(400, 150);\n  background(30);\n  fill(230);\n  text(\"The diode passes positive peaks. The capacitor holds charge between peaks; the resistor discharges it.\", 20, 40, 360, 100);\n  noLoop();\n}\n"
+  },
+  "artifact": null
+}

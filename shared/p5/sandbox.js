@@ -166,6 +166,21 @@ window.addEventListener("message", async (event) => {
     mirrorRender();
     return;
   }
+  if (message.type === "closeSerial") {
+    p5Instance?.noLoop();
+    window.serialConnected = false;
+    // End pending reads first, so adapters can release reader/writer locks.
+    serialProxy.reset();
+    Promise.resolve(window.arduinoComms?.disconnect?.())
+      .catch(() => {})
+      .finally(() => {
+        host.postMessage(
+          { type: "serialClosed", requestId: message.requestId },
+          "*",
+        );
+      });
+    return;
+  }
   if (message.type === "theme") return;
   if (message.type === "state") {
     serialProxy.setConnected(

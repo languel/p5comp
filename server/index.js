@@ -1,3 +1,4 @@
+import { createAgentRelay } from "./agentRelay.js";
 import express from "express";
 import { spawn } from "node:child_process";
 import {
@@ -35,6 +36,7 @@ app.use((request, response, next) => {
   if (request.method === "OPTIONS") return response.sendStatus(204);
   next();
 });
+app.use("/api/agent", createAgentRelay());
 app.use(express.json({ limit: "512kb", strict: true }));
 
 app.post("/api/compile", async (request, response) => {

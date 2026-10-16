@@ -73,7 +73,17 @@ export function installSerialProxy(send) {
     value: serial,
     configurable: true,
   });
+  const reset = () => {
+    try {
+      controller?.close();
+    } catch {}
+    controller = null;
+    portOpen = false;
+    port.readable = null;
+    port.writable = null;
+  };
   return {
+    reset,
     setConnected(value, nextMode = "simulation") {
       mode = nextMode;
       const changed = value !== available;

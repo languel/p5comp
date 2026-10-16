@@ -1,4 +1,7 @@
-import { isBreadboard, breadboardContacts } from "./breadboard.js";
+import {copyCircuitSelection, pasteCircuitSelection} from "./selectionClipboard.js";
+import {deleteCircuitSelection} from "./selectionDeletion.js";
+import {snapInsertion, terminalContacts, syncSeating, unplugContacts, movingParts, groupParts, ungroupParts, connectorRole} from "./terminalContacts.js";
+import { isBreadboard } from "./breadboard.js";
 import { componentColor } from "./componentColor.js";
 import { WIRE_COLORS } from "./colors.js";
 import {
@@ -34,7 +37,7 @@ const el = (tag, attrs = {}) => {
   for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, String(v));
   return n;
 };
-const color = (c) => (/^#[0-9a-f]{6}$/i.test(c) ? c : "#788fa5");
+const color = (c) => (/^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(c) ? c : "#788fa5");
 export class CircuitCanvas {
   constructor({
     stage,
@@ -47,6 +50,7 @@ export class CircuitCanvas {
     onViewChange,
     onDocs,
     onRename,
+    onEditValue,
     onAdd,
     saved = {},
   }) {
@@ -61,6 +65,7 @@ export class CircuitCanvas {
       onViewChange,
       onDocs,
       onRename,
+      onEditValue,
       onAdd,
     });
     this.camera = {
@@ -450,9 +455,11 @@ export class CircuitCanvas {
     this.render();
   }
   selectPart(id, additive = false) {
-    if (!additive && !this.selectedParts.has(id)) this.clearSelection();
-    if (additive && this.selectedParts.has(id)) this.selectedParts.delete(id);
-    else if (id) this.selectedParts.add(id);
+    const seatedInSelectedHost = (this.diagram.attachments || []).some(([child,host]) => child.startsWith(id + ":") && this.selectedParts.has(host.split(":")[0]));
+    if (!additive && (!this.selectedParts.has(id) || (this.selectedPart !== id && seatedInSelectedHost))) this.clearSelection();
+    const members = movingParts(this.diagram, [id], false);
+    if (additive && this.selectedParts.has(id)) for (const member of members) this.selectedParts.delete(member);
+    else for (const member of members) this.selectedParts.add(member);
     this.selectedPart = this.selectedParts.has(id)
       ? id
       : ([...this.selectedParts].at(-1) ?? null);
@@ -474,7 +481,9 @@ export class CircuitCanvas {
       this.selectedParts.has(p.id),
     )) {
       const element = this.elements.get(p.id),
-        native = element?.constructor.elementProperties?.has("color");
+        native =
+          isBreadboard(p.type) ||
+          element?.constructor.elementProperties?.has("color");
       p.attrs = componentColor(
         p.attrs,
         value ? color(value) : null,
@@ -612,7 +621,7 @@ export class CircuitCanvas {
     let best = null,
       distance = 13 / this.camera.zoom;
     for (const [id, q] of this.pins) {
-      if (this.drag?.kind === "group" && this.selectedParts.has(q.part))
+      if (this.drag?.kind === "group" && this.drag.members.has(q.part))
         continue;
       const d = Math.hypot(q.x - p.x, q.y - p.y);
       if (d < distance && id !== this.draft?.source) {
@@ -640,6 +649,7 @@ export class CircuitCanvas {
         kind: "rotate",
         id,
         center,
+        startPoint: point,
         angle: Math.atan2(point.y - center.y, point.x - center.x),
         rotation: part.rotate || 0,
         before: this.checkpoint(),
@@ -697,6 +707,13 @@ export class CircuitCanvas {
       e.stopPropagation();
       const id = pin.dataset.pin;
       if (!this.draft && !this.wireMode) {
+        const pair = (this.diagram.attachments || []).find(pair => pair.includes(id));
+        if (pair) {
+          this.drag = {kind:"unplug",pair,before:this.checkpoint(),x:e.clientX,y:e.clientY};
+          this.stage.setPointerCapture(e.pointerId);
+          this.stage.focus({preventScroll:true});
+          return;
+        }
         const attached = this.diagram.connections
             .map((c, i) => ({ i, end: c.slice(0, 2).indexOf(id) }))
             .filter((c) => c.end >= 0),
@@ -869,6 +886,13 @@ export class CircuitCanvas {
         1
       );
     }
+    if (p.type.startsWith("p5comp-"))
+      return path.some(
+        (n) =>
+          n.tagName === "INPUT" ||
+          n.tagName === "BUTTON" ||
+          n.hasAttribute?.("data-active-control"),
+      );
     // Let the native controls receive pointer/mouse events on their moving heads.
     // The case, mounting holes, and pins remain canvas drag targets.
     if (p.type === "wokwi-slide-potentiometer")
@@ -888,21 +912,39 @@ export class CircuitCanvas {
           n.getRootNode() instanceof ShadowRoot),
     );
   }
+  copySelection() {
+    return copyCircuitSelection(this.diagram,this.selectedParts,this.selectedWires,this.pins);
+  }
+  pasteSelection(fragment, offset={x:20,y:20}, record=true) {
+    const before=this.checkpoint(), pasted=pasteCircuitSelection(this.diagram,fragment,offset);
+    if(record){this.undoStack.push(before);this.redoStack=[];}
+    this.onRestore?.(pasted.diagram);
+    this.selectedParts=new Set(pasted.ids);
+    this.selectedWires=new Set(pasted.wires);
+    this.selectedPart=pasted.ids.at(-1)||null;
+    this.render();
+    return before;
+  }
   beginGroup(e) {
+    let duplicateBefore;
+    if(e.altKey) duplicateBefore=this.pasteSelection(copyCircuitSelection(this.diagram,movingParts(this.diagram,this.selectedParts),this.selectedWires,this.pins),{x:0,y:0},false);
+    const members = movingParts(this.diagram, this.selectedParts);
     this.drag = {
+      members,
       kind: "group",
       start: this.toWorld(e),
-      before: this.checkpoint(),
+      before: duplicateBefore || this.checkpoint(),
       grid: this.gridSettings(),
+      pins: new Map([...this.pins].map(([id,p])=>[id,{...p}])),
       parts: this.diagram.parts
-        .filter((p) => this.selectedParts.has(p.id))
+        .filter((p) => members.has(p.id))
         .map((p) => ({ p, x: p.left, y: p.top })),
       anchor: [...this.pins.values()].find((q) =>
-        this.selectedParts.has(q.part),
+        members.has(q.part),
       ),
       wires: this.diagram.connections.map((c) => ({
         ends: c.slice(0, 2),
-        points: wirePoints(c, this.pins),
+        points: simplify(wirePoints(c, this.pins)),
       })),
     };
     this.stage.setPointerCapture(e.pointerId);
@@ -967,8 +1009,9 @@ export class CircuitCanvas {
           { x: anchor.x + p.x - d.start.x, y: anchor.y + p.y - d.start.y },
           e,
         ),
-        dx = result.point.x - anchor.x,
-        dy = result.point.y - anchor.y;
+        insertion = this.snap && !e.altKey ? snapInsertion(this.diagram,d.pins,d.members,p.x-d.start.x,p.y-d.start.y,Math.min(4,6/this.camera.zoom)) : null,
+        dx = insertion?.dx ?? result.point.x - anchor.x,
+        dy = insertion?.dy ?? result.point.y - anchor.y;
       for (const { p, x, y } of d.parts) {
         p.left = x + dx;
         p.top = y + dy;
@@ -978,8 +1021,8 @@ export class CircuitCanvas {
       }
       this.diagram.connections.forEach((c, i) => {
         const old = d.wires[i],
-          a = this.selectedParts.has(old.ends[0].split(":")[0]),
-          b = this.selectedParts.has(old.ends[1].split(":")[0]),
+          a = d.members.has(old.ends[0].split(":")[0]),
+          b = d.members.has(old.ends[1].split(":")[0]),
           selected = this.selectedWires.has(i);
         let points = old.points.slice(1, -1).map(copy);
         if ((a && b) || selected)
@@ -1047,7 +1090,30 @@ export class CircuitCanvas {
     this.drag = null;
     this.guides = [];
     if (!d) return;
+    if (d.kind === "unplug") {
+      if (Math.hypot(e.clientX-d.x,e.clientY-d.y)>4) {
+        unplugContacts(this.diagram,[d.pair]);
+        this.commit(d.before,true);
+      }
+      this.render();
+      return;
+    }
+    if (d.kind === "group" || d.kind === "rotate") {
+      this.refreshPins();
+      syncSeating(this.diagram,this.pins);
+    }
     if (d.kind === "rotate") {
+      const point = this.toWorld(e);
+      if (
+        Math.hypot(point.x - d.startPoint.x, point.y - d.startPoint.y) *
+          this.camera.zoom <
+        4
+      ) {
+        this.diagram.parts.find((p) => p.id === d.id).rotate =
+          (d.rotation + 45) % 360;
+        this.applyTints();
+        this.refreshPins();
+      }
       this.diagram.connections.forEach((c, i) => {
         if (c.slice(0, 2).some((end) => end.split(":")[0] === d.id))
           this.route(i);
@@ -1128,12 +1194,14 @@ export class CircuitCanvas {
       part = hit?.closest(".part");
     if (
       part &&
-      !this.activeBody(e, part) &&
-      !hit.closest(".part-doc-help,.part-rotate")
+      !hit.closest(
+        ".part-doc-help,.part-rotate,.part-label-input,.part-value-editor",
+      )
     ) {
       e.preventDefault();
       this.selectPart(part.dataset.id);
-      this.onRename?.(part);
+      if (hit.closest(".part-handle")) this.onRename?.(part);
+      else this.onEditValue?.(part);
       return;
     }
     const wire = hit?.closest("[data-wire]") || e.target.closest("[data-wire]");
@@ -1172,23 +1240,8 @@ export class CircuitCanvas {
     this.commit(before, true);
   }
   deleteSelection() {
-    const before = this.checkpoint(),
-      remove = new Set(
-        this.diagram.parts
-          .filter(
-            (p) =>
-              this.selectedParts.has(p.id) &&
-              p.id !== this.diagram.parts.find((q) => q.type === TYPES[0])?.id,
-          )
-          .map((p) => p.id),
-      );
-    const next = structuredClone(this.diagram);
-    next.parts = next.parts.filter((p) => !remove.has(p.id));
-    next.connections = next.connections.filter(
-      (c, i) =>
-        !this.selectedWires.has(i) &&
-        !c.slice(0, 2).some((e) => remove.has(e.split(":")[0])),
-    );
+    const before = this.checkpoint();
+    const next = deleteCircuitSelection(this.diagram, this.selectedParts, this.selectedWires);
     if (JSON.stringify(next) === before) return;
     this.undoStack.push(before);
     this.redoStack = [];
@@ -1238,6 +1291,14 @@ export class CircuitCanvas {
       );
       action("Autoroute connections", () => this.routeSelectedParts());
       action("Documentation", () => this.onDocs?.(this.selectedPart));
+      if (this.selectedParts.size > 1) action("Group selection · ⌘/Ctrl G", () => this.groupSelection());
+      if ((this.diagram.groups || []).some(g => g.some(id => this.selectedParts.has(id)))) action("Ungroup · ⌘/Ctrl Shift G", () => this.groupSelection(true));
+      if ((this.diagram.attachments || []).some(([child]) => child.startsWith(this.selectedPart + ":"))) action("Unplug component", () => {
+        const before = this.checkpoint();
+        unplugContacts(this.diagram, this.diagram.attachments.filter(([child]) => child.startsWith(this.selectedPart + ":")));
+        this.clearSelection();
+        this.commit(before,true);
+      });
       const transforms = document.createElement("div");
       transforms.className = "canvas-transform-tools";
       for (const [glyph, label, operation] of [
@@ -1322,12 +1383,21 @@ export class CircuitCanvas {
     this.colorPicker.open(row, value, fn);
     this.menu.hidden = true;
   }
+  groupSelection(ungroup = false) {
+    const before = this.checkpoint();
+    if (ungroup) ungroupParts(this.diagram,this.selectedParts);
+    else groupParts(this.diagram,this.selectedParts);
+    this.commit(before);
+  }
   key(e) {
     if (e.target.closest("input,select,textarea,.cm-editor")) return;
     if (e.code === "Space") {
       e.preventDefault();
       this.space = true;
       this.stage.classList.add("pan-ready");
+    }
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "g") {
+      e.preventDefault();this.groupSelection(e.shiftKey);return;
     }
     if (e.key === "?" && this.selectedPart) this.onDocs?.(this.selectedPart);
     if (e.key === "Escape") {
@@ -1499,7 +1569,7 @@ export class CircuitCanvas {
         });
       }
     }
-    const seats = new Map(breadboardContacts(this.diagram.parts, this.pins));
+    const seats = new Map(terminalContacts(this.diagram.parts, this.pins, this.diagram.detachedContacts));
     const seatedHoles = new Set(seats.values());
     const bodies = this.rectangles();
     const boardIds = new Set(
@@ -1544,6 +1614,7 @@ export class CircuitCanvas {
       title.textContent = /^wokwi-pushbutton(?:-6mm)?$/.test(part?.type || "")
         ? `${id} · contact ${contact}; same-number pins are always joined, 1 ↔ 2 closes when pressed`
         : id;
+      title.textContent += ` · ${connectorRole(part, id.split(":")[1])}`;
       if (seats.has(id))
         title.textContent += ` · seated in ${seats.get(id)} (automatic connection)`;
       circle.append(title);

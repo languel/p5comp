@@ -1,0 +1,425 @@
+{
+  "version": 2,
+  "canvas": {
+    "camera": {
+      "x": 30,
+      "y": 80,
+      "zoom": 1
+    },
+    "snap": true,
+    "orthogonal": true,
+    "labels": true,
+    "gridReference": "breadboard"
+  },
+  "workbench": {
+    "name": "Op-amp buffer and comparator",
+    "layout": "tabs",
+    "activeView": "circuit",
+    "splitRatio": 0.6,
+    "files": {}
+  },
+  "diagram": {
+    "version": 1,
+    "parts": [
+      {
+        "id": "g",
+        "type": "p5comp-ground",
+        "left": 120,
+        "top": 360,
+        "attrs": {}
+      },
+      {
+        "id": "bat",
+        "type": "p5comp-battery",
+        "left": 40,
+        "top": 90,
+        "attrs": {
+          "voltage": 5
+        }
+      },
+      {
+        "id": "gen",
+        "type": "p5comp-signal-generator",
+        "left": 40,
+        "top": 230,
+        "attrs": {
+          "waveform": "sine",
+          "frequency": 5,
+          "amplitude": 2,
+          "offset": 2.5
+        }
+      },
+      {
+        "id": "buffer",
+        "type": "p5comp-opamp",
+        "left": 250,
+        "top": 120,
+        "attrs": {
+          "gain": 10000
+        }
+      },
+      {
+        "id": "compare",
+        "type": "p5comp-comparator",
+        "left": 250,
+        "top": 260,
+        "attrs": {
+          "gain": 10000
+        }
+      },
+      {
+        "id": "threshold",
+        "type": "p5comp-battery",
+        "left": 120,
+        "top": 400,
+        "attrs": {
+          "voltage": 2.5
+        }
+      },
+      {
+        "id": "scope",
+        "type": "p5comp-oscilloscope",
+        "left": 450,
+        "top": 160,
+        "attrs": {
+          "timeWindow": 0.4,
+          "voltsPerDiv": 1,
+          "verticalOffset": 2.5,
+          "triggerLevel": 2.5,
+          "triggerMode": "auto"
+        }
+      }
+    ],
+    "connections": [
+      [
+        "bat:-",
+        "g:GND",
+        "#000000",
+        [
+          {
+            "x": 177,
+            "y": 114
+          },
+          {
+            "x": 177,
+            "y": 348
+          },
+          {
+            "x": 140,
+            "y": 348
+          }
+        ]
+      ],
+      [
+        "threshold:-",
+        "g:GND",
+        "#000000",
+        [
+          {
+            "x": 208,
+            "y": 424
+          },
+          {
+            "x": 208,
+            "y": 340
+          },
+          {
+            "x": 140,
+            "y": 340
+          }
+        ]
+      ],
+      [
+        "gen:GND",
+        "g:GND",
+        "#000000",
+        [
+          {
+            "x": 140,
+            "y": 324
+          },
+          {
+            "x": 132,
+            "y": 324
+          },
+          {
+            "x": 132,
+            "y": 348
+          },
+          {
+            "x": 140,
+            "y": 348
+          }
+        ]
+      ],
+      [
+        "bat:+",
+        "buffer:V+",
+        "#8796a6",
+        [
+          {
+            "x": 28,
+            "y": 114
+          },
+          {
+            "x": 28,
+            "y": 78
+          },
+          {
+            "x": 298,
+            "y": 78
+          }
+        ]
+      ],
+      [
+        "bat:+",
+        "compare:V+",
+        "#8796a6",
+        [
+          {
+            "x": 28,
+            "y": 114
+          },
+          {
+            "x": 28,
+            "y": 218
+          },
+          {
+            "x": 298,
+            "y": 218
+          }
+        ]
+      ],
+      [
+        "buffer:V-",
+        "g:GND",
+        "#000000",
+        [
+          {
+            "x": 298,
+            "y": 208
+          },
+          {
+            "x": 185,
+            "y": 208
+          },
+          {
+            "x": 185,
+            "y": 332
+          },
+          {
+            "x": 140,
+            "y": 332
+          }
+        ]
+      ],
+      [
+        "compare:V-",
+        "g:GND",
+        "#000000",
+        [
+          {
+            "x": 298,
+            "y": 348
+          },
+          {
+            "x": 188,
+            "y": 348
+          },
+          {
+            "x": 188,
+            "y": 328
+          },
+          {
+            "x": 148,
+            "y": 328
+          },
+          {
+            "x": 148,
+            "y": 348
+          },
+          {
+            "x": 140,
+            "y": 348
+          }
+        ]
+      ],
+      [
+        "gen:OUT",
+        "buffer:IN+",
+        "#8796a6",
+        [
+          {
+            "x": 65,
+            "y": 336
+          },
+          {
+            "x": 238,
+            "y": 336
+          },
+          {
+            "x": 238,
+            "y": 144
+          }
+        ]
+      ],
+      [
+        "buffer:OUT",
+        "buffer:IN-",
+        "#8796a6",
+        [
+          {
+            "x": 362,
+            "y": 158
+          },
+          {
+            "x": 362,
+            "y": 108
+          },
+          {
+            "x": 230,
+            "y": 108
+          },
+          {
+            "x": 230,
+            "y": 172
+          }
+        ]
+      ],
+      [
+        "gen:OUT",
+        "compare:IN+",
+        "#8796a6",
+        [
+          {
+            "x": 65,
+            "y": 324
+          },
+          {
+            "x": 128,
+            "y": 324
+          },
+          {
+            "x": 128,
+            "y": 328
+          },
+          {
+            "x": 148,
+            "y": 328
+          },
+          {
+            "x": 148,
+            "y": 324
+          },
+          {
+            "x": 230,
+            "y": 324
+          },
+          {
+            "x": 230,
+            "y": 284
+          }
+        ]
+      ],
+      [
+        "threshold:+",
+        "compare:IN-",
+        "#8796a6",
+        [
+          {
+            "x": 108,
+            "y": 424
+          },
+          {
+            "x": 108,
+            "y": 344
+          },
+          {
+            "x": 222,
+            "y": 344
+          },
+          {
+            "x": 222,
+            "y": 312
+          }
+        ]
+      ],
+      [
+        "scope:GND",
+        "g:GND",
+        "#000000",
+        [
+          {
+            "x": 470,
+            "y": 472
+          },
+          {
+            "x": 100,
+            "y": 472
+          },
+          {
+            "x": 100,
+            "y": 340
+          },
+          {
+            "x": 136,
+            "y": 340
+          },
+          {
+            "x": 136,
+            "y": 348
+          },
+          {
+            "x": 140,
+            "y": 348
+          }
+        ]
+      ],
+      [
+        "scope:CH1",
+        "buffer:OUT",
+        "#8796a6",
+        [
+          {
+            "x": 570,
+            "y": 364
+          },
+          {
+            "x": 362,
+            "y": 364
+          },
+          {
+            "x": 362,
+            "y": 158
+          }
+        ]
+      ],
+      [
+        "scope:CH2",
+        "compare:OUT",
+        "#8796a6",
+        [
+          {
+            "x": 670,
+            "y": 368
+          },
+          {
+            "x": 370,
+            "y": 368
+          },
+          {
+            "x": 370,
+            "y": 298
+          }
+        ]
+      ]
+    ]
+  },
+  "controls": {},
+  "api": "none",
+  "arduino": "// Analog-only lesson: no Arduino firmware required.\n",
+  "p5": {
+    "none": "function setup() {\n  createCanvas(400, 150);\n  background(30);\n  fill(230);\n  text(\"Compare raw CH1 with filtered CH2. Change resistance, capacitance or generator frequency.\", 20, 40, 360, 100);\n  noLoop();\n}\n"
+  },
+  "artifact": null
+}

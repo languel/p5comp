@@ -1,3 +1,4 @@
+import {analogTopology} from "./analogTopology.js";
 import { isNeoPixel, pixelCount } from "./outputModels.js";
 import { isPot, isSensorInput } from "./inputModels.js";
 import { boardKind, boardLayout } from "./avrBoards.js";
@@ -42,27 +43,27 @@ export function classroomCircuit() {
   ];
   const connections = [
     ["uno:5V", "bb:bp.1", "#bc7770"],
-    ["uno:GND.2", "bb:bn.1", "#707875"],
-    ["pot:GND", "bb:1t.a", "#707875"],
+    ["uno:GND.2", "bb:bn.1", "#000000"],
+    ["pot:GND", "bb:1t.a", "#000000"],
     ["pot:SIG", "bb:2t.a", "#997aa6"],
     ["pot:VCC", "bb:3t.a", "#bc7770"],
-    ["bb:1t.e", "bb:bn.3", "#707875"],
+    ["bb:1t.e", "bb:bn.3", "#000000"],
     ["bb:3t.e", "bb:bp.5", "#bc7770"],
     ["uno:A0", "bb:2t.e", "#997aa6"],
     ["sonar:VCC", "bb:25t.a", "#bc7770"],
-    ["sonar:GND", "bb:28t.a", "#707875"],
+    ["sonar:GND", "bb:28t.a", "#000000"],
     ["bb:25t.e", "bb:bp.25", "#bc7770"],
-    ["bb:28t.e", "bb:bn.28", "#707875"],
+    ["bb:28t.e", "bb:bn.28", "#000000"],
     ["uno:9", "sonar:TRIG", "#bb9b61"],
     ["uno:8", "sonar:ECHO", "#77a3a4"],
     ["b1:1.l", "bb:11t.a", "#7799ac"],
-    ["b1:2.l", "bb:12t.a", "#707875"],
+    ["b1:2.l", "bb:12t.a", "#000000"],
     ["uno:2", "bb:11t.e", "#7799ac"],
-    ["bb:12t.e", "bb:bn.12", "#707875"],
+    ["bb:12t.e", "bb:bn.12", "#000000"],
     ["b2:1.l", "bb:18t.a", "#997aa6"],
-    ["b2:2.l", "bb:19t.a", "#707875"],
+    ["b2:2.l", "bb:19t.a", "#000000"],
     ["uno:3", "bb:18t.e", "#997aa6"],
-    ["bb:19t.e", "bb:bn.19", "#707875"],
+    ["bb:19t.e", "bb:bn.19", "#000000"],
   ].map((c) => [...c, []]);
   return { version: 1, editor: "physical-p5", parts, connections };
 }
@@ -72,6 +73,10 @@ export function validateDiagram(d) {
     throw new Error("Project needs parts and connections arrays.");
   if (d.parts.length > 40 || d.connections.length > 300)
     throw new Error("Classroom project limit: 40 parts / 300 wires.");
+  for (const field of ["attachments", "detachedContacts"]) {
+    if (d[field] != null && (!Array.isArray(d[field]) || d[field].some(pair => !Array.isArray(pair) || pair.length !== 2 || pair.some(id => typeof id !== "string")))) throw Error("Invalid terminal attachments.");
+  }
+  if (d.groups != null && (!Array.isArray(d.groups) || d.groups.some(g => !Array.isArray(g) || g.some(id => typeof id !== "string")))) throw Error("Invalid component groups.");
   const ids = new Set();
   for (const p of d.parts) {
     if (!/^[a-zA-Z][\w-]{0,30}$/.test(p.id) || ids.has(p.id))
@@ -90,6 +95,8 @@ export function validateDiagram(d) {
     if (!elementByType.has(p.type))
       throw new Error(`Unsupported part: ${p.type}`);
     if (p.type === "wokwi-resistor") resistance(p.attrs?.value);
+    if (p.attrs?.maxResistance != null && isPot(p.type))
+      resistance(p.attrs.maxResistance);
     if (isNeoPixel(p.type)) {
       for (const prop of ["pixels", "rows", "cols"])
         if (
@@ -210,22 +217,26 @@ export function resolveCircuit(diagram, contacts = []) {
       join(`${p.id}:2.l`, `${p.id}:2.r`);
     }
   }
-  for (const [a, b] of contacts) if (known.has(a) && known.has(b)) join(a, b);
+  for (const [a, b] of [...contacts, ...(diagram.attachments || [])]) if (known.has(a) && known.has(b)) join(a, b);
   for (const [a, b] of diagram.connections) {
     if ((!known.has(a) && !freePoint(a)) || (!known.has(b) && !freePoint(b)))
       throw new Error(`Unknown terminal: ${!known.has(a) ? a : b}`);
     if (known.has(a) && known.has(b)) join(a, b);
   }
   const uno = diagram.parts.filter((p) => isAVRBoard(p.type));
-  if (uno.length !== 1)
-    throw new Error("Use exactly one simulated Arduino Uno, Nano or Mega.");
-  const kind = boardKind(uno[0].type),
+  if (uno.length > 1)
+    throw new Error("Use at most one simulated Arduino Uno, Nano or Mega.");
+  const kind = uno.length ? boardKind(uno[0].type) : "uno",
     layout = boardLayout(kind);
   const terminal = (n) =>
     n < layout.analogBase ? String(n) : "A" + (n - layout.analogBase);
-  const id = uno[0].id,
+  const id = uno[0]?.id || "__analog",
     equal = (a, b) => find(a) === find(b),
     warnings = [];
+  for (const p of diagram.parts) {
+    if (p.type === "p5comp-ground") join(`${p.id}:GND`, `${id}:GND.1`);
+    if (p.type === "p5comp-vcc") join(`${p.id}:VCC`, `${id}:5V`);
+  }
   if (equal(`${id}:5V`, `${id}:GND.1`))
     throw new Error("5V is shorted to GND. Remove the short before running.");
   const target = (endpoint) => {
@@ -303,7 +314,7 @@ export function resolveCircuit(diagram, contacts = []) {
     sources: [
       { net: net(`${id}:5V`), volts: 5 },
       { net: net(`${id}:GND.1`), volts: 0 },
-      ...Array.from({ length: layout.digitalCount }, (_, pin) => ({
+      ...Array.from({ length: uno.length ? layout.digitalCount : 0 }, (_, pin) => ({
         net: net(`${id}:${pin < layout.analogBase ? pin : "A" + (pin - 14)}`),
         pin,
       })),
@@ -320,12 +331,23 @@ export function resolveCircuit(diagram, contacts = []) {
         a: net(p.id + ":1.l"),
         b: net(p.id + ":2.l"),
       });
-    if (p.type === "wokwi-resistor")
+    if (["wokwi-resistor", "p5comp-photoresistor"].includes(p.type))
       passive.resistors.push({
         id: p.id,
         a: net(p.id + ":1"),
         b: net(p.id + ":2"),
-        ohms: resistance(p.attrs?.value),
+        ohms:
+          p.type === "p5comp-photoresistor"
+            ? 10000
+            : resistance(p.attrs?.value),
+        photo:
+          p.type === "p5comp-photoresistor"
+            ? {
+                lux: Number(p.attrs?.value ?? 100),
+                rl10: Number(p.attrs?.rl10 ?? 50),
+                gamma: Number(p.attrs?.gamma ?? 0.7),
+              }
+            : undefined,
       });
     if (p.type === "wokwi-led")
       passive.leds.push({
@@ -352,6 +374,8 @@ export function resolveCircuit(diagram, contacts = []) {
           index: i,
           initial: p.attrs?.values || Array(8).fill(0),
         });
+    if (p.type === "p5comp-toggle-switch")
+      add("1", "2", { kind: "toggle", initial: Number(p.attrs?.value || 0) });
     if (p.type === "wokwi-slide-switch") {
       add("2", "1", {
         kind: "slide",
@@ -381,6 +405,7 @@ export function resolveCircuit(diagram, contacts = []) {
         type: p.type,
         attrs: p.attrs || {},
         powered: powered(p),
+        analogNet: net(p.id + ":" + (p.type.includes("photo") ? "AO" : "AOUT")),
         analog: target(p.id + ":" + (p.type.includes("photo") ? "AO" : "AOUT")),
         digitalNet: net(
           p.id +
@@ -539,8 +564,31 @@ export function resolveCircuit(diagram, contacts = []) {
       }
     }
   }
+  const instruments = diagram.parts
+    .filter((p) =>
+      ["p5comp-multimeter", "p5comp-signal-probe", "p5comp-plotter", "p5comp-oscilloscope"].includes(p.type),
+    )
+    .map((p) => ({
+      id: p.id,
+      type: p.type,
+      mode: p.attrs?.mode || "voltage",
+      channels: ["p5comp-plotter", "p5comp-oscilloscope"].includes(p.type) ? Array.from({length: p.type === "p5comp-plotter" ? 8 : 2}, (_, i) => ({ name: "CH" + (i + 1), net: net(p.id + ":CH" + (i + 1)) })) : undefined,
+      a: net(p.id + (p.type === "p5comp-signal-probe" ? ":SIG" : ":V+")),
+      b: net(p.id + (p.type !== "p5comp-multimeter" ? ":GND" : ":COM")),
+      pin: target(p.id + ":SIG"),
+    }));
+  for (const m of instruments)
+    if (m.mode === "current" && m.type === "p5comp-multimeter")
+      passive.resistors.push({ id: m.id, a: m.a, b: m.b, ohms: 0.1 });
+  for (const p of pots) {
+    const part = diagram.parts.find((q) => q.id === p.id);
+    p.nets = [net(p.id + ":GND"), net(p.id + ":SIG"), net(p.id + ":VCC")];
+    p.resistance = resistance(part.attrs?.maxResistance ?? 10000);
+  }
   return {
-    board: kind,
+    board: uno.length ? kind : null,
+    analog: analogTopology(diagram,net,net(`${id}:GND.1`)),
+    instruments,
     pots,
     sonars,
     buttons,

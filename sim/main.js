@@ -1,3 +1,11 @@
+import {startupProject} from "./startupProject.js";
+import {CircuitAudio} from "./circuitAudio.js";
+import "./foundationElements.js";
+import {isObjectDeleteShortcut} from "./selectionDeletion.js";
+import {terminalContacts, syncSeating, unplugContacts} from "./terminalContacts.js";
+import { installAgentSurface } from "./automation/install.js";
+import { createAgentAdapter } from "./automation/adapter.js";
+import { paintRGBGlow } from "./ledAppearance.js";
 import { InputSimulator } from "./InputSimulator.js";
 import { isPot, isSensorInput } from "./inputModels.js";
 import { boardKind } from "./avrBoards.js";
@@ -7,7 +15,6 @@ import {
   breadboardName,
   breadboardPins,
   breadboardSVG,
-  breadboardContacts,
   isBreadboard,
 } from "./breadboard.js";
 import firmataParserSource from "../firmata/FirmataParser.js?raw";
@@ -24,6 +31,8 @@ import { SonarSimulator } from "./SonarSimulator.js";
 import "./style.css";
 import "@wokwi/elements";
 import "./extraElements.js";
+import "./simpleElements.js";
+import "./instrumentElements.js";
 import { CircuitCanvas } from "./CircuitCanvas.js";
 import { initializeTheme } from "../shared/ui/theme.js";
 import { createEditor } from "../shared/editor/createEditor.js";
@@ -44,41 +53,32 @@ import {
 } from "./examples.js";
 import lessonSource from "./classroom.ino?raw";
 
+let agentSurface = null,
+  agentMuteObserve = false,
+  agentMuteActions = false,
+  agentLatestState = null;
 const $ = (id) => document.getElementById(id),
   workspace = new URLSearchParams(location.search).get("workspace"),
   key =
     "physical-p5.circuit-project.v1" +
     (workspace ? ":" + workspace.slice(0, 64) : "");
 initializeTheme();
-let savedCanvas = {},
+let cachedProjectText=null;
+try { cachedProjectText=localStorage.getItem(key); } catch {}
+const initialProject=startupProject(cachedProjectText);
+let savedCanvas = initialProject.canvas || {},
   workbench = null,
-  savedWorkbench = {};
-let diagram = classroomCircuit(),
-  controls = { pot: 512, sonar: 100, b1: false, b2: false },
-  api = "webserial",
-  savedP5 = {},
-  artifact = null;
-try {
-  const d = JSON.parse(localStorage.getItem(key) || "null");
-  if (d) {
-    validateDiagram(d.diagram);
-
-    diagram = d.diagram;
-    controls = d.controls || controls;
-    api = ["native", "none", "firmata"].includes(d.api) ? d.api : "webserial";
-    savedP5 = Object.fromEntries(
-      Object.entries(d.p5 || {}).map(([api, source]) => [
-        api,
-        upgradeClassSketchTheme(source),
-      ]),
-    );
-    artifact = d.artifact || null;
-    savedCanvas = d.canvas || {};
-    savedWorkbench = d.workbench || {};
-  }
-} catch (e) {
-  console.warn("Using classroom circuit:", e.message);
-}
+  savedWorkbench = initialProject.workbench || {};
+let diagram = initialProject.diagram,
+  controls = initialProject.controls || {},
+  api = ["native", "none", "firmata"].includes(initialProject.api) ? initialProject.api : "webserial",
+  savedP5 = Object.fromEntries(Object.entries(initialProject.p5 || {}).map(([api,source])=>[api,upgradeClassSketchTheme(source)])),
+  artifact = initialProject.artifact || null;
+const circuitAudio=new CircuitAudio({onError:message=>log(message),onInput:value=>{
+  if(value==null)return;
+  for(const part of diagram.parts)if(["wokwi-small-sound-sensor","wokwi-big-sound-sensor"].includes(part.type))controls[part.id]=value;
+  worker?.postMessage({type:"controls",controls});
+}});
 let compiling = false;
 let running = false,
   paused = false,
@@ -93,6 +93,7 @@ let running = false,
   topology = null;
 const serial = new SerialConnection();
 const log = (line) => {
+  agentSurface?.emit("console", { line: String(line) });
   lines.push(line);
   if (!/^[←→]/.test(line)) workbench?.buildLog(line);
   if (lines.length > 150) lines.shift();
@@ -104,17 +105,27 @@ const notice = (message) => {
   $("notice").textContent = message || "";
 };
 const status = (s) => {
+  agentSurface?.emit("runtime.status", { message: s });
   $("status").textContent = s;
+  $("run").dataset.running = String(running);
+  $("run").dataset.paused = String(paused);
+  $("run").setAttribute("aria-pressed", String(running && !paused));
+  const action = paused
+    ? "Resume simulation"
+    : running
+      ? "Stop simulation"
+      : "Run Arduino + p5";
+  $("run").title =
+    action + " · Shift-click: pause/resume · Option/Alt-click: reset";
+  $("run").setAttribute("aria-label", action);
+  $("run").textContent = action;
   workbench?.editorStatus("arduino", s);
+  workbench?.syncTransport(running && !paused);
 };
 function sourceValue(editor) {
   return editor.state.doc.toString();
 }
-let initialSource = lessonSource;
-try {
-  const d = JSON.parse(localStorage.getItem(key) || "null");
-  if (typeof d?.arduino === "string") initialSource = d.arduino;
-} catch {}
+const initialSource = typeof initialProject.arduino === "string" ? initialProject.arduino : lessonSource;
 const arduinoEditor = createEditor({
   parent: $("arduinoEditor"),
   value: initialSource,
@@ -144,7 +155,8 @@ const bridge = new P5Bridge($("p5Frame"), {
   onSendLine: (text) => writeBytes(new TextEncoder().encode(text + "\n")),
 });
 bridge.addEventListener("status", (event) => {
-  $("p5Status").textContent = event.detail;
+  const status = $("p5Status");
+  if (status) status.textContent = event.detail;
 });
 bridge.addEventListener("console", (e) => {
   if (e.detail.level === "error") {
@@ -161,6 +173,7 @@ function persist() {
   savedP5[api] = sourceValue(p5Editor);
   try {
     localStorage.setItem(key, JSON.stringify(project()));
+    if (!agentMuteObserve) agentSurface?.observe();
   } catch {
     notice("Browser storage is full. Save the project to a file.");
   }
@@ -197,8 +210,10 @@ function updateConnection() {
     !serial.connected;
 }
 function runP5() {
+  if (!agentMuteActions)
+    agentSurface?.action("runtime", { action: "p5_start" });
   updateConnection();
-  bridge.run(
+  return bridge.run(
     workbench?.p5Source() || sourceValue(p5Editor),
     workbench?.p5Project() || {},
   );
@@ -214,11 +229,8 @@ function receive(bytes) {
     const line = raw.trim();
     if (!line) continue;
     log("← " + line);
-    const v = line.split(",").map(Number);
-    if (v.length === 4 && v.every(Number.isFinite)) {
-      $("packet").textContent = line;
-      lastPacket = line;
-    }
+    $("packet").textContent = line;
+    lastPacket = line;
   }
 }
 async function writeBytes(bytes) {
@@ -230,6 +242,7 @@ async function writeBytes(bytes) {
         throw new Error("Start the Uno before sending serial data.");
       worker.postMessage({ type: "write", bytes: Array.from(bytes) });
     }
+    if (mode === "simulation" && !agentMuteActions) agentSurface?.action("serial", { action: "write", text: new TextDecoder().decode(bytes) });
     log("→ " + new TextDecoder().decode(bytes).trim());
   } catch (e) {
     notice(e.message);
@@ -296,6 +309,9 @@ async function getFirmware() {
   persist();
   return result.hex;
 }
+document.addEventListener("p5comp:pwm-refresh", (e) =>
+  worker?.postMessage({ type: "refresh", hz: e.detail }),
+);
 function startWorker(hex) {
   worker?.terminate();
   worker = new Worker(new URL("./worker.js", import.meta.url), {
@@ -304,16 +320,31 @@ function startWorker(hex) {
   worker.onmessage = ({ data: d }) => {
     if (d.type === "serial") receive(d.bytes);
     if (d.type === "state") {
+      agentLatestState = d;
+      circuitAudio?.consume(d.analogFrames||[],diagram.parts);
+      for(const [id,element] of partElements)if(element.tagName==="P5COMP-OSCILLOSCOPE")element.ingest(d.analogFrames||[],id);
       $("clock").textContent = d.seconds.toFixed(2) + " s";
       $("led").dataset.on = String(d.led);
       $("led").textContent = "LED 13 · " + (d.led ? "on" : "off");
       document.querySelector(
         "wokwi-arduino-uno,wokwi-arduino-nano,wokwi-arduino-mega",
-      ).led13 = d.led;
+      )?.setAttribute("data-led13", String(d.led));
+      const activeBoard=document.querySelector("wokwi-arduino-uno,wokwi-arduino-nano,wokwi-arduino-mega");
+      if(activeBoard)activeBoard.led13=d.led;
       for (const [id, state] of Object.entries(d.parts || {})) {
         const element = partElements.get(id);
         if (!element) continue;
         element.dataset.simulation = JSON.stringify(state);
+        if (
+          ["P5COMP-MULTIMETER", "P5COMP-SIGNAL-PROBE", "P5COMP-PLOTTER"].includes(element.tagName)
+        ) {
+          element.measurement = { ...state, seconds: d.seconds };
+          element.title = state.warning || state.reading || "Plotter · voltage history";
+          continue;
+        }
+        if (element.tagName.startsWith("P5COMP-") && element.constructor.elementProperties?.has("measurement")) {
+          element.measurement=state; continue;
+        }
         if (element.tagName === "WOKWI-LED") {
           element.value = state.lit;
           element.brightness =
@@ -332,6 +363,7 @@ function startWorker(hex) {
           "ledBlue",
         ])
           if (state[prop] != null) element[prop] = state[prop];
+        if (element.tagName === "WOKWI-RGB-LED") paintRGBGlow(element, state);
         for (const prop of [
           "energized",
           "active",
@@ -408,19 +440,28 @@ function startWorker(hex) {
     notice(e.message || "Emulator worker failed.");
   };
   serialBuffer = "";
-  worker.postMessage({ type: "start", hex, topology, controls });
+  worker.postMessage({
+    type: "start",
+    hex,
+    topology,
+    controls,
+    refreshHz: Number(localStorage.getItem("p5comp.pwmRefreshHz")) || 60,
+  });
   running = true;
   paused = false;
   $("pause").disabled = false;
   $("pause").textContent = "Pause";
-  status("Running · simulated Arduino");
+  status(topology?.board === null ? "Running · analog circuit" : "Running · simulated Arduino");
   updateConnection();
   document.querySelector(
     "wokwi-arduino-uno,wokwi-arduino-nano,wokwi-arduino-mega",
-  ).ledPower = true;
+  )?.setAttribute("data-powered", "true");
+  const activeBoard=document.querySelector("wokwi-arduino-uno,wokwi-arduino-nano,wokwi-arduino-mega");
+  if(activeBoard)activeBoard.ledPower=true;
 }
 async function runArduino() {
   if (compiling) return;
+  if (!agentMuteActions) agentSurface?.action("runtime", { action: "start" });
   compiling = true;
   $("run").disabled = true;
   $("compile").disabled = true;
@@ -432,9 +473,11 @@ async function runArduino() {
     }
     topology = resolveCurrentCircuit();
     showHealth();
-    const hex = await getFirmware();
+    const hex = topology.board === null ? null : await getFirmware();
     startWorker(hex);
-    runP5();
+    const muteP5Action = agentMuteActions;
+    agentMuteActions = true;
+    try { await runP5(); } finally { agentMuteActions = muteP5Action; }
     persist();
   } catch (e) {
     stop();
@@ -450,6 +493,9 @@ async function runArduino() {
   }
 }
 function stop() {
+  circuitAudio.silence();
+  if (running && !agentMuteActions)
+    agentSurface?.action("runtime", { action: "stop" });
   $("run").title = "Run Arduino + p5";
   $("run").setAttribute("aria-label", "Run Arduino + p5");
   worker?.terminate();
@@ -469,8 +515,10 @@ function stop() {
       else Object.assign(element, { r: 0, g: 0, b: 0 });
     }
     if (element.tagName === "WOKWI-RELAY-MODULE") element.energized = false;
-    if (element.tagName === "WOKWI-RGB-LED")
+    if (element.tagName === "WOKWI-RGB-LED") {
       element.ledRed = element.ledGreen = element.ledBlue = 0;
+      paintRGBGlow(element, {});
+    }
     if (["WOKWI-7SEGMENT", "WOKWI-LED-BAR-GRAPH"].includes(element.tagName))
       element.values = Array(8).fill(0);
     if (element.tagName === "WOKWI-BUZZER") element.hasSignal = false;
@@ -491,7 +539,7 @@ function showHealth() {
     topology = resolveCurrentCircuit();
     $("circuitHealth").textContent = topology.warnings.length
       ? topology.warnings.join(" ")
-      : `Wiring ready · ${topology.board === "mega" ? "Mega" : topology.board === "nano" ? "Nano" : "Uno"} at 16 MHz`;
+      : topology.board === null ? "Analog circuit · 12 kHz sampling" : `Wiring ready · ${topology.board === "mega" ? "Mega" : topology.board === "nano" ? "Nano" : "Uno"} at 16 MHz`;
     const visual = diagram.parts.filter(
       (p) =>
         !elementByType.get(p.type)?.modeled &&
@@ -548,6 +596,11 @@ const canvas = new CircuitCanvas({
   },
   onAdd: (point) => elementPicker.open(point),
   onRename: (wrapper) =>
+    workbench?.editLabel(
+      wrapper,
+      diagram.parts.find((p) => p.id === wrapper.dataset.id),
+    ),
+  onEditValue: (wrapper) =>
     isSensorInput(diagram.parts.find((p) => p.id === wrapper.dataset.id)?.type)
       ? inputSimulator.open(
           diagram.parts.find((p) => p.id === wrapper.dataset.id),
@@ -562,8 +615,7 @@ const canvas = new CircuitCanvas({
   onSelectPart: (id) => {
     selectedPart = id;
     workbench?.selectPart(id);
-    $("removePart").disabled =
-      !id || id === diagram.parts.find((p) => isAVRBoard(p.type))?.id;
+    $("removePart").disabled = !id;
     $("partTint").disabled = !id;
     $("grayTint").disabled = !id;
     $("originalTint").disabled = !id;
@@ -669,15 +721,18 @@ function breadboard(part) {
 }
 function currentContacts() {
   canvas.refreshPins();
-  return breadboardContacts(diagram.parts, canvas.pins);
+  if (!canvas.drag) syncSeating(diagram, canvas.pins);
+  return terminalContacts(diagram.parts, canvas.pins, diagram.detachedContacts);
 }
 function resolveCurrentCircuit() {
   return resolveCircuit(diagram, currentContacts());
 }
 let seatedKey = "";
 function seatingChanged() {
-  const next = JSON.stringify(currentContacts());
-  const changed = next !== seatedKey;
+  const contacts = currentContacts();
+  const synced = !canvas.drag && syncSeating(diagram, canvas.pins);
+  const next = JSON.stringify(contacts);
+  const changed = synced || next !== seatedKey;
   seatedKey = next;
   return changed;
 }
@@ -685,9 +740,7 @@ let partRenderVersion = 0;
 function renderParts() {
   const version = ++partRenderVersion;
   $("removeWire").disabled = selectedWire < 0;
-  $("removePart").disabled =
-    !selectedPart ||
-    selectedPart === diagram.parts.find((p) => isAVRBoard(p.type))?.id;
+  $("removePart").disabled = !selectedPart;
   partElements.clear();
   $("parts").replaceChildren();
   for (const p of diagram.parts) {
@@ -715,7 +768,7 @@ function renderParts() {
       rotate.className = "part-rotate";
       rotate.dataset.rotateCorner = corner;
       rotate.textContent = "↻";
-      rotate.title = "Drag to rotate · 45° increments";
+      rotate.title = "Click to rotate 45° · drag to rotate";
       rotate.setAttribute("aria-label", `Rotate ${p.id} from ${corner} corner`);
       rotate.onclick = (e) => e.stopPropagation();
       wrapper.append(rotate);
@@ -724,7 +777,7 @@ function renderParts() {
       (isBreadboard(p.type)
         ? breadboardName(p)
         : elementByType.get(p.type)?.name || p.type) +
-      " · drag to move; click to select";
+      " · drag to move; double-click label to rename, body to edit value";
     wrapper.append(handle);
     const body = document.createElement("div");
     body.className = "part-body";
@@ -757,6 +810,14 @@ function renderParts() {
       if (p.type === "wokwi-resistor")
         element.value = String(resistance(p.attrs?.value));
       body.append(element);
+      if (p.type === "p5comp-multimeter")
+        element.addEventListener("mode-change", (e) => {
+          const before = canvas.checkpoint();
+          p.attrs = { ...p.attrs, mode: e.detail };
+          canvas.commit(before, true);
+          changed();
+          if (running) runArduino();
+        });
       if (isAVRBoard(p.type)) {
         element.ledPower = running;
       }
@@ -769,6 +830,13 @@ function renderParts() {
           setControl(p.id, element.value),
         );
       }
+      if (p.type === "p5comp-photoresistor") {
+        controls[p.id] ??= Number(p.attrs?.value ?? 100);
+        element.value = controls[p.id];
+        element.addEventListener("input", () =>
+          setControl(p.id, Number(element.value)),
+        );
+      }
       if (p.type === "wokwi-dip-switch-8") {
         controls[p.id] ??= p.attrs?.values || Array(8).fill(0);
         element.values = [...controls[p.id]];
@@ -776,7 +844,7 @@ function renderParts() {
           setControl(p.id, [...element.values]),
         );
       }
-      if (p.type === "wokwi-slide-switch") {
+      if (["wokwi-slide-switch", "p5comp-toggle-switch"].includes(p.type)) {
         controls[p.id] ??= Number(p.attrs?.value || 0);
         element.value = controls[p.id];
         element.addEventListener("input", () =>
@@ -822,15 +890,30 @@ function renderParts() {
   ).then(() => {
     if (version === partRenderVersion) {
       for (const element of partElements.values()) {
+        // Slim only the resistor body/bands; preserve lead positions and footprint.
+        if (element.localName === "wokwi-resistor")
+          element.shadowRoot
+            ?.querySelector("svg > g")
+            ?.setAttribute("transform", "translate(0 .48) scale(1 .68)");
         const slider = element.localName === "wokwi-slide-potentiometer";
         const toggle = element.localName === "wokwi-slide-switch";
         if (!slider && !toggle) continue;
-        const head = element.shadowRoot?.querySelector(slider ? "#tip" : "#handle");
+        const head = element.shadowRoot?.querySelector(
+          slider ? "#tip" : "#handle",
+        );
         if (head) {
           head.style.cursor = slider ? "ew-resize" : "pointer";
-          head.setAttribute("aria-label", slider ? "Drag slider" : "Toggle switch");
-          const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
-          title.textContent = slider ? "Drag to change value · Alt-drag to move part" : "Click to toggle · Alt-drag to move part";
+          head.setAttribute(
+            "aria-label",
+            slider ? "Drag slider" : "Toggle switch",
+          );
+          const title = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "title",
+          );
+          title.textContent = slider
+            ? "Drag to change value · Alt-drag to move part"
+            : "Click to toggle · Alt-drag to move part";
           head.append(title);
         }
       }
@@ -896,7 +979,12 @@ function setControl(id, value) {
   const el = partElements.get(id);
   if (
     el &&
-    (isPot(el.tagName.toLowerCase()) || el.tagName === "WOKWI-SLIDE-SWITCH")
+    (isPot(el.tagName.toLowerCase()) ||
+      [
+        "WOKWI-SLIDE-SWITCH",
+        "P5COMP-TOGGLE-SWITCH",
+        "P5COMP-PHOTORESISTOR",
+      ].includes(el.tagName))
   )
     el.value = value;
   if (el?.tagName === "WOKWI-DIP-SWITCH-8") el.values = [...value];
@@ -931,6 +1019,8 @@ function renderControls() {
       [
         "wokwi-dip-switch-8",
         "wokwi-slide-switch",
+        "p5comp-toggle-switch",
+        "p5comp-photoresistor",
         "wokwi-membrane-keypad",
       ].includes(p.type),
   )) {
@@ -946,6 +1036,8 @@ function renderControls() {
       [
         "wokwi-dip-switch-8",
         "wokwi-slide-switch",
+        "p5comp-toggle-switch",
+        "p5comp-photoresistor",
         "wokwi-membrane-keypad",
       ].includes(p.type)
     ) {
@@ -1046,14 +1138,15 @@ function resize() {
   }
 }
 new ResizeObserver(resize).observe(document.querySelector(".preview"));
-$("run").onclick = () => {
-  if (!paused) return runArduino();
-  paused = false;
-  worker?.postMessage({ type: "pause", paused: false });
-  $("pause").disabled = false;
-  $("run").title = "Run Arduino + p5";
-  $("run").setAttribute("aria-label", "Run Arduino + p5");
-  status("Running · simulated Arduino");
+$("run").onclick = (e) => {
+  if (e.altKey) return runArduino();
+  if (running && (e.shiftKey || paused)) return $("pause").onclick();
+  if (running) {
+    stop();
+    bridge.stop();
+    return;
+  }
+  return runArduino();
 };
 $("compile").onclick = runArduino;
 $("runP5").onclick = runP5;
@@ -1061,16 +1154,19 @@ $("reset").onclick = runArduino;
 $("pause").onclick = () => {
   if (mode === "usb") return;
   paused = !paused;
+  if (!agentMuteActions)
+    agentSurface?.action("runtime", { action: paused ? "pause" : "resume" });
   worker?.postMessage({ type: "pause", paused });
-  $("pause").textContent = "Pause";
-  $("pause").disabled = paused;
-  $("run").title = paused ? "Resume simulation" : "Run Arduino + p5";
-  $("run").setAttribute("aria-label", $("run").title);
+  $("pause").textContent = paused ? "Resume simulation" : "Pause";
+  $("pause").setAttribute("aria-label", $("pause").textContent);
+  $("pause").disabled = false;
   status(paused ? "Paused · simulated Arduino" : "Running · simulated Arduino");
 };
 $("comms").onchange = async () => {
-  const oldBaud = api === "firmata" ? 57600 : 9600;
+  const oldBaud = Number($("monitorBaud").value);
   api = $("comms").value;
+  $("monitorBaud").value = api === "firmata" ? "57600" : "9600";
+  monitorBaud = Number($("monitorBaud").value);
   setCode(
     p5Editor,
     embedComms(sourceValue(p5Editor), api, {
@@ -1082,10 +1178,10 @@ $("comms").onchange = async () => {
   persist();
   if (api === "firmata")
     notice("Firmata requires StandardFirmata Arduino firmware (Examples).");
-  if (serial.connected && oldBaud !== (api === "firmata" ? 57600 : 9600)) {
+  if (serial.connected && oldBaud !== Number($("monitorBaud").value)) {
     try {
       const port = await serial.releasePort();
-      await serial.reconnect(port, api === "firmata" ? 57600 : 9600);
+      await serial.reconnect(port, Number($("monitorBaud").value));
     } catch (e) {
       notice(e.message);
       log(e.message);
@@ -1118,6 +1214,7 @@ $("removeWire").onclick = () => {
 };
 $("removePart").onclick = () => canvas.deleteSelection();
 function addElement(type, attrs = {}, point = null) {
+  if (type === "p5comp-note") return workbench?.addNote(point);
   if (!elementByType.has(type)) return;
   if (diagram.parts.length >= 40) {
     notice("Maximum 40 parts.");
@@ -1136,7 +1233,19 @@ function addElement(type, attrs = {}, point = null) {
       (canvas.stage.clientHeight / 2 - canvas.camera.y) / canvas.camera.zoom,
   };
   diagram.parts.push({ id, type, ...position, attrs: { ...attrs } });
-  controls[id] = type === TYPES[2] ? 512 : type === TYPES[3] ? 100 : false;
+  controls[id] = isPot(type)
+    ? Number(attrs.value ?? 512)
+    : type === TYPES[3]
+      ? 100
+      : type === "p5comp-photoresistor"
+        ? Number(attrs.value ?? 100)
+        : type === "wokwi-dip-switch-8"
+          ? attrs.values || Array(8).fill(0)
+          : type === "wokwi-membrane-keypad"
+            ? []
+            : ["wokwi-slide-switch", "p5comp-toggle-switch"].includes(type)
+              ? Number(attrs.value || 0)
+              : false;
   renderParts();
   canvas.commit(before, true);
   canvas.selectPart(id);
@@ -1146,7 +1255,7 @@ function addElement(type, attrs = {}, point = null) {
     canvas.render();
   });
 }
-$("lesson").onclick = () => {
+$("lesson").onclick = (e) => {
   const before = canvas.checkpoint();
   diagram = classroomCircuit();
   canvas.clearSelection();
@@ -1178,7 +1287,7 @@ function openProject(d) {
   stop();
   diagram = candidate;
   controls = d.controls || {};
-  if (d.arduino) setCode(arduinoEditor, d.arduino);
+  if (typeof d.arduino === "string") setCode(arduinoEditor, d.arduino);
   if (d.p5) {
     savedP5 = Object.fromEntries(
       Object.entries(d.p5).map(([api, source]) => [
@@ -1236,7 +1345,29 @@ $("projectFile").onchange = async () => {
 };
 $("sendForm").onsubmit = (e) => {
   e.preventDefault();
-  writeBytes(new TextEncoder().encode($("sendText").value + "\n"));
+  const endings = { none: "", lf: "\n", cr: "\r", crlf: "\r\n" };
+  writeBytes(
+    new TextEncoder().encode(
+      $("sendText").value + endings[$("monitorEnding").value],
+    ),
+  );
+};
+let monitorBaud = api === "firmata" ? 57600 : 9600;
+$("monitorBaud").value = String(monitorBaud);
+$("monitorBaud").title =
+  "USB serial baud rate. Simulation delivers decoded UART bytes.";
+$("monitorBaud").onchange = async () => {
+  const next = Number($("monitorBaud").value);
+  try {
+    if (serial.connected) {
+      const port = await serial.releasePort();
+      await serial.reconnect(port, next);
+    }
+    monitorBaud = next;
+  } catch (error) {
+    $("monitorBaud").value = String(monitorBaud);
+    notice(error.message);
+  }
 };
 $("clearLog").onclick = () => {
   lines = [];
@@ -1265,7 +1396,7 @@ $("usb").onclick = async () => {
     stop();
     const grantedPorts = await navigator.serial.getPorts();
     await serial.connect({
-      baudRate: api === "firmata" ? 57600 : 9600,
+      baudRate: Number($("monitorBaud").value),
       port: grantedPorts.length === 1 ? grantedPorts[0] : null,
     });
     $("usb").textContent = "Disconnect USB Arduino";
@@ -1290,7 +1421,7 @@ async function uploadFirmware() {
         log(p);
       });
     } finally {
-      await serial.reconnect(port, api === "firmata" ? 57600 : 9600);
+      await serial.reconnect(port, Number($("monitorBaud").value));
     }
     status("Uploaded and verified · physical Uno");
     log("Uploaded and verified · physical Uno");
@@ -1303,8 +1434,55 @@ async function uploadFirmware() {
   }
 }
 $("upload").onclick = uploadFirmware;
+// Native clipboard events keep editor and browser text shortcuts intact.
+const canvasEditing = e => e.composedPath().some(n=>n.matches?.('input,select,textarea,.cm-editor,[contenteditable]:not([contenteditable="false"])'));
+document.addEventListener("copy",e=>{
+  if(canvasEditing(e))return;
+  const ref=workbench?.references.find(r=>r.id===workbench.selectedReferenceId);
+  const fragment=ref?{reference:structuredClone(ref)}:{circuit:canvas.copySelection()};
+  if(!ref&&!fragment.circuit.parts.length&&!fragment.circuit.connections.length)return;
+  const text=JSON.stringify({format:"p5comp-selection-v1",...fragment});
+  e.clipboardData.setData("text/plain",text);e.preventDefault();
+});
+document.addEventListener("paste",e=>{
+  if(canvasEditing(e))return;
+  let data;try{data=JSON.parse(e.clipboardData.getData("text/plain"));}catch{return;}
+  if(data?.format!=="p5comp-selection-v1")return;
+  e.preventDefault();
+  if(data.reference)workbench.duplicateReference(data.reference,20);
+  else if(data.circuit?.parts&&data.circuit?.connections)canvas.pasteSelection(data.circuit);
+});
 document.addEventListener("keydown", (e) => {
-  if (e.target.closest("input,select,textarea,.cm-editor") || e.repeat) return;
+  if (!isObjectDeleteShortcut(e)) return;
+  e.preventDefault();
+  e.stopPropagation();
+  if (!workbench?.deleteSelectedReference()) canvas.deleteSelection();
+}, {capture:true});
+document.addEventListener("keydown", (e) => {
+  const modifier = e.metaKey || e.ctrlKey;
+  if (modifier && e.key === ".") {
+    e.preventDefault();
+    stop();
+    bridge.stop();
+    return;
+  }
+  const editing = e
+    .composedPath()
+    .some((n) =>
+      n.matches?.("input,select,textarea,.cm-editor,[contenteditable]:not([contenteditable=false])"),
+    );
+  if (
+    modifier &&
+    e.key === "Enter" &&
+    !editing &&
+    !e.defaultPrevented &&
+    !e.repeat
+  ) {
+    e.preventDefault();
+    if (!running || paused) runArduino();
+    return;
+  }
+  if (editing || e.repeat) return;
   const id =
     e.key.toLowerCase() === "a"
       ? "b1"
@@ -1322,6 +1500,7 @@ document.addEventListener("keydown", (e) => {
   }
 });
 document.addEventListener("keyup", (e) => {
+  if (e.composedPath().some(n => n.matches?.("input,select,textarea,.cm-editor,[contenteditable]:not([contenteditable=false])"))) return;
   const id =
     e.key.toLowerCase() === "a"
       ? "b1"
@@ -1368,6 +1547,11 @@ window.physicalP5 = {
   },
 };
 renderParts();
+$("run").classList.remove("primary");
+$("run").dataset.running = "false";
+$("run").setAttribute("aria-pressed", "false");
+$("run").title =
+  "Run Arduino + p5 · Shift-click: pause/resume · Option/Alt-click: reset";
 initializeCompactUI({ canvas, key });
 workbench = new Workbench({
   key,
@@ -1385,33 +1569,68 @@ workbench = new Workbench({
   setCode,
   stop,
   runP5,
+  runArduino,
   commsExample: (api) =>
     commsExample(api, {
       parser: firmataParserSource,
       client: firmataClientSource,
     }),
   seated: (id) => currentContacts().filter(([pin]) => pin.startsWith(id + ":")),
+  clearSelection: () => {
+    selectedPart = null;
+    selectedWire = -1;
+    canvas.clearSelection();
+    canvas.render();
+  },
   selected: () => diagram.parts.find((p) => p.id === selectedPart),
   element: () => partElements.get(selectedPart),
-  updatePart: (next) => {
+  updatePart: (next, targetId = selectedPart) => {
     const before = canvas.checkpoint();
-    if (!selectedPart) throw new Error("Select a component first.");
+    if (!targetId || !diagram.parts.some((p) => p.id === targetId))
+      throw new Error("This component no longer exists.");
+    const previous = diagram.parts.find((p) => p.id === targetId);
     const candidate = structuredClone(diagram);
-    candidate.parts[candidate.parts.findIndex((p) => p.id === selectedPart)] =
-      next;
-    if (next.id !== selectedPart)
+    candidate.parts[candidate.parts.findIndex((p) => p.id === targetId)] = next;
+    if (next.id !== targetId)
       candidate.connections = candidate.connections.map((c) =>
         c.map((v, i) =>
-          i < 2 && typeof v === "string" && v.startsWith(selectedPart + ":")
-            ? next.id + v.slice(selectedPart.length)
+          i < 2 && typeof v === "string" && v.startsWith(targetId + ":")
+            ? next.id + v.slice(targetId.length)
             : v,
         ),
       );
+    if (next.id !== targetId) {
+      for (const field of ["attachments","detachedContacts"])
+        if (candidate[field]) candidate[field] = candidate[field].map(pair => pair.map(id=>id.startsWith(targetId+":") ? next.id + id.slice(targetId.length) : id));
+      if (candidate.groups) candidate.groups = candidate.groups.map(g=>g.map(id=>id === targetId ? next.id : id));
+    }
     validateDiagram(candidate);
-    if (next.id !== selectedPart) {
-      controls[next.id] = controls[selectedPart];
-      delete controls[selectedPart];
+    if (next.id !== targetId) {
+      controls[next.id] = controls[targetId];
+      delete controls[targetId];
       selectedPart = next.id;
+    }
+    if (
+      ([
+        "wokwi-slide-switch",
+        "p5comp-toggle-switch",
+        "p5comp-photoresistor",
+      ].includes(next.type) ||
+        isPot(next.type)) &&
+      next.attrs?.value !== previous.attrs?.value &&
+      next.attrs?.value !== undefined
+    ) {
+      const value = Number(next.attrs.value);
+      if (!Number.isFinite(value)) throw new Error("Enter a numeric value.");
+      controls[next.id] = [
+        "wokwi-slide-switch",
+        "p5comp-toggle-switch",
+      ].includes(next.type)
+        ? value
+          ? 1
+          : 0
+        : Math.max(0, Math.min(1023, value));
+      next.attrs.value = controls[next.id];
     }
     if (isMomentarySwitch(next.type) && next.attrs?.pressed !== undefined)
       controls[next.id] = !!next.attrs.pressed;
@@ -1438,7 +1657,216 @@ $("apiLabel").textContent =
 if (diagram.canvasEditor !== 2) {
   requestAnimationFrame(() => {
     diagram.canvasEditor = 2;
-    canvas.cleanup(e.shiftKey ? "simple" : "careful");
+    canvas.cleanup();
     canvas.fit();
   });
 }
+
+// All external transports use this same semantic adapter; no arbitrary-eval endpoint.
+agentSurface = installAgentSurface(
+  createAgentAdapter({
+    workspace: key,
+    project,
+    state: () => ({
+      running,
+      paused,
+      mode,
+      p5Running: !!workbench.p5Running,
+      selection: {
+        parts: [...canvas.selectedParts],
+        wires: [...canvas.selectedWires],
+      },
+      controls: structuredClone(controls),
+      topology,
+      simulation: agentLatestState,
+      console: lines.slice(-200),
+      api,
+    }),
+    applyProject: async (next, { replace = false } = {}) => {
+      validateDiagram(next.diagram || next);
+      if (
+        next.workbench?.references &&
+        !Array.isArray(next.workbench.references)
+      )
+        throw Error("references must be an array.");
+      if (
+        next.workbench?.files &&
+        Object.values(next.workbench.files).some((v) => typeof v !== "string")
+      )
+        throw Error("Source files must be strings.");
+      if (next.arduino != null && typeof next.arduino !== "string") throw Error("Arduino source must be text.");
+      if (next.p5 && (typeof next.p5 !== "object" || Object.values(next.p5).some(v => typeof v !== "string"))) throw Error("p5 source must be text.");
+      if (next.canvas?.camera && (![next.canvas.camera.x,next.canvas.camera.y,next.canvas.camera.zoom].every(Number.isFinite) || next.canvas.camera.zoom <= 0)) throw Error("Invalid canvas camera.");
+      for (const ref of next.workbench?.references || [])
+        if (!ref || typeof ref.id !== "string" || !["note","image","video","webcam"].includes(ref.kind) || !Number.isFinite(ref.x) || !Number.isFinite(ref.y) || !(ref.width > 0)) throw Error("Invalid scene reference.");
+      const previousProject = project();
+      const stable = p => ({ diagram: p.diagram, arduino: p.arduino, p5: p.p5, api: p.api, workbench: p.workbench });
+      if (!replace && JSON.stringify(stable(previousProject)) === JSON.stringify(stable(next))) {
+        const updatedControls = next.controls || {};
+        for (const [id, value] of Object.entries(updatedControls))
+          if (JSON.stringify(value) !== JSON.stringify(controls[id])) setControl(id, value);
+        controls = structuredClone(updatedControls);
+        worker?.postMessage({ type: "controls", controls });
+        if (next.canvas) {
+          const { camera, color, ...view } = next.canvas;
+          Object.assign(canvas, view);
+          if (camera) Object.assign(canvas.camera, camera);
+          if (color) canvas.newColor = color;
+          canvas.view();
+        }
+        artifact = next.artifact || null;
+        persist();
+        return { updated: true };
+      }
+      const resume = running && !replace;
+      agentMuteActions = true;
+      agentMuteObserve = true;
+      try {
+        openProject(structuredClone(next));
+        bridge.stop();
+      } finally {
+        agentMuteActions = false;
+        agentMuteObserve = false;
+      }
+      if (resume) {
+        agentMuteActions = true;
+        try {
+          await runArduino();
+        } finally {
+          agentMuteActions = false;
+        }
+      }
+      return { opened: true };
+    },
+    setControl,
+    exportPDF: async () => { await workbench.export("PDF"); return {downloaded:true,format:"pdf"}; },
+    runtime: async (action) => {
+      if (action === "start") {
+        await runArduino();
+        if (!running) throw Error("Simulation did not start. Check console diagnostics.");
+        return { running };
+      }
+      if (action === "stop") {
+        stop();
+        bridge.stop();
+        return { running: false };
+      }
+      if (action === "p5_start") {
+        await runP5();
+        return { started: true };
+      }
+      if (action === "p5_stop") {
+        bridge.stop();
+        agentSurface?.action("runtime", { action });
+        return { stopped: true };
+      }
+      if (action === "compile") {
+        const hex = await getFirmware();
+        return { compiled: true, bytes: hex.length };
+      }
+      if (action === "pause" || action === "resume") {
+        if (running && paused !== (action === "pause")) $("pause").onclick();
+        return { paused };
+      }
+      throw Error("Unsupported runtime action.");
+    },
+    canvas: async (a) => {
+      if (["group","ungroup","unplug"].includes(a.action)) {
+        if (a.ids) { canvas.clearSelection(); for (const id of a.ids) if (!canvas.selectedParts.has(id)) canvas.selectPart(id,true); }
+        if (a.action === "unplug") {
+          const before = canvas.checkpoint();
+          unplugContacts(diagram,(diagram.attachments || []).filter(([child]) => (a.ids || [...canvas.selectedParts]).includes(child.split(":")[0])));
+          canvas.clearSelection(); canvas.commit(before,true);
+        } else canvas.groupSelection(a.action === "ungroup");
+      }
+      if (a.action === "fit") canvas.fit();
+      if (a.action === "cleanup") canvas.cleanup(a.mode || "careful");
+      if (a.action === "autoroute") {
+        if (a.index == null) canvas.cleanup(a.mode || "careful");
+        else canvas.autoRoute(a.index, a.mode || "careful");
+      }
+      if (a.action === "undo") canvas.undo();
+      if (a.action === "redo") canvas.redo();
+      if (a.action === "select") {
+        canvas.clearSelection();
+        for (const id of a.ids || []) {
+          if (!diagram.parts.some((p) => p.id === id))
+            throw Error("Part not found: " + id);
+          if (!canvas.selectedParts.has(id)) canvas.selectPart(id, true);
+        }
+      }
+      if (a.action === "view") {
+        const view = a.view || {};
+        if (view.camera) {
+          const c = view.camera;
+          if (
+            ![c.x, c.y, c.zoom].every(Number.isFinite) ||
+            c.zoom < 0.15 ||
+            c.zoom > 4
+          )
+            throw Error("Invalid camera.");
+          Object.assign(canvas.camera, c);
+          canvas.view();
+        }
+        if (view.labels != null) canvas.setLabels(!!view.labels);
+        if (view.gridMultiplier != null)
+          canvas.setGridMultiplier(view.gridMultiplier);
+        if (view.gridReference) {
+          if (!["breadboard", "arduino", "none"].includes(view.gridReference))
+            throw Error("Invalid grid reference.");
+          canvas.gridReference = view.gridReference;
+          canvas.view();
+        }
+        persist();
+      }
+      return { view: canvas.getState(), selection: [...canvas.selectedParts] };
+    },
+    view: (a) => {
+      if (a.inspector) workbench.tab(a.inspector);
+      if (a.bottom) workbench.bottomTab(a.bottom);
+      if (a.main || a.layout)
+        workbench.mainView(
+          a.main || workbench.activeView || "circuit",
+          a.layout || workbench.layout || "tabs",
+        );
+      if (a.dock) workbench.dock(a.dock);
+      persist();
+      return workbench.snapshot();
+    },
+    serial: async (a) => {
+      if (a.action === "read") return lines.slice(-200);
+      if (mode !== "simulation" || !running)
+        throw Error(
+          "Serial API writes require a running simulation. Use the UI for physical devices.",
+        );
+      const text = String(a.text || "");
+      worker.postMessage({
+        type: "write",
+        bytes: [...new TextEncoder().encode(text)],
+      });
+      agentSurface?.action("serial", a);
+      return { bytes: text.length };
+    },
+  }),
+);
+window.physicalP5.agent = window.p5comp;
+bridge.addEventListener("status", (e) =>
+  agentSurface.emit("p5.status", { message: e.detail }),
+);
+bridge.addEventListener("runtimeError", (e) =>
+  agentSurface.emit("p5.error", e.detail),
+);
+bridge.addEventListener("console", (e) =>
+  agentSurface.emit("p5.console", e.detail),
+);
+document.addEventListener("click", (e) => {
+  const b = e.target.closest?.("button");
+  if (!b) return;
+  const label = b.getAttribute("aria-label") || b.title || b.textContent.trim();
+  if (/camera|capture|share window|snapshot|upload|USB/i.test(label))
+    agentSurface.emit("external.intent", { label, replayable: false });
+});
+
+document.addEventListener("p5comp:human-p5-stop", () => { if (!agentMuteActions) agentSurface?.action("runtime", { action: "p5_stop" }); });
+
+circuitAudio.mount(document.getElementById("globalSettings"));

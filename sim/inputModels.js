@@ -1,5 +1,10 @@
 export const isPot = (type) =>
-  ["wokwi-potentiometer", "wokwi-slide-potentiometer"].includes(type);
+  [
+    "wokwi-potentiometer",
+    "wokwi-slide-potentiometer",
+    "p5comp-potentiometer",
+    "p5comp-slide-potentiometer",
+  ].includes(type);
 export const isSensorInput = (type) =>
   /^(wokwi-(?:small|big)-sound-sensor|wokwi-photoresistor-sensor|wokwi-pir-motion-sensor)$/.test(
     type,

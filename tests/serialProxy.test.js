@@ -146,3 +146,17 @@ test("unmodified p5.webserial exits on host disconnect and can reconnect without
     await worker.terminate();
   }
 });
+test("reset ends a locked reader and permits a clean transport reopen", async () => {
+  const { proxy, serial } = frame(() => {});
+  proxy.setConnected(true);
+  const port = await serial.requestPort();
+  await port.open({ baudRate: 9600 });
+  const reader = port.readable.getReader();
+  const pending = reader.read();
+  proxy.reset();
+  assert.equal((await pending).done, true);
+  reader.releaseLock();
+  assert.equal(port.readable, null);
+  await port.open({ baudRate: 9600 });
+  await port.close();
+});

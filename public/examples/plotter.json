@@ -1,0 +1,664 @@
+{
+  "version": 2,
+  "workbench": {
+    "name": "Plotter \u00b7 multiple signals",
+    "files": {
+      "index.html": "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"utf-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <title>p5 sketch</title>\n    <script src=\"p5.js\"></script>\n    <script src=\"p5.webserial.js\"></script>\n    <style>\n      html,\n      body {\n        margin: 0;\n        padding: 0;\n      }\n      canvas {\n        display: block;\n      }\n    </style>\n  </head>\n  <body>\n    <main id=\"canvas\"></main>\n    <script src=\"sketch.js\"></script>\n  </body>\n</html>\n"
+    },
+    "assets": {},
+    "arduinoName": "sketch.ino",
+    "p5Name": "sketch.js",
+    "references": [],
+    "components": [],
+    "settings": {},
+    "dock": "split",
+    "layout": "horizontal",
+    "activeView": "circuit",
+    "splitRatio": 0.6
+  },
+  "canvas": {
+    "camera": {
+      "x": -494.17980214465535,
+      "y": -408.09888432021705,
+      "zoom": 1.5799264756854654
+    },
+    "snap": true,
+    "orthogonal": true,
+    "color": "#121415",
+    "labels": false,
+    "gridMultiplier": 1,
+    "gridReference": "breadboard",
+    "gridBetween": false,
+    "zoom": 1
+  },
+  "diagram": {
+    "version": 1,
+    "parts": [
+      {
+        "id": "uno",
+        "type": "wokwi-arduino-uno",
+        "left": 400,
+        "top": 450,
+        "label": "Uno",
+        "attrs": {}
+      },
+      {
+        "id": "bb",
+        "type": "wokwi-breadboard-half",
+        "left": 400,
+        "top": 220,
+        "label": " ",
+        "attrs": {
+          "color": "#ffffffb8"
+        }
+      },
+      {
+        "id": "button",
+        "type": "wokwi-pushbutton",
+        "left": 643,
+        "top": 287.5,
+        "label": "Digital in \u00b7 D2",
+        "attrs": {
+          "color": "purple"
+        },
+        "rotate": 270
+      },
+      {
+        "id": "led",
+        "type": "wokwi-led",
+        "left": 469,
+        "top": 218,
+        "label": "D12 \u00b7 LED",
+        "attrs": {
+          "color": "red"
+        }
+      },
+      {
+        "id": "limit",
+        "type": "wokwi-resistor",
+        "left": 464.6,
+        "top": 311.35,
+        "label": "220\u03a9",
+        "attrs": {
+          "value": "220"
+        },
+        "rotate": 90
+      },
+      {
+        "id": "pot",
+        "type": "p5comp-potentiometer",
+        "left": 417.5,
+        "top": 225,
+        "label": "A0 \u00b7 pot",
+        "attrs": {
+          "value": 650,
+          "maxResistance": 10000
+        }
+      },
+      {
+        "id": "rgb",
+        "type": "wokwi-rgb-led",
+        "left": 599.5,
+        "top": 216,
+        "label": "PWM \u00b7 RGB",
+        "attrs": {
+          "common": "cathode"
+        }
+      },
+      {
+        "id": "rr",
+        "type": "wokwi-resistor",
+        "left": 578.65,
+        "top": 312.5,
+        "label": "220\u03a9",
+        "attrs": {
+          "value": "220"
+        },
+        "rotate": 90
+      },
+      {
+        "id": "rg",
+        "type": "wokwi-resistor",
+        "left": 597.65,
+        "top": 312.5,
+        "label": "220\u03a9",
+        "attrs": {
+          "value": "220"
+        },
+        "rotate": 90
+      },
+      {
+        "id": "rb",
+        "type": "wokwi-resistor",
+        "left": 607.15,
+        "top": 312.5,
+        "label": "220\u03a9",
+        "attrs": {
+          "value": "220"
+        },
+        "rotate": 90
+      },
+      {
+        "id": "meter",
+        "type": "p5comp-multimeter",
+        "left": 820,
+        "top": 450,
+        "label": "PWM voltage",
+        "attrs": {
+          "mode": "voltage"
+        }
+      },
+      {
+        "id": "probe",
+        "type": "p5comp-signal-probe",
+        "left": 820,
+        "top": 245,
+        "label": "D9 signal",
+        "attrs": {}
+      },
+      {
+        "id": "plot",
+        "type": "p5comp-plotter",
+        "left": 1040,
+        "top": 260,
+        "attrs": {
+          "timeWindow": 10,
+          "layout": "stack",
+          "autoNormalize": true,
+          "min": 0,
+          "max": 5
+        }
+      },
+      {
+        "id": "plotGround",
+        "type": "p5comp-ground",
+        "left": 1035,
+        "top": 500,
+        "attrs": {}
+      },
+      {
+        "id": "supply",
+        "type": "p5comp-vcc",
+        "left": 1370,
+        "top": 470,
+        "attrs": {}
+      }
+    ],
+    "connections": [
+      [
+        "uno:5V",
+        "bb:bp.1",
+        "#cf6868",
+        [
+          {
+            "x": 560,
+            "y": 650
+          },
+          {
+            "x": 370,
+            "y": 650
+          },
+          {
+            "x": 370,
+            "y": 385.4
+          }
+        ]
+      ],
+      [
+        "uno:GND.2",
+        "bb:bn.1",
+        "#000000",
+        [
+          {
+            "x": 569.5,
+            "y": 660
+          },
+          {
+            "x": 355,
+            "y": 660
+          },
+          {
+            "x": 355,
+            "y": 394.9
+          }
+        ]
+      ],
+      [
+        "bb:bn.30",
+        "bb:tn.30",
+        "#000000",
+        [
+          {
+            "x": 750,
+            "y": 394.9
+          },
+          {
+            "x": 750,
+            "y": 241.5
+          }
+        ]
+      ],
+      [
+        "led:A",
+        "bb:9t.a",
+        "#cf6868",
+        []
+      ],
+      [
+        "led:C",
+        "bb:8t.a",
+        "#000000",
+        []
+      ],
+      [
+        "limit:1",
+        "bb:9t.d",
+        "#cf6868",
+        []
+      ],
+      [
+        "limit:2",
+        "bb:9b.h",
+        "#cf6868",
+        []
+      ],
+      [
+        "bb:8t.b",
+        "bb:tn.7",
+        "#000000",
+        [
+          {
+            "x": 479.75,
+            "y": 269.5
+          },
+          {
+            "x": 479.75,
+            "y": 241.5
+          }
+        ]
+      ],
+      [
+        "uno:12",
+        "bb:9b.j",
+        "#cf6868",
+        [
+          {
+            "x": 534.5,
+            "y": 420
+          },
+          {
+            "x": 494,
+            "y": 420
+          }
+        ]
+      ],
+      [
+        "rgb:R",
+        "bb:21t.a",
+        "#cf6868",
+        []
+      ],
+      [
+        "rgb:COM",
+        "bb:22t.b",
+        "#000000",
+        []
+      ],
+      [
+        "rgb:G",
+        "bb:23t.a",
+        "#7b9f87",
+        []
+      ],
+      [
+        "rgb:B",
+        "bb:24t.a",
+        "#658eac",
+        []
+      ],
+      [
+        "rg:1",
+        "bb:23t.d",
+        "#7b9f87",
+        []
+      ],
+      [
+        "rg:2",
+        "bb:23b.h",
+        "#7b9f87",
+        []
+      ],
+      [
+        "uno:9",
+        "bb:21b.j",
+        "#cf6868",
+        [
+          {
+            "x": 563,
+            "y": 421.5
+          },
+          {
+            "x": 608,
+            "y": 421.5
+          }
+        ]
+      ],
+      [
+        "uno:10",
+        "bb:23b.j",
+        "#7b9f87",
+        [
+          {
+            "x": 553.5,
+            "y": 431
+          },
+          {
+            "x": 627,
+            "y": 431
+          }
+        ]
+      ],
+      [
+        "uno:11",
+        "bb:24b.j",
+        "#658eac",
+        [
+          {
+            "x": 544,
+            "y": 440.5
+          },
+          {
+            "x": 636.5,
+            "y": 440.5
+          }
+        ]
+      ],
+      [
+        "pot:GND",
+        "bb:2t.a",
+        "#000000",
+        []
+      ],
+      [
+        "pot:SIG",
+        "bb:3t.a",
+        "#d6c451",
+        []
+      ],
+      [
+        "pot:VCC",
+        "bb:4t.a",
+        "#cf6868",
+        []
+      ],
+      [
+        "bb:2t.c",
+        "bb:tn.1",
+        "#000000",
+        [
+          {
+            "x": 402,
+            "y": 279
+          },
+          {
+            "x": 402,
+            "y": 241.5
+          }
+        ]
+      ],
+      [
+        "bb:4t.c",
+        "bb:tp.5",
+        "#cf6868",
+        [
+          {
+            "x": 456,
+            "y": 279
+          }
+        ]
+      ],
+      [
+        "uno:A0",
+        "bb:3t.e",
+        "#d6c451",
+        [
+          {
+            "x": 608,
+            "y": 675
+          },
+          {
+            "x": 340,
+            "y": 675
+          },
+          {
+            "x": 340,
+            "y": 307.5
+          },
+          {
+            "x": 437,
+            "y": 307.5
+          }
+        ]
+      ],
+      [
+        "bb:bp.30",
+        "bb:tp.30",
+        "#cf6868",
+        [
+          {
+            "x": 765,
+            "y": 385.4
+          },
+          {
+            "x": 765,
+            "y": 232
+          }
+        ]
+      ],
+      [
+        "bb:27b.j",
+        "uno:2",
+        "#a583b9",
+        [
+          {
+            "x": 665,
+            "y": 440.5
+          },
+          {
+            "x": 636.5,
+            "y": 440.5
+          }
+        ]
+      ],
+      [
+        "bb:29b.j",
+        "bb:bn.29",
+        "#121415",
+        [
+          {
+            "x": 679.25,
+            "y": 364.5
+          },
+          {
+            "x": 679.25,
+            "y": 394.9
+          }
+        ]
+      ],
+      [
+        "bb:tn.19",
+        "bb:22t.c",
+        "#121415",
+        [
+          {
+            "x": 594.1537471257667,
+            "y": 241.5
+          },
+          {
+            "x": 594.1537471257667,
+            "y": 274.98688709557035
+          },
+          {
+            "x": 617.5,
+            "y": 274.98688709557035
+          }
+        ]
+      ],
+      [
+        "rr:1",
+        "bb:21t.d",
+        "#cf6868",
+        []
+      ],
+      [
+        "rr:2",
+        "bb:21b.h",
+        "#cf6868",
+        []
+      ],
+      [
+        "rb:1",
+        "bb:24t.d",
+        "#658eac",
+        []
+      ],
+      [
+        "rb:2",
+        "bb:24b.h",
+        "#658eac",
+        []
+      ],
+      [
+        "button:1.l",
+        "bb:27b.h",
+        "#a583b9",
+        []
+      ],
+      [
+        "button:2.l",
+        "bb:29b.h",
+        "#000000",
+        []
+      ],
+      [
+        "meter:V+",
+        "bb:21b.j",
+        "#cf6868",
+        [
+          {
+            "x": 886,
+            "y": 590
+          },
+          {
+            "x": 790,
+            "y": 590
+          },
+          {
+            "x": 790,
+            "y": 375
+          },
+          {
+            "x": 608,
+            "y": 375
+          }
+        ]
+      ],
+      [
+        "meter:COM",
+        "bb:bn.25",
+        "#000000",
+        [
+          {
+            "x": 844,
+            "y": 580
+          },
+          {
+            "x": 775,
+            "y": 580
+          },
+          {
+            "x": 775,
+            "y": 394.9
+          }
+        ]
+      ],
+      [
+        "probe:SIG",
+        "bb:21b.i",
+        "#cf6868",
+        [
+          {
+            "x": 950,
+            "y": 333
+          },
+          {
+            "x": 950,
+            "y": 365
+          },
+          {
+            "x": 790,
+            "y": 365
+          },
+          {
+            "x": 790,
+            "y": 355
+          }
+        ]
+      ],
+      [
+        "probe:GND",
+        "bb:bn.27",
+        "#000000",
+        [
+          {
+            "x": 800,
+            "y": 333
+          },
+          {
+            "x": 800,
+            "y": 394.9
+          }
+        ]
+      ],
+      [
+        "plot:GND",
+        "plotGround:GND",
+        "#000000"
+      ],
+      [
+        "plot:CH1",
+        "uno:9",
+        "#bc7770"
+      ],
+      [
+        "plot:CH2",
+        "uno:10",
+        "#7da58a"
+      ],
+      [
+        "plot:CH3",
+        "uno:11",
+        "#658eac"
+      ],
+      [
+        "plot:CH4",
+        "supply:VCC",
+        "#c8ac59"
+      ]
+    ]
+  },
+  "controls": {
+    "button": false,
+    "pot": 650
+  },
+  "api": "webserial",
+  "p5": {
+    "webserial": "// Values come from Arduino at 9600 baud: button,pot,LED,R,G,B.\nlet values = [0, 0, 0, 0, 0, 0],\n  received = false;\nfunction setup() {\n  createCanvas(520, 470);\n}\nfunction draw() {\n  arduinoComms.poll();\n  const [button, pot, led, r, g, b] = values;\n  const dark = window.theme === \"dark\";\n  const ink = dark ? \"#d8d8da\" : \"#343436\";\n  const muted = dark ? \"#929298\" : \"#77777c\";\n  background(dark ? \"#242426\" : \"#fafafa\");\n  textFont(\"sans-serif\");\n  textAlign(LEFT);\n  noStroke();\n  fill(ink);\n  textSize(22);\n  text(\"Four kinds of signal\", 24, 36);\n  fill(muted);\n  textSize(12);\n  text(\n    received ? \"Live from Arduino \u00b7 9600 baud\" : \"Waiting for Arduino\u2026\",\n    24,\n    60,\n  );\n  card(\n    24,\n    82,\n    \"DIGITAL INPUT \u00b7 D2\",\n    button ? \"Pressed \u00b7 LOW\" : \"Released \u00b7 HIGH\",\n  );\n  fill(button ? \"#7b9f87\" : muted);\n  circle(220, 138, 28);\n  card(\n    272,\n    82,\n    \"DIGITAL OUTPUT \u00b7 D12\",\n    led ? \"LED on \u00b7 HIGH\" : \"LED off \u00b7 LOW\",\n  );\n  fill(led ? \"#ef6c68\" : muted);\n  circle(468, 138, 28);\n  card(24, 194, \"ANALOG INPUT \u00b7 A0\", pot + \" / 1023\");\n  fill(dark ? \"#444448\" : \"#dedee0\");\n  rect(40, 273, 190, 5, 2);\n  fill(\"#b6a061\");\n  rect(40, 273, (190 * pot) / 1023, 5, 2);\n  card(272, 194, \"PWM OUTPUT \u00b7 D9 / D10 / D11\", \"RGB color fade\");\n  fill(r, g, b);\n  circle(448, 265, 56);\n  textSize(12);\n  [\n    [\"R\", r, \"#cf6868\"],\n    [\"G\", g, \"#7b9f87\"],\n    [\"B\", b, \"#658eac\"],\n  ].forEach(([label, value, color], i) => {\n    const y = 335 + i * 30;\n    fill(ink);\n    text(label + \"  \" + value + \" / 255\", 24, y);\n    fill(dark ? \"#444448\" : \"#dedee0\");\n    rect(150, y - 9, 340, 7, 2);\n    fill(color);\n    rect(150, y - 9, (340 * value) / 255, 7, 2);\n  });\n  fill(muted);\n  text(\"Press the button. Turn the pot to fade the RGB brightness.\", 24, 446);\n}\nfunction card(x, y, title, value) {\n  const dark = window.theme === \"dark\";\n  fill(dark ? \"#303033\" : \"#eeeeef\");\n  rect(x, y, 224, 110, 6);\n  fill(dark ? \"#a1a1a5\" : \"#77777c\");\n  textSize(10);\n  text(title, x + 16, y + 26);\n  fill(dark ? \"#d8d8da\" : \"#343436\");\n  textSize(17);\n  text(value, x + 16, y + 58);\n}\n\nfunction acceptLine(line) {\n  const fields = line.trim().split(\",\").map(Number);\n  if (fields.length === 6 && fields.every(Number.isFinite)) {\n    values = fields;\n    received = true;\n  }\n}\n\n// p5comp communications: begin\n////////////////////////////////////////////////////////////////////////\n// Arduino \u2194 p5: webserial. This code is part of your sketch.\n// p5.webserial is loaded by index.html. In setup/draw you can also call connect/poll explicitly.\nvar arduinoComms = {\n  lastLine: \"\",\n  connected: false,\n  onLine(line) {\n    this.lastLine = line;\n    if (typeof acceptLine === \"function\") acceptLine(line);\n  },\n  async connect(onLine) {\n    if (this.connected) return;\n    if (onLine) this.onLine = onLine;\n    this.port = createSerial();\n    await this.port.open(9600);\n    this.connected = true;\n  },\n  poll() {\n    if (!this.port?.opened()) return;\n    for (let i = 0; i < 50; i++) {\n      const line = this.port.readUntil(\"\\n\");\n      if (!line) break;\n      this.onLine(line);\n    }\n  },\n  sendLine(line) {\n    if (this.port?.opened()) return this.port.println(line);\n  },\n  async disconnect() {\n    await this.port?.close();\n    this.connected = false;\n  },\n};\np5.prototype.registerMethod(\"pre\", () => arduinoComms.poll());\np5.prototype.registerMethod(\"afterSetup\", () => {\n  if (window.serialConnected) arduinoComms.connect().catch(console.error);\n});\n////////////////////////////////////////////////////////////////////////\n// p5comp communications: end\n"
+  },
+  "arduino": "// Four signal types: button in, LED out, potentiometer in, RGB PWM out.\n// The button uses INPUT_PULLUP: pressed reads LOW. RGB is common cathode.\nconst int BUTTON = 2, LED = 12, POT = A0;\nconst int RED = 9, GREEN = 10, BLUE = 11;\nunsigned long lastReport = 0;\nvoid setup() {\n  pinMode(BUTTON, INPUT_PULLUP);\n  pinMode(LED, OUTPUT);\n  pinMode(RED, OUTPUT);\n  pinMode(GREEN, OUTPUT);\n  pinMode(BLUE, OUTPUT);\n  Serial.begin(9600);\n}\nvoid loop() {\n  bool pressed = digitalRead(BUTTON) == LOW;\n  int pot = analogRead(POT);\n  digitalWrite(LED, pressed);\n  // Crossfade red -> green -> blue. The pot controls brightness.\n  int phase = (millis() / 8) % 768;\n  int segment = phase / 256, fade = phase % 256;\n  int r = segment == 0 ? 255 - fade : segment == 2 ? fade : 0;\n  int g = segment == 0 ? fade : segment == 1 ? 255 - fade : 0;\n  int b = segment == 1 ? fade : segment == 2 ? 255 - fade : 0;\n  r = (long)r * pot / 1023;\n  g = (long)g * pot / 1023;\n  b = (long)b * pot / 1023;\n  analogWrite(RED, r);\n  analogWrite(GREEN, g);\n  analogWrite(BLUE, b);\n  if (millis() - lastReport >= 50) {\n    lastReport = millis();\n    // CSV: pressed, pot, digital LED, red PWM, green PWM, blue PWM\n    Serial.print(pressed); Serial.print(',');\n    Serial.print(pot); Serial.print(',');\n    Serial.print(pressed); Serial.print(',');\n    Serial.print(r); Serial.print(',');\n    Serial.print(g); Serial.print(','); Serial.println(b);\n  }\n  delay(10);\n}\n",
+  "artifact": {
+    "source": "// Four signal types: button in, LED out, potentiometer in, RGB PWM out.\n// The button uses INPUT_PULLUP: pressed reads LOW. RGB is common cathode.\nconst int BUTTON = 2, LED = 12, POT = A0;\nconst int RED = 9, GREEN = 10, BLUE = 11;\nunsigned long lastReport = 0;\nvoid setup() {\n  pinMode(BUTTON, INPUT_PULLUP);\n  pinMode(LED, OUTPUT);\n  pinMode(RED, OUTPUT);\n  pinMode(GREEN, OUTPUT);\n  pinMode(BLUE, OUTPUT);\n  Serial.begin(9600);\n}\nvoid loop() {\n  bool pressed = digitalRead(BUTTON) == LOW;\n  int pot = analogRead(POT);\n  digitalWrite(LED, pressed);\n  // Crossfade red -> green -> blue. The pot controls brightness.\n  int phase = (millis() / 8) % 768;\n  int segment = phase / 256, fade = phase % 256;\n  int r = segment == 0 ? 255 - fade : segment == 2 ? fade : 0;\n  int g = segment == 0 ? fade : segment == 1 ? 255 - fade : 0;\n  int b = segment == 1 ? fade : segment == 2 ? 255 - fade : 0;\n  r = (long)r * pot / 1023;\n  g = (long)g * pot / 1023;\n  b = (long)b * pot / 1023;\n  analogWrite(RED, r);\n  analogWrite(GREEN, g);\n  analogWrite(BLUE, b);\n  if (millis() - lastReport >= 50) {\n    lastReport = millis();\n    // CSV: pressed, pot, digital LED, red PWM, green PWM, blue PWM\n    Serial.print(pressed); Serial.print(',');\n    Serial.print(pot); Serial.print(',');\n    Serial.print(pressed); Serial.print(',');\n    Serial.print(r); Serial.print(',');\n    Serial.print(g); Serial.print(','); Serial.println(b);\n  }\n  delay(10);\n}\n",
+    "buildKey": "// Four signal types: button in, LED out, potentiometer in, RGB PWM out.\n// The button uses INPUT_PULLUP: pressed reads LOW. RGB is common cathode.\nconst int BUTTON = 2, LED = 12, POT = A0;\nconst int RED = 9, GREEN = 10, BLUE = 11;\nunsigned long lastReport = 0;\nvoid setup() {\n  pinMode(BUTTON, INPUT_PULLUP);\n  pinMode(LED, OUTPUT);\n  pinMode(RED, OUTPUT);\n  pinMode(GREEN, OUTPUT);\n  pinMode(BLUE, OUTPUT);\n  Serial.begin(9600);\n}\nvoid loop() {\n  bool pressed = digitalRead(BUTTON) == LOW;\n  int pot = analogRead(POT);\n  digitalWrite(LED, pressed);\n  // Crossfade red -> green -> blue. The pot controls brightness.\n  int phase = (millis() / 8) % 768;\n  int segment = phase / 256, fade = phase % 256;\n  int r = segment == 0 ? 255 - fade : segment == 2 ? fade : 0;\n  int g = segment == 0 ? fade : segment == 1 ? 255 - fade : 0;\n  int b = segment == 1 ? fade : segment == 2 ? 255 - fade : 0;\n  r = (long)r * pot / 1023;\n  g = (long)g * pot / 1023;\n  b = (long)b * pot / 1023;\n  analogWrite(RED, r);\n  analogWrite(GREEN, g);\n  analogWrite(BLUE, b);\n  if (millis() - lastReport >= 50) {\n    lastReport = millis();\n    // CSV: pressed, pot, digital LED, red PWM, green PWM, blue PWM\n    Serial.print(pressed); Serial.print(',');\n    Serial.print(pot); Serial.print(',');\n    Serial.print(pressed); Serial.print(',');\n    Serial.print(r); Serial.print(',');\n    Serial.print(g); Serial.print(','); Serial.println(b);\n  }\n  delay(10);\n}\n{}",
+    "hex": ":100000000C9462000C948A000C948A000C948A0070\r\n:100010000C948A000C948A000C948A000C948A0038\r\n:100020000C948A000C948A000C948A000C948A0028\r\n:100030000C948A000C948A000C948A000C948A0018\r\n:100040000C9424030C948A000C9494030C946E0377\r\n:100050000C948A000C948A000C948A000C948A00F8\r\n:100060000C948A000C948A000000000023002600F3\r\n:10007000290000000000240027002A0000000000E2\r\n:10008000250028002B0004040404040404040202D4\r\n:100090000202020203030303030301020408102007\r\n:1000A0004080010204081020010204081020000012\r\n:1000B0000008000201000003040700000000000027\r\n:1000C00000009A0511241FBECFEFD8E0DEBFCDBFE0\r\n:1000D00011E0A0E0B1E0ECE5FCE002C005900D927B\r\n:1000E000A631B107D9F721E0A6E1B1E001C01D9228\r\n:1000F000A03CB207E1F710E0C2E6D0E004C02197CF\r\n:10010000FE010E942606C136D107C9F70E94C60328\r\n:100110000C942C060C940000833081F028F481307C\r\n:1001200099F08230A9F008958730A9F08830C9F09D\r\n:100130008430B1F4809180008F7D03C08091800075\r\n:100140008F7780938000089584B58F7784BD08955C\r\n:1001500084B58F7DFBCF8091B0008F778093B00006\r\n:1001600008958091B0008F7DF9CF1F93CF93DF93D7\r\n:10017000282F30E0F901E255FF4F8491F901E6564E\r\n:10018000FF4FD491F901EA57FF4FC491CC23A9F056\r\n:10019000162F81110E948C00EC2FF0E0EE0FFF1F54\r\n:1001A000E458FF4FA591B4918FB7F894EC911111D9\r\n:1001B00008C0D095DE23DC938FBFDF91CF911F91D4\r\n:1001C0000895DE2BF8CFCF93DF9390E0FC01E65645\r\n:1001D000FF4F24918A579F4FFC0184918823D1F0CF\r\n:1001E00090E0880F991FFC01EE58FF4FA591B49144\r\n:1001F000FC01E458FF4FC591D491623071F49FB770\r\n:10020000F8943C91822F809583238C93E8812E2B48\r\n:1002100028839FBFDF91CF9108958FB7F894EC9119\r\n:100220002E2B2C938FBFF6CF1F93CF93DF93182FD6\r\n:10023000EB0161E00E94E300209739F460E0812F38\r\n:10024000DF91CF911F910C94B500CF3FD10511F4F0\r\n:1002500061E0F5CFE12FF0E0E255FF4FE491E330AC\r\n:1002600031F140F4E130B1F0E230E1F0C038D105D5\r\n:100270007CF7E4CFE73029F1E83059F1E430B1F709\r\n:1002800080918000806280938000D0938B00C09327\r\n:100290008A0004C084B5806884BDC7BDDF91CF915A\r\n:1002A0001F91089584B5806284BDC8BDF7CF809149\r\n:1002B0008000806880938000D0938900C09388007C\r\n:1002C000EDCF8091B00080688093B000C093B30000\r\n:1002D000E5CF8091B00080628093B000C093B400FD\r\n:1002E000DDCF3FB7F89480911F0190912001A0913C\r\n:1002F0002101B091220126B5A89B05C02F3F19F01E\r\n:100300000196A11DB11D3FBFBA2FA92F982F882795\r\n:10031000BC01CD01620F711D811D911D42E0660F70\r\n:10032000771F881F991F4A95D1F70895AF92BF9202\r\n:10033000CF92DF92EF92FF920F931F93CF93DF93B1\r\n:100340006C017B018B01040F151FEB015E01AE18E0\r\n:10035000BF08C017D10759F06991D601ED91FC9102\r\n:100360000190F081E02DC6010995892B79F7C5012F\r\n:10037000DF91CF911F910F91FF90EF90DF90CF9081\r\n:10038000BF90AF900895FC01538D448D252F30E030\r\n:10039000842F90E0821B930B541710F0CF96089592\r\n:1003A00001970895FC01918D828D981761F0A28DBF\r\n:1003B000AE0FBF2FB11D5D968C91928D9F5F9F7385\r\n:1003C000928F90E008958FEF9FEF0895FC01918D3B\r\n:1003D000828D981731F0828DE80FF11D858D90E0A8\r\n:1003E00008958FEF9FEF0895FC01918D228D892F45\r\n:1003F00090E0805C9F4F821B91098F73992708952D\r\n:1004000083E291E00E94F40121E0892B09F420E0CD\r\n:10041000822F089580E090E0892B29F00E9400024D\r\n:1004200081110C9400000895FC01A48DA80FB92F30\r\n:10043000B11DA35ABF4F2C91848D90E001968F730C\r\n:100440009927848FA689B7892C93A089B1898C912B\r\n:10045000837080648C93938D848D981306C002887A\r\n:10046000F389E02D80818F7D80830895EF92FF9244\r\n:100470000F931F93CF93DF93EC0181E0888F9B8DC7\r\n:100480008C8D98131AC0E889F989808185FF15C081\r\n:100490009FB7F894EE89FF896083E889F9898081A4\r\n:1004A0008370806480839FBF81E090E0DF91CF9173\r\n:1004B0001F910F91FF90EF900895F62E0B8D10E095\r\n:1004C0000F5F1F4F0F731127E02E8C8D8E110CC004\r\n:1004D0000FB607FCFACFE889F989808185FFF5CF4F\r\n:1004E000CE010E941402F1CFEB8DEC0FFD2FF11D18\r\n:1004F000E35AFF4FF0829FB7F8940B8FEA89FB898C\r\n:1005000080818062CFCF682F83E291E00C94360225\r\n:10051000CF93DF93EC01888D8823B9F0AA89BB893A\r\n:10052000E889F9898C9185FD03C0808186FD0DC025\r\n:100530000FB607FCF7CF8C9185FFF2CF808185FF46\r\n:10054000EDCFCE010E941402E9CFDF91CF91089543\r\n:100550008F929F92AF92BF920F931F93CF93DF938F\r\n:10056000CDB7DEB7A1970FB6F894DEBF0FBECDBFF3\r\n:1005700019A2423008F44AE08E010F5D1F4F842E0D\r\n:10058000912CB12CA12CA50194010E94C705E62F46\r\n:10059000B901CA01EA3044F5E05DD801EE938D015E\r\n:1005A000232B242B252B79F790E080E0109769F01E\r\n:1005B000FD0101900020E9F73197AF014A1B5B0B69\r\n:1005C000BD0183E291E00E949601A1960FB6F894D6\r\n:1005D000DEBF0FBECDBFDF91CF911F910F91BF90B6\r\n:1005E000AF909F908F900895E95CD7CFCF92DF9224\r\n:1005F000EF92FF92CF93DF936C01990FEE08FF0803\r\n:10060000F7FE17C08DE20E948302EC016627772770\r\n:10061000CB016C197D098E099F094AE00E94A8024E\r\n:100620008C0F9D1FDF91CF91FF90EF90DF90CF90C7\r\n:1006300008954AE0C701B601DF91CF91FF90EF9096\r\n:10064000DF90CF900C94A8021F920F920FB60F92DA\r\n:1006500011242F933F938F939F93AF93BF938091D8\r\n:100660001B0190911C01A0911D01B0911E013091C0\r\n:100670001A0123E0230F2D3758F50196A11DB11D56\r\n:1006800020931A0180931B0190931C01A0931D01DC\r\n:10069000B0931E0180911F0190912001A091210132\r\n:1006A000B09122010196A11DB11D80931F0190936D\r\n:1006B0002001A0932101B0932201BF91AF919F919E\r\n:1006C0008F913F912F910F900FBE0F901F90189513\r\n:1006D00026E8230F0296A11DB11DD2CF1F920F92C3\r\n:1006E0000FB60F9211242F933F934F935F936F9305\r\n:1006F0007F938F939F93AF93BF93EF93FF9383E287\r\n:1007000091E00E941402FF91EF91BF91AF919F91F0\r\n:100710008F917F916F915F914F913F912F910F90AA\r\n:100720000FBE0F901F9018951F920F920FB60F9249\r\n:1007300011242F938F939F93EF93FF93E0913301B5\r\n:10074000F09134018081E0913901F0913A0182FD0C\r\n:100750001BC0908180913C018F5F8F7320913D0180\r\n:10076000821741F0E0913C01F0E0ED5DFE4F958F86\r\n:1007700080933C01FF91EF919F918F912F910F906A\r\n:100780000FBE0F901F9018958081F4CFCF93DF9309\r\n:10079000CDB7DEB728970FB6F894DEBF0FBECDBF3A\r\n:1007A000789484B5826084BD84B5816084BD85B54C\r\n:1007B000826085BD85B5816085BD80916E00816058\r\n:1007C00080936E00109281008091810082608093FE\r\n:1007D0008100809181008160809381008091800000\r\n:1007E0008160809380008091B10084608093B1002B\r\n:1007F0008091B00081608093B00080917A00846025\r\n:1008000080937A0080917A00826080937A00809150\r\n:100810007A00816080937A0080917A00806880936A\r\n:100820007A001092C10062E082E00E94E30061E081\r\n:100830008CE00E94E30061E089E00E94E30061E057\r\n:100840008AE00E94E30061E08BE00E94E300E09117\r\n:100850003301F091340182E08083E0912F01F09127\r\n:1008600030011082E0913101F09132018FEC8083F0\r\n:1008700010923B01E0913701F091380186E08083CE\r\n:10088000E0913501F0913601808180618083E091B3\r\n:100890003501F0913601808188608083E0913501D7\r\n:1008A000F0913601808180688083E0913501F0917C\r\n:1008B000360180818F7D808344244A9453E0552EF5\r\n:1008C000612C712CE0EBF0E08491ECE9F0E0F49124\r\n:1008D000F983E8E8F0E0F491FB83FF2309F411C108\r\n:1008E00081110E948C002B81E22FF0E0EE0FFF1FA0\r\n:1008F000E859FF4FA591B4918C9139813823398300\r\n:1009000031E020E04981411101C030E0832F922F76\r\n:10091000FC0121E0E227FA83E98330E430937C0094\r\n:1009200080917A00806480937A0080917A0086FDBD\r\n:10093000FCCF209078003090790069818CE00E9493\r\n:10094000B5002FB7F89460911B0170911C01809144\r\n:100950001D0190911E012FBF23E0969587957795F5\r\n:1009600067952A95D1F720E033E040E050E00E94FF\r\n:10097000C705E72FFF27E7FDFA95F887EF839B016F\r\n:100980003327EF2B09F0C0C089018FEF90E0821B65\r\n:10099000930B9C01D1010E940806A30192010E94C1\r\n:1009A000E90549019101D8010E940806A3019201BD\r\n:1009B0000E94E9052B833C834D835E839101AF81C7\r\n:1009C000B8850E940806A30192010E94E905690109\r\n:1009D000B40189E00E9414016B817C818AE00E944D\r\n:1009E0001401B6018BE00E9414012FB7F894809196\r\n:1009F0001B0190911C01A0911D01B0911E012FBF00\r\n:100A000040911601509117016091180170911901E0\r\n:100A1000841B950BA60BB70BC297A105B10508F473\r\n:100A20003FC02FB7F89480911B0190911C01A091B9\r\n:100A30001D01B0911E012FBF8093160190931701E5\r\n:100A4000A0931801B093190189819A810E94F6023E\r\n:100A50008CE20E948302C1010E94F6028CE20E9495\r\n:100A6000830289819A810E94F6028CE20E948302AD\r\n:100A7000C4010E94F6028CE20E9483028B819C8159\r\n:100A80000E94F6028CE20E948302C6010E94F602D6\r\n:100A900042E050E062E171E083E291E00E94960161\r\n:100AA0000E9471014B015C018AE0C82ED12CE12C1F\r\n:100AB000F12C0E947101681979098A099B09683E25\r\n:100AC000734081059105A8F3F1E0CF1AD108E10840\r\n:100AD000F10828EE820E23E0921EA11CB11CC11465\r\n:100AE000D104E104F10429F780E090E0892B09F4B6\r\n:100AF000E9CE0E940002882309F4E4CE0E9400009F\r\n:100B0000E1CE90E080E004CFEF81F885329749F0A4\r\n:100B10000FEF10E0021B130B38872F8330E020E02B\r\n:100B200039CFEFEFF0E0E21BF30BF887EF8310E033\r\n:100B300000E030CFE3E2F1E01382128288EE93E02E\r\n:100B4000A0E0B0E084839583A683B78384E091E03E\r\n:100B50009183808385EC90E09587848784EC90E096\r\n:100B60009787868780EC90E0918B808B81EC90E07A\r\n:100B7000938B828B82EC90E0958B848B86EC90E05B\r\n:100B8000978B868B118E128E138E148E0895A1E290\r\n:100B90001A2EAA1BBB1BFD010DC0AA1FBB1FEE1FF7\r\n:100BA000FF1FA217B307E407F50720F0A21BB30B42\r\n:100BB000E40BF50B661F771F881F991F1A9469F7BE\r\n:100BC00060957095809590959B01AC01BD01CF011A\r\n:100BD0000895052E97FB1EF400940E94000657FD11\r\n:100BE00007D00E94C70507FC03D04EF40C94000602\r\n:100BF00050954095309521953F4F4F4F5F4F089549\r\n:100C000090958095709561957F4F8F4F9F4F089578\r\n:100C10000E941006332312F48A1B9B0B0C942106AE\r\n:100C2000A29FB001B39FC001A39F700D811D11242D\r\n:100C3000911DB29F700D811D1124911D08950E9478\r\n:100C40001006B7FF0895821B930B0895EE0FFF1F48\r\n:0C0C50000590F491E02D0994F894FFCF7A\r\n:100C5C000000000036029601C3018802F401D201A3\r\n:060C6C00E6010D0A000084\r\n:00000001FF\r\n"
+  }
+}

@@ -1,7 +1,10 @@
+import {AnalogSolver} from "./analogSolver.js";
+import { instrumentStates } from "./instruments.js";
 import { ExtendedOutputs } from "./outputModels.js";
 import { digitalLevels, sensorReading } from "./inputModels.js";
 import { avrConfig, boardLayout, megaPins } from "./avrBoards.js";
 import { PeripheralModels } from "./peripherals.js";
+import { resistiveVoltages } from "./resistiveNetwork.js";
 import { passiveStates } from "./passiveStates.js";
 import {
   CPU,
@@ -106,9 +109,18 @@ export class UnoRuntime {
     this.triggerStarts = new Map();
     this.lastTriggers = new Map();
     this.echoBusy = new Set();
+    this.pinSamples = Array.from({ length: this.layout.digitalCount }, () => ({
+      last: 0,
+      high: false,
+      total: 0,
+      edges: [],
+      transitions: 0,
+    }));
+    this.sampleStart = 0;
     this.uart.onRxComplete = () => this.pumpRx();
     for (const port of Object.values(this.ports))
       port.addListener(() => {
+        this.samplePins();
         this.applyDigitalInputs();
         this.checkTriggers();
         const high = (n) => {
@@ -150,6 +162,21 @@ export class UnoRuntime {
       if (p.pin >= this.layout.analogBase && p.powered)
         this.adc.channelValues[p.pin - this.layout.analogBase] =
           (Math.max(0, Math.min(1023, this.controls[p.id] ?? 512)) / 1023) * 5;
+    if (this.topology.passive?.resistors.some((r) => r.photo)) {
+      const voltage = resistiveVoltages(
+        this.topology.passive,
+        [],
+        this.controls,
+      );
+      for (let i = 0; i < this.layout.analogCount; i++) {
+        const net = this.topology.digital?.pinNets[this.layout.analogBase + i];
+        if (voltage.has(net))
+          this.adc.channelValues[i] = Math.max(
+            0,
+            Math.min(5, voltage.get(net)),
+          );
+      }
+    }
     this.applyDigitalInputs();
   }
   applyDigitalInputs() {
@@ -314,7 +341,74 @@ export class UnoRuntime {
     this.pumpRx();
     this.applyDigitalInputs();
   }
+  samplePins() {
+    const cycle = this.cpu.cycles;
+    for (let n = 0; n < this.pinSamples.length; n++) {
+      const s = this.pinSamples[n],
+        [port, bit] = this.pin(n),
+        high = port.pinState(bit) === PinState.High;
+      s.total += (cycle - s.last) * (s.high ? 1 : 0);
+      s.last = cycle;
+      if (s.high !== high) {
+        s.high = high;
+        s.transitions++;
+        s.edges.push([cycle, high]);
+        if (s.edges.length > 128) s.edges.shift();
+      }
+    }
+  }
   snapshot() {
+    this.samplePins();
+    const cycle = this.cpu.cycles,
+      dt = Math.max(1, cycle - this.sampleStart),
+      pwm = [],
+      signals = [];
+    const pins = Array.from({ length: this.layout.digitalCount }, (_, n) => {
+      const [port, bit] = this.pin(n),
+        state = port.pinState(bit);
+      return state === PinState.High ? 5 : state === PinState.Low ? 0 : null;
+    });
+    for (let n = 0; n < this.pinSamples.length; n++) {
+      const s = this.pinSamples[n],
+        edges = s.edges.filter((e) => e[0] > cycle - F_CPU / 20),
+        rises = edges.filter((e) => e[1]);
+      const frequency =
+        rises.length > 1
+          ? (F_CPU * (rises.length - 1)) / (rises.at(-1)[0] - rises[0][0])
+          : 0;
+      const duty = s.total / dt;
+      if (s.transitions >= 4 && pins[n] != null) {
+        pwm[n] = duty;
+        pins[n] = 5 * duty;
+      }
+      signals[n] = {
+        frequency,
+        duty: pwm[n] ?? (s.high ? 1 : 0),
+        samples: edges.map((e) => [
+          (e[0] - (cycle - F_CPU / 20)) / (F_CPU / 20),
+          e[1] ? 1 : 0,
+        ]),
+      };
+      s.total = 0;
+      s.transitions = 0;
+    }
+    this.sampleStart = cycle;
+    if(this.topology.analog?.active && !this.analog) this.analog=new AnalogSolver(this.topology);
+    const analogFrames=this.analog?.advance(cycle/F_CPU,pins,this.runtimeControls,signals)||[];
+    const passive = passiveStates(
+      this.topology.passive,
+      pins,
+      this.runtimeControls,
+      pwm,
+    );
+    const measurements = instrumentStates(
+      this.topology,
+      pins,
+      this.runtimeControls,
+      passive,
+      signals,
+      this.analog?.volts,
+    );
     const outputs = this.outputs.snapshot(this.cpu.cycles);
     for (const p of this.topology.peripherals || [])
       if (p.type === "wokwi-relay-module")
@@ -323,6 +417,7 @@ export class UnoRuntime {
           energized: !!this.runtimeControls[p.id + ":coil"],
         };
     return {
+      analogFrames,
       cycles: this.cpu.cycles,
       seconds: this.cpu.cycles / F_CPU,
       led:
@@ -332,19 +427,9 @@ export class UnoRuntime {
         ...this.peripherals.snapshot(this.cpu.cycles),
         ...outputs,
         ...this.inputStates,
-        ...passiveStates(
-          this.topology.passive,
-          Array.from({ length: this.layout.digitalCount }, (_, n) => {
-            const [port, bit] = this.pin(n),
-              state = port.pinState(bit);
-            return state === PinState.High
-              ? 5
-              : state === PinState.Low
-                ? 0
-                : null;
-          }),
-          this.runtimeControls,
-        ),
+        ...passive,
+        ...measurements,
+        ...this.analog?.states(),
       },
     };
   }

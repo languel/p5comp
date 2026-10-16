@@ -1,0 +1,245 @@
+{
+  "version": 2,
+  "canvas": {
+    "camera": {
+      "x": 30,
+      "y": 80,
+      "zoom": 1
+    },
+    "snap": true,
+    "orthogonal": true,
+    "labels": true,
+    "gridReference": "breadboard"
+  },
+  "workbench": {
+    "name": "LC · find resonance",
+    "layout": "tabs",
+    "activeView": "circuit",
+    "splitRatio": 0.6,
+    "files": {}
+  },
+  "diagram": {
+    "version": 1,
+    "parts": [
+      {
+        "id": "gen",
+        "type": "p5comp-signal-generator",
+        "left": 40,
+        "top": 90,
+        "attrs": {
+          "waveform": "sine",
+          "frequency": 160,
+          "amplitude": 2,
+          "offset": 0
+        }
+      },
+      {
+        "id": "r",
+        "type": "wokwi-resistor",
+        "left": 210,
+        "top": 150,
+        "attrs": {
+          "value": "47"
+        }
+      },
+      {
+        "id": "l",
+        "type": "p5comp-inductor",
+        "left": 290,
+        "top": 150,
+        "attrs": {
+          "value": "100mH"
+        }
+      },
+      {
+        "id": "c",
+        "type": "p5comp-capacitor",
+        "left": 290,
+        "top": 280,
+        "attrs": {
+          "value": "10uF"
+        }
+      },
+      {
+        "id": "g",
+        "type": "p5comp-ground",
+        "left": 125,
+        "top": 360,
+        "attrs": {}
+      },
+      {
+        "id": "scope",
+        "type": "p5comp-oscilloscope",
+        "left": 450,
+        "top": 100,
+        "attrs": {
+          "timeWindow": 0.04,
+          "voltsPerDiv": 1,
+          "triggerLevel": 0,
+          "triggerMode": "auto"
+        }
+      }
+    ],
+    "connections": [
+      [
+        "gen:GND",
+        "g:GND",
+        "#000000",
+        [
+          {
+            "x": 140,
+            "y": 348
+          },
+          {
+            "x": 145,
+            "y": 348
+          }
+        ]
+      ],
+      [
+        "gen:OUT",
+        "r:1",
+        "#8796a6",
+        [
+          {
+            "x": 65,
+            "y": 184
+          },
+          {
+            "x": 198,
+            "y": 184
+          },
+          {
+            "x": 198,
+            "y": 155.65
+          }
+        ]
+      ],
+      [
+        "r:2",
+        "l:1",
+        "#8796a6",
+        [
+          {
+            "x": 280.8,
+            "y": 155.65
+          },
+          {
+            "x": 278,
+            "y": 155.65
+          },
+          {
+            "x": 278,
+            "y": 174
+          }
+        ]
+      ],
+      [
+        "l:2",
+        "c:1",
+        "#8796a6",
+        [
+          {
+            "x": 378,
+            "y": 174
+          },
+          {
+            "x": 378,
+            "y": 268
+          },
+          {
+            "x": 278,
+            "y": 268
+          },
+          {
+            "x": 278,
+            "y": 298
+          }
+        ]
+      ],
+      [
+        "c:2",
+        "g:GND",
+        "#000000",
+        [
+          {
+            "x": 362,
+            "y": 298
+          },
+          {
+            "x": 362,
+            "y": 348
+          },
+          {
+            "x": 145,
+            "y": 348
+          }
+        ]
+      ],
+      [
+        "scope:GND",
+        "g:GND",
+        "#000000",
+        [
+          {
+            "x": 470,
+            "y": 340
+          },
+          {
+            "x": 145,
+            "y": 340
+          }
+        ]
+      ],
+      [
+        "scope:CH1",
+        "gen:OUT",
+        "#8796a6",
+        [
+          {
+            "x": 570,
+            "y": 304
+          },
+          {
+            "x": 370,
+            "y": 304
+          },
+          {
+            "x": 370,
+            "y": 222
+          },
+          {
+            "x": 65,
+            "y": 222
+          }
+        ]
+      ],
+      [
+        "scope:CH2",
+        "c:1",
+        "#7ba9ca",
+        [
+          {
+            "x": 670,
+            "y": 328
+          },
+          {
+            "x": 278,
+            "y": 328
+          },
+          {
+            "x": 278,
+            "y": 298
+          }
+        ]
+      ]
+    ]
+  },
+  "controls": {},
+  "api": "none",
+  "arduino": "// Analog-only lesson: no Arduino firmware required.\n",
+  "p5": {
+    "none": "function setup() {\n  createCanvas(400, 150);\n  background(30);\n  fill(230);\n  text(\"Sweep generator frequency around 159 Hz. Compare amplitude and phase across the capacitor.\", 20, 40, 360, 100);\n  noLoop();\n}\n"
+  },
+  "artifact": null
+}

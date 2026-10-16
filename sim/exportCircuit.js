@@ -87,7 +87,7 @@ export function circuitSVG(diagram, references, background, sources = {}) {
           y: r.y,
           width: r.width,
           height: h,
-          fill: background,
+          fill: r.background || "#f6f4ee",
           stroke: "#888",
           opacity: r.opacity,
         }),
@@ -98,13 +98,13 @@ export function circuitSVG(diagram, references, background, sources = {}) {
         const t = svgNode("text", {
           x: r.x + 12,
           y,
-          fill: "#888",
+          fill: r.color || "#343436",
           "font-family": "sans-serif",
-          "font-size": 13,
+          "font-size": r.fontSize || 13,
         });
         t.textContent = line;
         scene.append(t);
-        y += 18;
+        y += (r.fontSize || 13) * 1.4;
       }
       continue;
     }

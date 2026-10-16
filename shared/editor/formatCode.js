@@ -1,5 +1,6 @@
 let clangReady;
 export async function formatCode(source, language) {
+  if (language === "latex") return source;
   if (language === "cpp") {
     const clang = await import("@wasm-fmt/clang-format/vite");
     clangReady ||= clang.default();
@@ -16,9 +17,10 @@ export async function formatCode(source, language) {
     import("prettier/plugins/estree"),
     import("prettier/plugins/html"),
     import("prettier/plugins/postcss"),
+    import("prettier/plugins/markdown"),
   ]);
   return prettier.format(source, {
-    parser: language === "html" ? "html" : language === "css" ? "css" : "babel",
+    parser: ["html", "css", "markdown"].includes(language) ? language : "babel",
     plugins: plugins.map((p) => p.default || p),
     tabWidth: 2,
     printWidth: 88,

@@ -8,7 +8,7 @@
   </head>
   <body>
     <header class="bar">
-      <a class="brand" href="/sim/">p5comp</a>
+      <a class="brand" href="/">p5comp</a>
       <nav class="section-nav" aria-label="Sections">
         <a href="/sim/" class="active" aria-current="page">circuit</a
         ><a href="/ide">code</a><a href="/firmata/">firmata</a>
@@ -29,8 +29,8 @@
       </button>
       <span id="status" role="status">Ready · simulated Uno</span>
       <button id="run" class="primary">Run Arduino + p5</button
-      ><button id="pause" disabled>Pause</button
-      ><button id="reset">Reset</button>
+      ><button id="pause" hidden disabled>Pause</button
+      ><button id="reset" hidden>Reset</button>
       <button id="toggleCode">Code editors</button
       ><button id="toggleControls" aria-pressed="true">Input controls</button
       ><button id="hideUI">Hide interface</button>
@@ -225,7 +225,6 @@
       <details class="serial-panel" id="monitor">
         <summary>Console <span title="9600 baud UART">9600</span></summary>
         <div class="log-tools">
-          <button id="clearLog">Clear</button>
           <form id="sendForm">
             <input
               id="sendText"
@@ -244,6 +243,9 @@
         </div>
       </footer>
     </main>
-    <script type="module" src="./main.js"></script>
+    <script type="module">
+      import { basePath } from "../shared/basePath.js";
+      location.replace(basePath() + location.search + location.hash);
+    </script>
   </body>
 </html>

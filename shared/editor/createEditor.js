@@ -1,3 +1,6 @@
+import { markdown } from "@codemirror/lang-markdown";
+import { StreamLanguage } from "@codemirror/language";
+import { stexMath } from "@codemirror/legacy-modes/mode/stex";
 import { completeFromList } from "@codemirror/autocomplete";
 import { basicSetup, EditorView } from "codemirror";
 import { cppLanguage, cpp } from "@codemirror/lang-cpp";
@@ -22,8 +25,22 @@ export function createEditor({
   onChange,
   onRun,
   onUpload,
+  lineWrapping = false,
 }) {
   const theme = new Compartment();
+  const syntax = new Compartment();
+  const languageSupport = (name) =>
+    name === "cpp"
+      ? cpp()
+      : name === "html"
+        ? html()
+        : name === "css"
+          ? css()
+          : name === "markdown"
+            ? markdown()
+            : name === "latex"
+              ? StreamLanguage.define(stexMath)
+              : javascript();
   const shortcuts = [
     indentWithTab,
     {
@@ -45,13 +62,8 @@ export function createEditor({
     doc: value,
     extensions: [
       basicSetup,
-      language === "cpp"
-        ? cpp()
-        : language === "html"
-          ? html()
-          : language === "css"
-            ? css()
-            : javascript(),
+      ...(lineWrapping ? [EditorView.lineWrapping] : []),
+      syntax.of(languageSupport(language)),
       language === "cpp"
         ? cppLanguageData
         : language === "javascript"
@@ -65,6 +77,10 @@ export function createEditor({
     ],
   });
   const editor = new EditorView({ state, parent });
+  editor.setLanguage = (next) => {
+    language = next;
+    editor.dispatch({ effects: syntax.reconfigure(languageSupport(next)) });
+  };
   const apply = () => {
     const prefs = editorPreferences();
     editor.dom.style.fontSize = prefs.fontSize + "px";

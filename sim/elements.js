@@ -1,7 +1,8 @@
+import { foundationCatalog } from "./foundationCatalog.js";
 import { extraCatalog } from "./extraCatalog.js";
 import { isBreadboard } from "./breadboard.js";
 import catalog from "./elements.json" with { type: "json" };
-catalog.push(...extraCatalog);
+catalog.push(...extraCatalog, ...foundationCatalog);
 const legacyBoard = catalog.find((e) => e.type === "wokwi-breadboard");
 Object.assign(legacyBoard, {
   name: "Breadboard long",
@@ -151,7 +152,7 @@ export function terminalColors(connections, selectedWire = -1) {
       if (id.startsWith("free:")) continue;
       const list = colors.get(id) || [];
       list.push({
-        color: /^#[0-9a-f]{6}$/i.test(c[2]) ? c[2] : "#788fa5",
+        color: /^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(c[2]) ? c[2] : "#788fa5",
         index: i,
       });
       colors.set(id, list);

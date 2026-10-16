@@ -1,8 +1,32 @@
-import { isBreadboard, breadboardName } from "./breadboard.js";
+import {
+  isBreadboard,
+  breadboardName,
+  breadboardSVG,
+  boardSpec,
+} from "./breadboard.js";
 import { searchElements, elementByType } from "./elements.js";
+const DEFAULT_FAVORITES = [
+  "wokwi-arduino-uno",
+  "wokwi-breadboard-half",
+  "wokwi-resistor",
+  "wokwi-led",
+  "wokwi-slide-switch",
+  "wokwi-potentiometer",
+  "wokwi-servo",
+];
+const FAVORITES_KEY = "p5comp.elementFavorites";
+function savedFavorites() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(FAVORITES_KEY));
+    if (Array.isArray(saved))
+      return saved.filter((type) => typeof type === "string");
+  } catch {}
+  return [...DEFAULT_FAVORITES];
+}
 export class ElementPicker {
   constructor(add) {
     this.add = add;
+    this.favorites = savedFavorites();
     this.dialog = document.createElement("dialog");
     this.dialog.className = "element-picker";
     this.dialog.setAttribute("aria-label", "Add circuit element");
@@ -43,14 +67,35 @@ export class ElementPicker {
   }
   render() {
     this.results.replaceChildren();
-    const found = searchElements(this.search.value),
+    const note = {
+      type: "p5comp-note",
+      name: "Note",
+      group: "Notes",
+      modeled: true,
+      modelDescription: "Markdown, HTML and LaTeX / KaTeX",
+    };
+    const showNote =
+      !this.search.value.trim() ||
+      "lesson note markdown mkd html latex katex text".includes(
+        this.search.value.trim().toLowerCase(),
+      );
+    const found = [
+        ...(showNote ? [note] : []),
+        ...searchElements(this.search.value).map((info) =>
+          isBreadboard(info.type) ? { ...info, group: "Breadboards" } : info,
+        ),
+      ],
       groups = [
+        "Favorites",
+        "Notes",
+        "Breadboards",
         "Custom",
         "Basic",
         "Inputs",
         "Sensors",
         "Displays",
         "Actuators",
+        "Instruments",
         "Boards",
       ];
     if (!found.length) {
@@ -60,7 +105,14 @@ export class ElementPicker {
       return;
     }
     for (const group of groups) {
-      const items = found.filter((e) => e.group === group);
+      const items =
+        group === "Favorites"
+          ? this.favorites
+              .map((type) => found.find((info) => info.type === type))
+              .filter(Boolean)
+          : found.filter((e) => e.group === group);
+      if (group === "Breadboards")
+        items.sort((a, b) => boardSpec(a).columns - boardSpec(b).columns);
       if (!items.length) continue;
       const heading = document.createElement("h3");
       heading.textContent = group;
@@ -78,8 +130,13 @@ export class ElementPicker {
         const body = document.createElement("span");
         body.className = "thumb-body";
         thumb.append(body);
-        if (isBreadboard(info.type)) thumb.textContent = "▦";
-        else {
+        if (info.type === "p5comp-note") thumb.textContent = "▤";
+        else if (isBreadboard(info.type)) {
+          thumb.innerHTML = breadboardSVG(info);
+          const svg = thumb.querySelector("svg");
+          svg.setAttribute("width", "44");
+          svg.setAttribute("height", "40");
+        } else {
           const part = document.createElement(info.type);
           for (const [key, val] of Object.entries(info.attrs || {}))
             part[key] = val;
@@ -88,7 +145,10 @@ export class ElementPicker {
             if (!part.isConnected) return;
             const w = body.offsetWidth || 100,
               h = body.offsetHeight || 100;
-            body.style.transform = `scale(${Math.min(44 / w, 40 / h, 1)})`;
+            const scale = Math.min(44 / w, 40 / h, 1);
+            body.style.transform = `scale(${scale})`;
+            body.style.left = (50 - w * scale) / 2 + "px";
+            body.style.top = (44 - h * scale) / 2 + "px";
           });
         }
         const name = document.createElement("span");
@@ -99,10 +159,40 @@ export class ElementPicker {
         state.title = button.title;
         button.append(thumb, name, state);
         button.onclick = () => {
-          this.add(info.type, info.attrs || {}, this.position);
           this.dialog.close();
+          this.add(info.type, info.attrs || {}, this.position);
         };
-        this.results.append(button);
+        const row = document.createElement("div");
+        row.className = "element-result-row";
+        const star = document.createElement("button");
+        star.className = "element-favorite";
+        const starred = this.favorites.includes(info.type);
+        const caption =
+          (starred ? "Remove " : "Add ") +
+          info.name +
+          (starred ? " from favorites" : " to favorites");
+        star.textContent = starred ? "★" : "☆";
+        star.title = caption;
+        star.setAttribute("aria-label", caption);
+        star.setAttribute("aria-pressed", String(starred));
+        star.onclick = () => {
+          const scroll = this.results.scrollTop;
+          this.favorites = starred
+            ? this.favorites.filter((type) => type !== info.type)
+            : [...this.favorites, info.type];
+          try {
+            localStorage.setItem(FAVORITES_KEY, JSON.stringify(this.favorites));
+          } catch {}
+          this.render();
+          this.results.scrollTop = scroll;
+          const replacement = [
+            ...this.results.querySelectorAll(".element-favorite"),
+          ].find((el) => el.dataset.type === info.type);
+          replacement?.focus({ preventScroll: true });
+        };
+        star.dataset.type = info.type;
+        row.append(button, star);
+        this.results.append(row);
       }
     }
   }
@@ -150,6 +240,7 @@ export class PartDocs {
           info.source.replace(".js", ".ts")
         : "https://docs.wokwi.com/guides/diagram-editor";
     this.panel.querySelector("a").href = url;
+    this.panel.querySelector("a").hidden = info.source === "p5comp";
     frame.hidden = !info.docs;
     local.hidden = !!info.docs;
     if (info.docs) frame.src = url;
@@ -159,6 +250,11 @@ export class PartDocs {
       const title = document.createElement("h3");
       title.textContent = "Element reference";
       local.append(title);
+      if (info.source === "p5comp") {
+        const description = document.createElement("p");
+        description.textContent = info.modelDescription;
+        local.append(description);
+      }
       const table = document.createElement("table");
       for (const pin of element?.pinInfo || []) {
         const row = document.createElement("tr");
@@ -180,6 +276,7 @@ export class PartDocs {
       local.append(props);
       const values = document.createElement("table");
       for (const [name] of element?.constructor.elementProperties || []) {
+        if (name.startsWith("_")) continue;
         const value = element[name];
         if (!["string", "number", "boolean"].includes(typeof value)) continue;
         const row = document.createElement("tr");

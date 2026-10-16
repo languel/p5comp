@@ -46,3 +46,20 @@ test("Firmata adapter embeds the actual parser/client and uses its firmware baud
   assert.match(source, /class FirmataParser/);
   new Function(source);
 });
+test("HelloLED and four-signal sketches switch API without retaining an inline second port", () => {
+  for (const name of ["one-led", "four-signals"]) {
+    const p = JSON.parse(
+      readFileSync(
+        new URL("../public/examples/" + name + ".json", import.meta.url),
+      ),
+    );
+    const native = embedComms(p.p5.webserial, "native");
+    assert.match(native, /navigator.serial/);
+    assert.doesNotMatch(native, /createSerial\(/);
+    assert.match(native, /function acceptLine/);
+    new Function(native);
+    const web = embedComms(native, "webserial");
+    assert.equal(web.match(/createSerial\(/g).length, 1);
+    new Function(web);
+  }
+});
