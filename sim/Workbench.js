@@ -510,7 +510,7 @@ export class Workbench {
     const mainViews = node(
       "div",
       "main-view-tools",
-      '<nav class="wb-tabs" role="tablist" aria-label="Main views"><button role="tab" data-main-view="circuit" title="Circuit" aria-label="Circuit"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="5" width="14" height="14" rx="1"/><path d="M8 1v4m4-4v4m4-4v4M8 19v4m4-4v4m4-4v4M1 8h4m-4 4h4m-4 4h4m14-8h4m-4 4h4m-4 4h4"/></svg></button><button role="tab" data-main-view="p5" title="p5 render" aria-label="p5 render">p5⋆</button></nav><select id="mainLayout" aria-label="Main layout"><option value="tabs">Tabs</option><option value="horizontal">Horizontal split</option><option value="vertical">Vertical split</option></select><button id="projectCircuit" title="Mirror circuit to projection window" aria-label="Circuit projection window">↗</button><button id="projectP5" title="Mirror p5 to projection window" aria-label="p5 projection window">↗</button>',
+      '<nav class="wb-tabs" role="tablist" aria-label="Main views"><button role="tab" data-main-view="circuit" title="Circuit" aria-label="Circuit"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="5" width="14" height="14" rx="1"/><path d="M8 1v4m4-4v4m4-4v4M8 19v4m4-4v4m4-4v4M1 8h4m-4 4h4m-4 4h4m14-8h4m-4 4h4m-4 4h4"/></svg></button><button role="tab" data-main-view="p5" title="p5 render" aria-label="p5 render">p5</button></nav><select id="mainLayout" aria-label="Main layout"><option value="tabs">Tabs</option><option value="horizontal">Horizontal split</option><option value="vertical">Vertical split</option></select><button id="projectCircuit" title="Mirror circuit to projection window" aria-label="Circuit projection window">↗</button><button id="projectP5" title="Mirror p5 to projection window" aria-label="p5 projection window">↗</button>',
     );
     // Main view navigation shares the global toolbar; the canvas keeps the full height.
     const layoutSelect = mainViews.querySelector("#mainLayout");
@@ -600,12 +600,14 @@ export class Workbench {
     });
     ctx.bridge.addEventListener("status", (e) => {
       this.editorStatus("p5", e.detail);
-      this.p5Running = /p5 running|Loading p5|Starting p5|Recovering p5/.test(
+      this.p5Running = /p5 running/.test(
         e.detail,
       );
       this.syncTransport();
     });
     ctx.bridge.addEventListener("runtimeError", (e) => {
+      this.p5Running=false;
+      this.syncTransport();
       this.editorStatus("p5", e.detail.message, "error");
       $("p5Console").textContent += e.detail.message + "\n";
       this.bottomTab("console");
@@ -1063,6 +1065,10 @@ export class Workbench {
   }
   syncTransport(arduinoRunning = this.arduinoRunning || false) {
     this.arduinoRunning = arduinoRunning;
+    for(const [kind,on] of [["circuit",arduinoRunning],["p5",!!this.p5Running]]) {
+      const button=this.editorPanel?.ownerDocument.querySelector(`[data-main-view="${kind}"]`);
+      if(button){button.dataset.running=String(on);button.title=(kind==="circuit"?"Circuit":"p5 render")+(on?" · running":" · stopped");}
+    }
     for (const [button, on, label] of [
       [$("compile"), arduinoRunning, "Arduino"],
       [this.p5RunButton, !!this.p5Running, "p5"],

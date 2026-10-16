@@ -1,3 +1,4 @@
+import {listCameras,cameraConstraints} from "./cameraSources.js";
 import { icon } from "./uiIcons.js";
 export function installSceneMedia(wb) {
   wb.cameraStreams = new Map();
@@ -303,15 +304,31 @@ export function decorateMedia(wb, ref, scene, content, handle, row) {
       start.setAttribute("aria-label", on ? "Stop camera" : "Start camera");
       start.title = on ? "Stop camera" : "Start camera";
     };
+    const sourceSelect=document.createElement("select");
+    sourceSelect.className="camera-source";
+    sourceSelect.setAttribute("aria-label","Webcam source");
+    sourceSelect.title="Choose webcam (Desk View uses window sharing)";
+    const refreshCameras=async()=>{
+      try {
+        const devices=await listCameras(navigator.mediaDevices);
+        sourceSelect.replaceChildren(new Option("Default camera",""),...devices.map(d=>new Option(d.label,d.id)));
+        sourceSelect.value=devices.some(d=>d.id===ref.deviceId)?ref.deviceId:"";
+      } catch { sourceSelect.replaceChildren(new Option("Default camera","")); }
+    };
+    refreshCameras();
+    const deviceChange=()=>refreshCameras();
+    navigator.mediaDevices?.addEventListener?.("devicechange",deviceChange);
+    const observer=new MutationObserver(()=>{if(!scene.isConnected){navigator.mediaDevices?.removeEventListener?.("devicechange",deviceChange);observer.disconnect();}});
+    observer.observe(document.body,{childList:true,subtree:true});
     paint(!!content.srcObject);
-    start.onclick = async () => {
+    const startCamera = async (replace=false) => {
       try {
         if (!navigator.mediaDevices?.getUserMedia)
           throw new Error(
             "Camera capture is unavailable in this browser. Open this project in Chrome or Edge on localhost/HTTPS.",
           );
         const old = wb.cameraStreams.get(ref.id);
-        if (old) {
+        if (old && !replace) {
           old.getTracks().forEach((t) => t.stop());
           wb.cameraStreams.delete(ref.id);
           content.srcObject = null;
@@ -321,29 +338,36 @@ export function decorateMedia(wb, ref, scene, content, handle, row) {
           return;
         }
         start.disabled = true;
+        sourceSelect.disabled = true;
         placeholder.hidden = false;
         placeholder.textContent = "Waiting for camera permission…";
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: false,
-        });
+        const stream = await navigator.mediaDevices.getUserMedia(cameraConstraints(ref.deviceId));
         if (!wb.references.some(r => r.id === ref.id)) {
           stream.getTracks().forEach(t => t.stop());
           return;
         }
         wb.cameraStreams.set(ref.id, stream);
         content.srcObject = stream;
+        old?.getTracks().forEach(t=>t.stop());
         await content.play();
+        await refreshCameras();
         paint(true);
         placeholder.hidden = true;
         controls.classList.remove("camera-off");
       } catch (e) {
-        placeholder.hidden = false;
+        placeholder.hidden = !!content.srcObject;
         placeholder.textContent = "Camera: " + e.message;
         wb.ctx.notice("Camera: " + e.message);
       } finally {
         start.disabled = false;
+        sourceSelect.disabled = false;
       }
+    };
+    start.onclick=()=>startCamera(false);
+    sourceSelect.onchange=()=>{
+      ref.deviceId=sourceSelect.value;
+      wb.ctx.persist();
+      if(wb.cameraStreams.has(ref.id))startCamera(true);
     };
     const share = document.createElement("button");
     share.className = "ui-icon-button";
@@ -403,7 +427,8 @@ export function decorateMedia(wb, ref, scene, content, handle, row) {
       }
     };
     const snap = document.createElement("button");
-    snap.textContent = "◉";
+    snap.className="ui-icon-button";
+    snap.append(icon("record"));
     snap.title = "Save webcam snapshot to assets";
     snap.setAttribute("aria-label", snap.title);
     snap.onclick = () => {
@@ -456,6 +481,8 @@ export function decorateMedia(wb, ref, scene, content, handle, row) {
       flip.setAttribute("aria-pressed", String(ref.flipX));
       wb.ctx.persist();
     };
-    controls.append(start, share, snap, flip, opacity);
+    controls.append(start,sourceSelect,share,snap,flip,opacity);
+    const close=scene.querySelector(".media-close");
+    if(close)controls.append(close);
   }
 }

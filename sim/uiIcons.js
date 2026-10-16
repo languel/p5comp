@@ -170,7 +170,7 @@ export function initializeIconSystem(root = document) {
         )
           kind = "panels";
         if (control.dataset.mainView === "circuit") kind = "chip";
-        if (control.dataset.tab === "arduino") kind = "arduino";
+        if (control.dataset.tab === "arduino") kind = "chip";
         if (control.dataset.tab === "properties") kind = "properties";
         if (control.dataset.tab === "settings") kind = "gear";
         if (control.id === "collapseBottom") kind = "chevron";

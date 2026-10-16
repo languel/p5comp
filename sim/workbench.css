@@ -1748,3 +1748,63 @@ button[data-running="true"][aria-label="Stop p5"] {
 .diy-guide pre { overflow-x: auto; padding: 10px; background: var(--ui-hover); }
 .audio-settings > div { display: grid; gap: 10px; padding: 10px 0; }
 .audio-settings input, .audio-settings select { max-width: 100%; }
+/* Capture chrome stays within the image, and disappears as a single unit. */
+.camera-overlay.scene-visual .webcam-controls,
+.camera-overlay .webcam-controls.camera-off {
+  top: 0;
+  bottom: auto;
+  left: 0;
+  right: 0;
+  gap: 2px;
+  padding: 3px;
+  min-height: 30px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+  background: var(--ui-panel);
+}
+.camera-overlay:hover .webcam-controls,
+.camera-overlay .webcam-controls:has(:focus-visible) {
+  opacity: 1;
+  pointer-events: auto;
+}
+.camera-overlay .webcam-controls .ui-icon-button {
+  flex: 0 0 26px;
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  min-height: 26px;
+  padding: 4px;
+}
+.camera-overlay .webcam-controls .media-close {
+  position: static;
+  margin-left: auto;
+  opacity: 1;
+}
+.camera-overlay .webcam-controls .camera-source {
+  min-width: 0;
+  width: 90px;
+  flex: 1 1 70px;
+  padding: 3px;
+  font-size: 11px;
+  text-overflow: ellipsis;
+}
+.camera-overlay .webcam-controls input[type="range"] {
+  min-width: 30px;
+  width: 48px;
+  flex: 0 1 48px;
+}
+[data-main-view][data-running="true"] > :is(svg,.ui-wordmark) {
+  filter: drop-shadow(0 0 3px currentColor);
+  animation: runtime-glow 2.4s ease-in-out infinite;
+}
+@keyframes runtime-glow {
+  0%,100% { filter: drop-shadow(0 0 1px currentColor); }
+  50% { filter: drop-shadow(0 0 4px currentColor); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-main-view][data-running="true"] > :is(svg,.ui-wordmark) { animation: none; }
+}
+@media (hover: none) {
+  .camera-overlay .webcam-controls { opacity: 1; pointer-events: auto; }
+}
