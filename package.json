@@ -11,7 +11,8 @@
     "start": "npm run build && node server/index.js",
     "test": "node --test",
     "mcp": "node server/mcp.js",
-    "verify:examples": "node scripts/verify-examples.mjs"
+    "verify:examples": "node scripts/verify-examples.mjs",
+    "vendor:ams": "sh -c 'cd \"${AMS_DIR:-$HOME/dev/artistmodelstudio}\" && npm run build:embed && scripts/sync-embed.sh \"$OLDPWD/public/vendor/ams-editor\"'"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.18.6",

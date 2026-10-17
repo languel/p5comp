@@ -6,3 +6,4 @@ dist/
 *.log
 *-preview.png
 .playwright-mcp/
+public/vendor/ams-editor/

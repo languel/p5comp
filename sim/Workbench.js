@@ -18,6 +18,7 @@ import {
   setEditorPreferences,
 } from "../shared/editor/editorPreferences.js";
 import { ProjectionWindows } from "./ProjectionWindows.js";
+import { DrawingBoard } from "./DrawingBoard.js";
 import { createEditor } from "../shared/editor/createEditor.js";
 import { circuitSVG, svgPNG } from "./exportCircuit.js";
 import { jsPDF } from "jspdf";
@@ -534,7 +535,7 @@ export class Workbench {
     const mainViews = node(
       "div",
       "main-view-tools",
-      '<nav class="wb-tabs" role="tablist" aria-label="Main views"><button role="tab" data-main-view="circuit" title="Circuit" aria-label="Circuit"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="5" width="14" height="14" rx="1"/><path d="M8 1v4m4-4v4m4-4v4M8 19v4m4-4v4m4-4v4M1 8h4m-4 4h4m-4 4h4m14-8h4m-4 4h4m-4 4h4"/></svg></button><button role="tab" data-main-view="p5" title="p5 render" aria-label="p5 render">p5</button></nav><select id="mainLayout" aria-label="Main layout"><option value="tabs">Tabs</option><option value="horizontal">Horizontal split</option><option value="vertical">Vertical split</option></select><button id="projectCircuit" title="Mirror circuit to projection window" aria-label="Circuit projection window">↗</button><button id="projectP5" title="Mirror p5 to projection window" aria-label="p5 projection window">↗</button>',
+      '<nav class="wb-tabs" role="tablist" aria-label="Main views"><button role="tab" data-main-view="circuit" title="Circuit" aria-label="Circuit"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="5" width="14" height="14" rx="1"/><path d="M8 1v4m4-4v4m4-4v4M8 19v4m4-4v4m4-4v4M1 8h4m-4 4h4m-4 4h4m14-8h4m-4 4h4m-4 4h4"/></svg></button><button role="tab" data-main-view="p5" title="p5 render" aria-label="p5 render">p5</button><button role="tab" data-main-view="draw" title="Drawing" aria-label="Drawing"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 013 3L8 19z"/><path d="M14 7l3 3"/></svg></button></nav><select id="mainLayout" aria-label="Main layout"><option value="tabs">Tabs</option><option value="horizontal">Horizontal split</option><option value="vertical">Vertical split</option></select><button id="projectCircuit" title="Mirror circuit to projection window" aria-label="Circuit projection window">↗</button><button id="projectP5" title="Mirror p5 to projection window" aria-label="p5 projection window">↗</button>',
     );
     // Main view navigation shares the global toolbar; the canvas keeps the full height.
     const layoutSelect = mainViews.querySelector("#mainLayout");
@@ -565,6 +566,19 @@ export class Workbench {
     divider.setAttribute("aria-label", "Resize circuit and p5 panels");
     divider.title = "Drag to resize · double-click to reset";
     workspace.append(divider);
+    this.drawing = new DrawingBoard({
+      workspace,
+      stage: $("stage"),
+      canvas: ctx.canvas,
+      tools: document.querySelector(".canvas-tools"),
+      persist: () => ctx.persist(),
+      addAsset: async (name, blob) => {
+        this.assets[name] = { src: await assetDataURL(blob), type: blob.type, size: blob.size };
+        ctx.persist();
+        this.renderAssets();
+        this.scheduleP5();
+      },
+    });
     const setSplit = (ratio) => {
       this.splitRatio = Math.max(0.15, Math.min(0.85, ratio));
       workspace.style.setProperty("--view-first", this.splitRatio + "fr");
@@ -1246,6 +1260,7 @@ export class Workbench {
       layout: this.layout,
       activeView: this.activeView,
       splitRatio: this.splitRatio,
+      drawing: this.drawing?.snapshot() || undefined,
     };
   }
   restore(d) {
@@ -1273,6 +1288,7 @@ export class Workbench {
     this.applySettings();
     this.renderReferences();
     this.selectPart();
+    this.drawing?.load(d.drawing);
     this.mainView(
       d.activeView || "circuit",
       ["tabs", "horizontal", "vertical"].includes(d.layout) ? d.layout : "tabs",
@@ -1691,11 +1707,14 @@ export class Workbench {
     workspace.dataset.layout = this.layout;
     workspace.classList.remove("canvas-expanded");
     const circuitPanel = document.querySelector(".circuit-panel");
+    const drawing = this.activeView === "draw";   // the Draw tab takes the whole area, in any layout
     circuitPanel.hidden =
-      this.layout === "tabs" && this.activeView !== "circuit";
+      drawing || (this.layout === "tabs" && this.activeView !== "circuit");
     circuitPanel.inert = circuitPanel.hidden;
     circuitPanel.setAttribute("aria-hidden", String(circuitPanel.hidden));
-    this.preview.hidden = this.layout === "tabs" && this.activeView !== "p5";
+    this.preview.hidden = drawing || (this.layout === "tabs" && this.activeView !== "p5");
+    workspace.classList.toggle("drawing", drawing);
+    this.drawing?.setView({ tab: drawing, circuit: !circuitPanel.hidden });
     document
       .querySelectorAll("[data-main-view]")
       .forEach((b) =>
