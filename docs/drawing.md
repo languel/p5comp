@@ -30,3 +30,5 @@ It builds the editor there (`npm run build:embed`) and copies it to `public/vend
 - Marks live on one large transparent board (2400 × 1600 at the origin); marks outside it are kept but are not in the PNG.
 - Undo in the editor and undo in the circuit are separate; the editor's follows its own history.
 - Deployed builds (`PAGES_BASE`) need the vendored folder committed or copied in the build step.
+
+- **Alt+Z** on the circuit switches the drawing layer and its toolbar on and off (in the Draw tab it is the editor's own zen). **Theme:** the editor follows p5comp's theme (`data-theme` on `<html>`) automatically.

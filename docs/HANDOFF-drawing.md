@@ -6,8 +6,8 @@ State on 17 Oct 2026. Branch `ams-editor-integration`, five commits on top of p5
 
 The Artist Model Studio drawing editor, embedded as an iframe through a small message protocol (`ams-editor-v1`).
 
-- **✎** (a button in the circuit's canvas tools): a transparent layer over the circuit canvas. The pointer draws instead of moving parts; only the editor's tool strip shows, across the top. Switched off, the drawing stays visible and the circuit is edited as before. Pan and zoom are shared: move either and the other follows. The editor has no zoom, fit or frame of its own here (the circuit owns the view), and no presentation menu.
-- **The Draw tab** (✎ in the top bar, next to Circuit and p5): the same drawing over the whole work area, with its own camera and the editor's own interface back (menu strip, zoom, panels, zen with Alt+Z). This is the editor's standalone mode; back on the circuit it is a bare layer again.
+- **✎** (a button in the circuit's canvas tools): a transparent layer over the circuit canvas. The pointer draws instead of moving parts; only the editor's one toolbar shows, across the top. Switched off, the drawing stays visible and the circuit is edited as before. Pan and zoom are shared: move either and the other follows. The editor has no zoom, fit or frame of its own here (the circuit owns the view), and no presentation menu.
+- **The Draw tab** (✎ in the top bar, next to Circuit and p5): the same drawing over the whole work area, with its own camera and the editor's own interface back (one toolbar with its menu, optional zoom controls toggled in the menu, Layers and Properties in the left sidebar, zen with Alt+Z). This is the editor's standalone mode; back on the circuit it is a bare layer again.
 - **Right-click in the drawing → Save selection as PNG / SVG to assets** (the whole drawing when nothing is selected): adds `drawing.png`, `drawing-2.png`, … as project assets for `loadImage`. A short message confirms and fades. No separate toolbar.
 - **Notes:** Opt+right-click a text note (or use the Note tool) for Font, Size and Style. Notes start in sans (the hand fonts are webfonts p5comp does not load, so the system's script font would stand in).
 - The drawing is saved in the project (`workbench.drawing`, the editor's JSON) and restored when a project opens.
@@ -38,6 +38,11 @@ cd ~/dev/arduino/p5comp-ams && npx vite --host 127.0.0.1 --port 5199
 ```
 
 To take it into the main checkout: `git merge ams-editor-integration` (fast-forward) or `git cherry-pick 3ac9be3..554389a`, then `npm run vendor:ams`.
+
+## Also
+
+- Alt+Z on the circuit switches the drawing layer and its toolbar on and off. The editor follows p5comp's theme (`data-theme`) through the client's `theme: 'host'` default.
+- The editor's menu (≡, first in its toolbar) holds the view items and, in the Draw tab, a toggle for the zoom controls.
 
 ## Checklist (all verified with synthetic events in the browser)
 

@@ -42,9 +42,19 @@ export class DrawingBoard {
     tools.append(this.toggle);
     new ResizeObserver(() => this.place()).observe(stage);
     new ResizeObserver(() => this.place()).observe(workspace);
+    // Alt+Z: the drawing layer and its toolbar on or off (in the Draw tab the editor's own zen works).
+    window.addEventListener("keydown", (e) => this.key(e));
     // The circuit's camera goes to the editor.
     const view = canvas.onViewChange;
     canvas.onViewChange = (...a) => { view?.(...a); this.follow(); };
+  }
+
+  key(e) {
+    const alt = e.altKey ?? e.alt;
+    if (!alt || e.code !== "KeyZ" || e.ctrlKey || e.metaKey || this.tab) return;
+    if (e.target?.closest?.("input, textarea, select, [contenteditable], .cm-editor")) return;
+    e.preventDefault?.();
+    this.setActive(!this.active);
   }
 
   /** The drawing for the project file (null until something was drawn or loaded). */
@@ -124,7 +134,6 @@ export class DrawingBoard {
         const editor = await createEditor(this.layer, {
           src: EDITOR_URL + "embed.html",
           ns: "p5comp-draw",
-          theme: document.documentElement.dataset.theme === "dark" ? "dark" : "light",
           boards: [BOARD],
           document: this.doc || undefined,
           overlay: true,
@@ -136,11 +145,9 @@ export class DrawingBoard {
         this.applyUI();
         editor.on("change", () => this.changed());
         editor.on("action", (m) => this.save(m.id, m.ids));
+        editor.on("key", (m) => this.key(m));   // keys the editor does not use (Alt+Z in the layer)
         // The editor's own pans and zooms go to the circuit.
         editor.on("camera", (m) => this.lead(m));
-        new MutationObserver(() =>
-          editor.setTheme(document.documentElement.dataset.theme === "dark" ? "dark" : "light"),
-        ).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
         this.say("");
       } catch (error) {
         this.say("The drawing editor is not installed: run npm run vendor:ams", 12000);
