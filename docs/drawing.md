@@ -4,11 +4,13 @@ The drawing editor is the Artist Model Studio's, embedded (branch `ams-editor-in
 
 ## Use
 
-- **✎** in the circuit's canvas tools switches a transparent layer on over the circuit. The pointer then draws (pen, brushes, shapes, colors, sculpting: the editor's tool strip appears down the left edge of the canvas, ; the studio's presentation menu, zoom and fit are left out because the circuit has its own view) instead of moving parts. Switched off, the drawing stays visible and the circuit is edited as before. The drawing and the circuit share one camera: pan or zoom either and the other follows.
+- **✎** in the circuit's canvas tools switches a transparent layer on over the circuit. The pointer then draws (pen, brushes, shapes, colors, sculpting: the editor's tool strip appears across the top of the canvas, ; the studio's presentation menu, zoom and fit are left out because the circuit has its own view) instead of moving parts. Switched off, the drawing stays visible and the circuit is edited as before. The drawing and the circuit share one camera: pan or zoom either and the other follows.
 - **The Draw tab** (pencil, next to Circuit and p5) shows the same drawing over the whole work area on a plain ground, with its own camera.
 - **Right-click** in the drawing for **Save selection as PNG / SVG to assets**: the selected marks (the whole drawing when nothing is selected) become a project asset, `drawing.png`, `drawing-2.png`, … the sketch loads with `loadImage('drawing.png')`. A short message confirms and goes away by itself.
 - The drawing is saved in the project (`workbench.drawing`, the editor's JSON) and in project files; opening a project replaces it.
 - Right-click menus, Ctrl+right-click (colors), Shift+Space (radial tool menu) and the other shortcuts of the editor work while drawing; Cmd+K is its command palette.
+
+- **Notes:** Opt+right-click a text note (or use the Note tool) for its font, size and style. Notes start in the sans font; the hand fonts are webfonts that p5comp does not load, so the system's script font would stand in.
 
 ## Install the editor
 

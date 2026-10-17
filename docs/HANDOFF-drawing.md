@@ -7,9 +7,9 @@ State on 17 Oct 2026. Branch `ams-editor-integration`, one commit (`3ac9be3`) on
 The Artist Model Studio drawing editor, embedded as an iframe through a small message protocol (`ams-editor-v1`). Two ways to use it:
 
 - **✎** (a new button in the circuit's canvas tools): a transparent layer over the circuit canvas. The pointer draws instead of moving parts; the editor's own tools appear. Off, the drawing stays visible and the circuit is edited as before. Pan and zoom are shared: move either and the other follows.
-- **The Draw tab** (pencil icon, next to Circuit and p5): the same drawing over the whole work area, with its own camera.
+- **The Draw tab** (pencil icon, next to Circuit and p5): the same drawing over the whole work area, with its own camera, and the editor's own interface back (the menu strip, zoom, panels, zen with Alt+Z). It is the standalone mode of the editor; back on the circuit it is a bare layer again.
 
-Right-click in the drawing: **Save selection as PNG / SVG to assets** (the whole drawing when nothing is selected) adds `drawing.png`, `drawing-2.png`, … as project assets for `loadImage`. Only the tool strip shows while drawing, tucked down the left edge; the editor's presentation menu, zoom and fit are left out (the circuit has its own view). Messages fade after a few seconds. The pencil is the same glyph on the Draw tab and the canvas button. The drawing is saved in the project (`workbench.drawing`) and restored when a project opens.
+Right-click in the drawing: **Save selection as PNG / SVG to assets** (the whole drawing when nothing is selected) adds `drawing.png`, `drawing-2.png`, … as project assets for `loadImage`. Only the tool strip shows while drawing, across the top; the editor's presentation menu, zoom and fit are left out (the circuit has its own view). Messages fade after a few seconds. The pencil is the same glyph on the Draw tab and the canvas button. The drawing is saved in the project (`workbench.drawing`) and restored when a project opens.
 
 ## Files (the whole integration)
 

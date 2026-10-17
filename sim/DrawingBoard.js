@@ -65,8 +65,10 @@ export class DrawingBoard {
     const was = this.tab;
     this.tab = tab;
     this.circuitShown = circuit;
-    if (tab) this.start().then(() => this.editor?.setUI({ tools: true }).then(() => this.editor.focus()));
-    else if (was) { this.editor?.setUI({ tools: this.active }); this.follow(true); }
+    // The Draw tab is the editor on its own, with the studio's interface (menu, zoom, panels, zen); drawing on the
+    // circuit is a bare layer, and the circuit owns the view.
+    if (tab) this.start().then(() => { this.applyUI(); this.editor?.focus(); });
+    else if (was) { this.applyUI().then(() => this.follow(true)); }
     this.place();
   }
 
@@ -90,11 +92,23 @@ export class DrawingBoard {
     this.active = on;
     this.toggle.setAttribute("aria-pressed", String(on));
     this.place();
-    if (on) this.start().then(() => this.editor?.setUI({ tools: true }).then(() => this.editor.focus()));
+    if (on) this.start().then(() => { this.applyUI(); this.editor?.focus(); });
     else {
-      this.editor?.setUI({ tools: false });
+      this.applyUI();
       this.editor?.getDocument().then((r) => this.remember(r)).catch(() => {});
     }
+  }
+
+  /** What the editor shows, one request after another so they cannot overtake each other. */
+  applyUI() {
+    const editor = this.editor;
+    if (!editor) return Promise.resolve();
+    const tab = this.tab, tools = this.active || tab;
+    this.uiChain = (this.uiChain || Promise.resolve()).then(async () => {
+      await editor.setMode(tab ? "standalone" : "overlay");
+      await editor.setUI(tab ? { tools: true, view: true, zoom: true, panels: true } : { tools, view: false, zoom: false, panels: false });
+    }).catch(() => {});
+    return this.uiChain;
   }
 
   async start() {
@@ -115,11 +129,11 @@ export class DrawingBoard {
           document: this.doc || undefined,
           overlay: true,
           ui: { tools: this.active || this.tab },
-          dock: "left",
           actions: ACTIONS,
           camera: this.camera(),
         });
         this.editor = editor;
+        this.applyUI();
         editor.on("change", () => this.changed());
         editor.on("action", (m) => this.save(m.id, m.ids));
         // The editor's own pans and zooms go to the circuit.
