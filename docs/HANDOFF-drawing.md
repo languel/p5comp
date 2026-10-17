@@ -21,7 +21,8 @@ State on 17 Oct 2026. The integration was merged into `main` (`e9fd570`) from th
 
 ## To try it
 
-The editor build is not committed (13 MB). It already sits, ignored, in the worktree's `public/vendor/ams-editor/`. To get it elsewhere:
+The lean editor build is about 784 KB and is not committed. It is generated into
+the ignored `public/vendor/ams-editor/` folder:
 
 ```sh
 npm run vendor:poliplan              # the lean editor (canvas, tools, the panels an editor needs)
@@ -30,14 +31,16 @@ AMS_FULL=1 npm run vendor:poliplan   # the chunky build with every studio panel
 
 Both build `~/dev/artistmodelstudio` (the studio's `main`; `AMS_DIR` to change) and copy the result into `public/vendor/ams-editor/` with a `VERSION` file.
 
-Easiest test, in the worktree (it has `node_modules` copied from the main checkout; run `npm install` there if dependencies changed):
+To test from the main checkout after vendoring:
 
 ```sh
-cd ~/dev/arduino/p5comp-ams && npx vite --host 127.0.0.1 --port 5199
+cd ~/dev/arduino/p5comp
+npx vite --host 127.0.0.1 --port 5199
 # open http://127.0.0.1:5199/sim/
 ```
 
-To take it into the main checkout: `git merge ams-editor-integration` (fast-forward) or `git cherry-pick 3ac9be3..554389a`, then `npm run vendor:poliplan`.
+The temporary integration worktrees and branches have been retired. Keep editor
+changes in the studio repo and re-run `npm run vendor:poliplan` here.
 
 ## Also
 
