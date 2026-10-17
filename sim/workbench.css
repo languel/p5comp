@@ -1866,29 +1866,19 @@ button[data-running="true"][aria-label="Stop p5"] {
   background: transparent;
   color-scheme: normal;
 }
-.draw-tools {
+.draw-status {
   position: absolute;
-  right: 8px;
-  top: 8px;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
   z-index: 7;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 6px;
+  max-width: 90%;
+  padding: 4px 10px;
   border: 1px solid var(--ui-line);
   border-radius: 6px;
   background: var(--ui-panel);
   font-size: 11px;
-}
-.draw-tools[hidden] {
-  display: none;
-}
-.draw-tools button {
-  padding: 3px 7px;
-  font-size: 11px;
-}
-.draw-status {
-  opacity: 0.7;
+  pointer-events: none;
 }
 .draw-status:empty {
   display: none;

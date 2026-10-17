@@ -3,20 +3,23 @@
  * (public/vendor/ams-editor/, see docs/drawing.md). One pencil button in the canvas tools switches the layer on:
  * the pointer then draws instead of moving parts, and the editor's own tools appear. Switched off, the drawing
  * stays visible and the circuit is edited as before. The two views share one camera (pan and zoom either way), the
- * project owns the drawing (workbench.snapshot().drawing), and a PNG of it can become a project asset the p5 sketch
- * loads by name. The Draw tab shows the same editor and drawing over the whole work area, with its own camera.
+ * project owns the drawing (workbench.snapshot().drawing). The editor's right-click menu has "Save selection as PNG / SVG
+ * to assets" (the whole drawing when nothing is selected): the file becomes a project asset the p5 sketch loads by name. The Draw tab shows the same editor and drawing over the whole work area, with its own camera.
  */
 import { basePath } from "../shared/basePath.js";
 
 const EDITOR_URL = basePath("vendor/ams-editor/");
 // One big transparent board under everything: marks need a home, and nothing of it is drawn.
 const BOARD = { id: "main", title: "drawing", width: 2400, height: 1600, ground: "transparent", hideBorder: true, hideLabel: true };
-const ASSET = "drawing.png";
+const ACTIONS = [
+  { id: "png", label: "Save selection as PNG to assets", hint: "The selected marks (the whole drawing when nothing is selected) as a transparent PNG project asset the p5 sketch can load" },
+  { id: "svg", label: "Save selection as SVG to assets", hint: "The same as an SVG project asset" },
+];
 const hasMarks = (doc) => Boolean(doc?.elements?.length);
 
 export class DrawingBoard {
-  constructor({ workspace, stage, canvas, tools, persist, addAsset }) {
-    Object.assign(this, { workspace, stage, canvas, persist, addAsset });
+  constructor({ workspace, stage, canvas, tools, persist, addAsset, assetNames }) {
+    Object.assign(this, { workspace, stage, canvas, persist, addAsset, assetNames });
     this.tab = false;
     this.circuitShown = true;
     this.doc = null;
@@ -25,17 +28,10 @@ export class DrawingBoard {
     this.layer.className = "draw-layer";
     this.layer.hidden = true;
     workspace.append(this.layer);   // (never moved: an iframe that moves in the page starts again)
-    this.bar = document.createElement("div");
-    this.bar.className = "draw-tools";
-    this.bar.hidden = true;
-    this.bar.innerHTML =
-      '<button data-draw="asset" title="Put a PNG of the drawing in the project assets, so the p5 sketch can load it: loadImage(\'drawing.png\')" aria-label="Use as p5 image">▣</button>' +
-      '<button data-draw="svg" title="Save the drawing as SVG" aria-label="Save SVG">⤓</button>' +
-      '<span class="draw-status" role="status"></span>';
-    this.layer.append(this.bar);
-    this.status = this.bar.querySelector(".draw-status");
-    this.bar.querySelector('[data-draw="asset"]').onclick = () => this.useInP5();
-    this.bar.querySelector('[data-draw="svg"]').onclick = () => this.saveSVG();
+    this.status = document.createElement("div");   // a message that goes away by itself
+    this.status.className = "draw-status";
+    this.status.setAttribute("role", "status");
+    this.layer.append(this.status);
     this.toggle = document.createElement("button");
     this.toggle.id = "drawLayer";
     this.toggle.setAttribute("aria-pressed", "false");
@@ -69,8 +65,8 @@ export class DrawingBoard {
     const was = this.tab;
     this.tab = tab;
     this.circuitShown = circuit;
-    if (tab) this.start().then(() => this.editor?.setUI({ tools: true, view: true }).then(() => this.editor.focus()));
-    else if (was) { this.editor?.setUI({ tools: this.active, view: this.active }); this.follow(true); }
+    if (tab) this.start().then(() => this.editor?.setUI({ tools: true }).then(() => this.editor.focus()));
+    else if (was) { this.editor?.setUI({ tools: this.active }); this.follow(true); }
     this.place();
   }
 
@@ -81,7 +77,6 @@ export class DrawingBoard {
     this.layer.classList.toggle("tab", this.tab);
     const on = this.active || this.tab;
     this.layer.classList.toggle("active", on);
-    this.bar.hidden = !on;
     this.toggle.hidden = this.tab;
     if (this.tab) {
       Object.assign(this.layer.style, { left: "0", top: "0", width: "100%", height: "100%" });
@@ -95,9 +90,9 @@ export class DrawingBoard {
     this.active = on;
     this.toggle.setAttribute("aria-pressed", String(on));
     this.place();
-    if (on) this.start().then(() => this.editor?.setUI({ tools: true, view: true }).then(() => this.editor.focus()));
+    if (on) this.start().then(() => this.editor?.setUI({ tools: true }).then(() => this.editor.focus()));
     else {
-      this.editor?.setUI({ tools: false, view: false });
+      this.editor?.setUI({ tools: false });
       this.editor?.getDocument().then((r) => this.remember(r)).catch(() => {});
     }
   }
@@ -119,12 +114,14 @@ export class DrawingBoard {
           boards: [BOARD],
           document: this.doc || undefined,
           overlay: true,
-          ui: { tools: this.active || this.tab, view: this.active || this.tab },
+          ui: { tools: this.active || this.tab },
           dock: "left",
+          actions: ACTIONS,
           camera: this.camera(),
         });
         this.editor = editor;
         editor.on("change", () => this.changed());
+        editor.on("action", (m) => this.save(m.id, m.ids));
         // The editor's own pans and zooms go to the circuit.
         editor.on("camera", (m) => this.lead(m));
         new MutationObserver(() =>
@@ -183,20 +180,16 @@ export class DrawingBoard {
     if (text) this.sayTimer = setTimeout(() => (this.status.textContent = ""), ms);
   }
 
-  async useInP5() {
-    if (!this.editor) return this.say("Open the drawing first.");
-    const { blob } = await this.editor.export({ board: BOARD.id, format: "png", scale: 1, transparent: true });
-    await this.addAsset(ASSET, blob);
-    this.say(`${ASSET} is in the project assets: loadImage('${ASSET}')`);
-  }
-
-  async saveSVG() {
-    if (!this.editor) return this.say("Open the drawing first.");
-    const { text } = await this.editor.export({ board: BOARD.id, format: "svg" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" }));
-    a.download = "drawing.svg";
-    a.click();
-    URL.revokeObjectURL(a.href);
+  /** A right-click choice: the selected marks (or the whole drawing) become a PNG or SVG project asset. */
+  async save(kind, ids) {
+    try {
+      const r = await this.editor.export(ids?.length ? { format: kind, ids, scale: 1 } : { board: BOARD.id, format: kind, scale: 1, transparent: true });
+      const out = r.blob || new Blob([r.text], { type: "image/svg+xml" });   // (the whole drawing's SVG comes back as text)
+      const name = this.assetNames(`drawing.${kind}`);
+      await this.addAsset(name, out);
+      this.say(`${name} is in the project assets: loadImage('${name}')`);
+    } catch (error) {
+      this.say(`Could not save: ${error.message}`, 8000);
+    }
   }
 }

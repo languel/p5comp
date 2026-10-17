@@ -572,6 +572,12 @@ export class Workbench {
       canvas: ctx.canvas,
       tools: document.querySelector(".canvas-tools"),
       persist: () => ctx.persist(),
+      assetNames: (wanted) => {   // drawing.png, then drawing-2.png, …
+        const [, stem, ext] = /^(.*)\.(\w+)$/.exec(wanted);
+        let name = wanted;
+        for (let i = 2; this.assets[name]; i++) name = `${stem}-${i}.${ext}`;
+        return name;
+      },
       addAsset: async (name, blob) => {
         this.assets[name] = { src: await assetDataURL(blob), type: blob.type, size: blob.size };
         ctx.persist();

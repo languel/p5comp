@@ -4,13 +4,15 @@ The drawing editor is the Artist Model Studio's, embedded (branch `ams-editor-in
 
 ## Use
 
-- **✎** in the circuit's canvas tools switches a transparent layer on over the circuit. The pointer then draws (pen, brushes, shapes, colors, sculpting: the editor's tool strip appears down the left edge of the canvas, with its menu strip) instead of moving parts. Switched off, the drawing stays visible and the circuit is edited as before. The drawing and the circuit share one camera: pan or zoom either and the other follows.
+- **✎** in the circuit's canvas tools switches a transparent layer on over the circuit. The pointer then draws (pen, brushes, shapes, colors, sculpting: the editor's tool strip appears down the left edge of the canvas, ; the studio's presentation menu, zoom and fit are left out because the circuit has its own view) instead of moving parts. Switched off, the drawing stays visible and the circuit is edited as before. The drawing and the circuit share one camera: pan or zoom either and the other follows.
 - **The Draw tab** (pencil, next to Circuit and p5) shows the same drawing over the whole work area on a plain ground, with its own camera.
-- **▣** (p5 image) puts a transparent PNG of the drawing in the project assets as `drawing.png`; the sketch loads it with `loadImage('drawing.png')`. **⤓** saves it as an SVG file. The message after either goes away by itself.
+- **Right-click** in the drawing for **Save selection as PNG / SVG to assets**: the selected marks (the whole drawing when nothing is selected) become a project asset, `drawing.png`, `drawing-2.png`, … the sketch loads with `loadImage('drawing.png')`. A short message confirms and goes away by itself.
 - The drawing is saved in the project (`workbench.drawing`, the editor's JSON) and in project files; opening a project replaces it.
 - Right-click menus, Ctrl+right-click (colors), Shift+Space (radial tool menu) and the other shortcuts of the editor work while drawing; Cmd+K is its command palette.
 
 ## Install the editor
+
+Two builds: the lean one (default; the canvas, tools and the panels an editor needs: Boards, Outliner, Properties, Settings, Shortcuts, History, Log, opened on demand with Cmd+B, the palette or the menu) and the chunky one with every studio panel: `AMS_FULL=1 npm run vendor:ams`.
 
 The built editor is not committed here (13 MB). With the Artist Model Studio checked out at `~/dev/artistmodelstudio` (or `AMS_DIR`):
 
