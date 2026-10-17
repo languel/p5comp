@@ -4,7 +4,7 @@ The drawing editor is **Poliplan**, the lean embeddable build of the Artist Mode
 
 ## Use
 
-- **✎** in the circuit's canvas tools switches a transparent layer on over the circuit. The pointer then draws (pen, brushes, shapes, colors, sculpting: the editor's tool strip appears across the top of the canvas, ; the studio's presentation menu, zoom and fit are left out because the circuit has its own view) instead of moving parts. Switched off, the drawing stays visible and the circuit is edited as before. The drawing and the circuit share one camera: pan or zoom either and the other follows.
+- **✎** in the circuit's canvas tools switches a transparent layer on over the circuit. The pointer then draws (pen, brushes, shapes, colors, sculpting: the editor's tool strip appears across the top of the canvas; the studio's presentation menu, zoom and fit are left out because the circuit has its own view) instead of moving parts. Switched off, the drawing stays visible and the circuit is edited as before. The drawing and the circuit share one camera: pan or zoom either and the other follows.
 - **The Draw tab** (pencil, next to Circuit and p5) shows the same drawing over the whole work area on a plain ground, with its own camera.
 - **Right-click** in the drawing for **Save selection as PNG / SVG to assets**: the selected marks (the whole drawing when nothing is selected) become a project asset, `drawing.png`, `drawing-2.png`, … the sketch loads with `loadImage('drawing.png')`. A short message confirms and goes away by itself.
 - The drawing is saved in the project (`workbench.drawing`, the editor's JSON) and in project files; opening a project replaces it.
@@ -16,7 +16,7 @@ The drawing editor is **Poliplan**, the lean embeddable build of the Artist Mode
 
 Two builds: Poliplan, the lean one (default, 780 KB: the canvas, tools, brushes, color pickers, exports, and the Boards, Layers (Outliner) and Properties panels, opened on demand with Cmd+B, the palette or the menu; no scenes, assets, recording, lessons, docs, assistant or code editor) and the chunky one with every studio panel: `AMS_FULL=1 npm run vendor:poliplan`.
 
-The built editor is not committed here (13 MB). With the Artist Model Studio checked out at `~/dev/artistmodelstudio` (the studio's `main`; `AMS_DIR` to change):
+The built editor is ignored here (about 784 KB for Poliplan; about 13 MB for the full studio build). With the Artist Model Studio checked out at `~/dev/artistmodelstudio` (the studio's `main`; `AMS_DIR` to change):
 
 ```sh
 npm run vendor:poliplan
@@ -32,3 +32,11 @@ It builds the editor there (`npm run build:embed`) and copies it to `public/vend
 - Deployed builds (`PAGES_BASE`) need the vendored folder committed or copied in the build step.
 
 - **Alt+Z** on the circuit switches the drawing layer and its toolbar on and off (in the Draw tab it is the editor's own zen). **Theme:** the editor follows p5comp's theme (`data-theme` on `<html>`) automatically.
+
+## Agent access
+
+`p5comp_drawing` exposes document reads/replacement, native Poliplan tool
+discovery and calls, layer activation, and PNG/SVG export into project assets.
+Use `p5comp_view` with `main: "draw"` to open the full editor. See the
+[API examples](agents.md#poliplan-drawing). Editor changes still belong in the
+studio repository and are re-vendored here.

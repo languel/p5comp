@@ -56,7 +56,7 @@ changes in the studio repo and re-run `npm run vendor:poliplan` here.
 5. Draw tab: the drawing over the whole area with menu strip, zoom and panels; Alt+Z hides and shows them. Back to Circuit: the bare layer returns over the stage.
 6. Opt+right-click a note: Font, Size, Style; new notes are sans.
 
-Not verified: a real mouse or pen (only dispatched events), touch, saving to and opening a project file with a drawing, the p5comp test suite (`npm test`).
+The p5comp test suite and production build pass after integration. Not verified: a real mouse or pen (only dispatched events), touch, or saving to and opening a project file with a drawing.
 
 ## Known gaps
 

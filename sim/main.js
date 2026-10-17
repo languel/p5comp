@@ -1,3 +1,4 @@
+import { drawingCommand } from "./automation/drawing.js";
 import {formatCode} from "../shared/editor/formatCode.js";
 import {matchingPortName} from "../shared/serial/portIdentity.js";
 import {createSerialActivity} from "./serialActivity.js";
@@ -1803,6 +1804,7 @@ agentSurface = installAgentSurface(
       return { opened: true };
     },
     setControl,
+    drawing: (a) => drawingCommand(workbench.drawing, a),
     exportPDF: async () => { await workbench.export("PDF"); return {downloaded:true,format:"pdf"}; },
     runtime: async (action) => {
       if (action === "start") {

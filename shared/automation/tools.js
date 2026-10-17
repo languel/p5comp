@@ -26,6 +26,20 @@ const tool = (
 });
 export const TOOLS = [
   tool(
+    "drawing",
+    "Read/load the Poliplan document, discover its native tools, call a discovered tool, toggle the circuit drawing layer, or export PNG/SVG to project assets. Drawing changes persist and are captured by process recording. Requires the vendored editor.",
+    {
+      action: { enum: ["get", "load", "tools", "call", "active", "export"] },
+      document: obj,
+      name: str,
+      arguments: obj,
+      active: bool,
+      format: { enum: ["png", "svg"] },
+      ids: { type: "array", items: str },
+    },
+    ["action"],
+  ),
+  tool(
     "export",
     "Export a project JSON, ZIP, SVG or PNG as text/base64, or download a PDF with code.",
     {
@@ -218,7 +232,7 @@ export const TOOLS = [
     {
       inspector: { enum: ["arduino", "p5", "properties", "help", "settings"] },
       bottom: { enum: ["simulation", "serial", "console"] },
-      main: { enum: ["circuit", "p5"] },
+      main: { enum: ["circuit", "p5", "draw"] },
       layout: { enum: ["tabs", "horizontal", "vertical"] },
       dock: str,
     },

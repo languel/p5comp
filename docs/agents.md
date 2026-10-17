@@ -157,3 +157,33 @@ origin/auth/session isolation. For a live end-to-end check, open the disposable
 It deliberately never falls back to a user's other workspace. It creates a
 five-step circuit/input/note process through the actual stdio MCP server, replays
 it and compares the resulting circuit, controls and notes with the final snapshot.
+
+## Poliplan drawing
+
+The same `p5comp_drawing` tool is available through browser API, WebMCP, HTTP,
+and stdio MCP. Install the editor first with `npm run vendor:poliplan`. Calls
+fail explicitly when the vendored editor is unavailable.
+
+```js
+await api.callTool("p5comp_view", { main: "draw" });
+const tools = await api.callTool("p5comp_drawing", { action: "tools" });
+const drawing = await api.callTool("p5comp_drawing", { action: "get" });
+// Use a name and arguments from the discovered native Poliplan tool schemas:
+await api.callTool("p5comp_drawing", {
+  action: "call", name: "ams_add", arguments: { /* discovered schema */ }
+});
+await api.callTool("p5comp_drawing", { action: "export", format: "svg" });
+await api.callTool("p5comp_drawing", { action: "active", active: false });
+```
+
+`load` replaces the drawing using a `document` object; `get` returns its current
+revision and document. `export` optionally accepts selected element `ids`, saves
+a uniquely named PNG/SVG in project assets, and returns its name, MIME type, and
+size. Native tools are discovered from the embedded editor; unknown names are
+rejected. Tool calls refresh the persisted document immediately, so drawing
+changes are captured as project changes in semantic recordings. Transient tool
+selection and editor UI are not recorded. The Draw tab has an independent
+camera; circuit overlay mode shares the circuit camera.
+
+The generated editor bundle remains Git-ignored. The current Pages workflow
+does not vendor it; deployment must supply that folder before building.

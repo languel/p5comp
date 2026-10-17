@@ -244,6 +244,7 @@ export function createAgentAdapter(ctx) {
           } else delete p.workbench.assets[a.name];
         });
       }
+      if (op === "drawing") return ctx.drawing(a);
       if (op === "view") return ctx.view(a);
       if (op === "examples") {
         const index = await (

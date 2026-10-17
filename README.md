@@ -202,7 +202,7 @@ It is a page API, not a registered WebMCP tool yet.
 All three views share `shared/ui/palette.css` and the same light/dark preference;
 theme changes propagate between open tabs. The p5 sandbox exposes `window.theme`
 and follows host chrome colors. Authored sketches keep their own drawing colors;
-the circuit starter adapts its drawing to the theme. Optional
+starter demos use fixed colors that work with either theme. Optional
 `/sim/?workspace=name` isolates project storage for separate demos or QA.
 
 ## code
@@ -391,7 +391,7 @@ component default. Wire palettes continue to set wire stroke colors directly.
 The interface toggle stays at its screen position when hiding the UI, changing
 from an eye to a panel glyph that restores the interface.
 
-Arduino controls share one toolbar row; the p5 toolbar uses a **↔** communications selector with **None**, **p5.webserial**, **navigator.serial**, and **Firmata**. Switching replaces a marked adapter block in the sketch, keeping its drawing code. The classroom example's stock serial code is migrated to that adapter. Custom serial code is preserved; if it already owns a port, use either your own code or the generated adapter to avoid competing reader locks. The webserial script is listed in `index.html` and included in ZIP exports.
+Arduino controls share one toolbar row; the p5 toolbar uses a **↔** communications selector with **None**, **p5.webserial**, **navigator.serial**, and **Firmata**. Switching replaces a marked adapter block in the sketch, keeping its drawing code. The classroom example's stock serial code is migrated to that adapter. Custom serial code is preserved; if it already owns a port, use either your own code or the generated adapter to avoid competing reader locks. The generated webserial adapter loads its library from sketch.js (local first, then CDN); ZIP exports include the local library.
 
 Generated adapters expose `arduinoComms.connect()`, `poll()`, and newline `sendLine()` for CSV sketches. Inside p5comp they connect to the host's simulation/USB transport; exported sketches should call `connect()` from a user button click. **None** disables the host serial bridge. Firmata instead exposes `arduinoComms.board` with `setPinMode()`, `write()` and `pins`, and requires **StandardFirmata at 57600 baud**. The StandardFirmata example compiles the actual firmware and reads simulated A0 through its binary UART protocol. Simulation was verified; this new Firmata adapter has not been tested on physical hardware.
 
@@ -442,3 +442,11 @@ p5comp. See [portable serial sketches](docs/simulation-and-lessons.md#p5-version
 For teaching and custom protocols, see the [Arduino ↔ p5 communications guide](docs/arduino-p5-communications.md).
 Examples → Communications includes a separate **Serial basics · two-way LED**
 project with small standalone sources and no communications framework.
+
+## Poliplan drawing
+
+Use the circuit toolbar's pencil or Alt+Z to draw over the circuit with shared
+pan and zoom. The Draw tab opens the full editor. Right-click a drawing to save
+a PNG or SVG into project assets. See [drawing setup and limitations](docs/drawing.md).
+Agents can use `p5comp_drawing` through MCP, WebMCP, or the browser/HTTP API;
+see [drawing automation](docs/agents.md#poliplan-drawing).
