@@ -1,6 +1,6 @@
 # Handoff: drawing on the circuit (Artist Model Studio editor)
 
-State on 17 Oct 2026. Branch `ams-editor-integration`, five commits on top of p5comp `main` at `3af325d` (history is linear, so a fast-forward merge works), also checked out as the git worktree `~/dev/arduino/p5comp-ams`. Pushed to `origin/ams-editor-integration`. The editor itself lives in `~/dev/artistmodelstudio`, branch `embed-editor` (pushed too).
+State on 17 Oct 2026. Branch `ams-editor-integration`, five commits on top of p5comp `main` at `3af325d` (history is linear, so a fast-forward merge works), also checked out as the git worktree `~/dev/arduino/p5comp-ams`. Pushed to `origin/ams-editor-integration`. The editor itself lives in the studio repo, branch `embed-editor`, checked out as the worktree `~/dev/artistmodelstudio-embed` (pushed too; the studio's own checkout stays on `main`).
 
 ## What it is
 
@@ -28,7 +28,7 @@ npm run vendor:ams              # the lean editor (canvas, tools, the panels an 
 AMS_FULL=1 npm run vendor:ams   # the chunky build with every studio panel
 ```
 
-Both build `~/dev/artistmodelstudio` (`AMS_DIR` to change; branch `embed-editor` must be checked out there) and copy the result into `public/vendor/ams-editor/` with a `VERSION` file.
+Both build `~/dev/artistmodelstudio-embed` (a git worktree of the studio on branch `embed-editor`; `AMS_DIR` to change) and copy the result into `public/vendor/ams-editor/` with a `VERSION` file.
 
 Easiest test, in the worktree (it has `node_modules` copied from the main checkout; run `npm install` there if dependencies changed):
 
@@ -61,4 +61,4 @@ Not verified: a real mouse or pen (only dispatched events), touch, saving to and
 
 ## Where the other half lives
 
-`~/dev/artistmodelstudio`, branch `embed-editor`: `docs/EMBEDDING.md` (plan, protocol, what was built, lean and chunky builds), `src/embed/` (the bridge and the client `ams-editor.js`), `embed.html`, `vite.embed.config.js`, `scripts/sync-embed.sh`, `embed-demo.html` (a bare host page to try every call). If the editor needs a change, change it there and run `npm run vendor:ams` again; tell the agent working there what the protocol lacked.
+`~/dev/artistmodelstudio-embed` (a worktree of `~/dev/artistmodelstudio`), branch `embed-editor`: `docs/EMBEDDING.md` (plan, protocol, what was built, lean and chunky builds), `src/embed/` (the bridge and the client `ams-editor.js`), `embed.html`, `vite.embed.config.js`, `scripts/sync-embed.sh`, `embed-demo.html` (a bare host page to try every call). If the editor needs a change, change it there and run `npm run vendor:ams` again; tell the agent working there what the protocol lacked.
