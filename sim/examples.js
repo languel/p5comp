@@ -1,4 +1,5 @@
-const drawing = `
+import {fixedDemoColors} from "./demoColors.js";
+const drawing = fixedDemoColors(`
 let values = [-1, 0, 0, 0], history = [], received = false;
 function acceptLine(line) {
   const n = line.trim().split(',').map(Number);
@@ -38,7 +39,7 @@ function draw() {
   noStroke(); fill(window.theme === 'dark' ? '#a1a1a5' : '#858e88'); textSize(11); text('distance', 25, 267); fill('#b0a078'); text('potentiometer', 95, 267);
   text('P5 → SERIAL → ARDUINO', 25, 302);
 }
-`;
+`);
 
 export const webserialSketch = `// p5.webserial is bundled locally. The host selects simulated / USB transport.
 let port;
@@ -85,39 +86,9 @@ ${drawing}`;
 
 // Upgrade the early bundled class demo without replacing student logic or serial code.
 export function upgradeClassSketchTheme(source) {
-  if (
-    typeof source !== "string" ||
-    !source.includes("function makeControls()") ||
-    !source.includes("ARDUINO → SERIAL → P5") ||
-    !source.includes("createCanvas(500, 360)") ||
-    source.includes("background(window.theme")
-  )
-    return source;
-  const colors = {
-    "#fafafa": "#242426",
-    "#464b49": "#d8d8da",
-    "#858e88": "#a1a1a5",
-    "#e4e7e5": "#3d3d40",
-    "#e8eeea": "#414145",
-  };
-  return source
-    .replace(
-      /\b(background|fill|stroke)\(\s*(['"])(#[0-9a-f]{6})\2\s*\)/gi,
-      (original, fn, quote, light) =>
-        colors[light.toLowerCase()]
-          ? `${fn}(window.theme === 'dark' ? '${colors[light.toLowerCase()]}' : '${light}')`
-          : original,
-    )
-    .replace(
-      /:\s*(['"])#e8eeea\1/g,
-      ": (window.theme === 'dark' ? '#414145' : '#e8eeea')",
-    )
-    .replace(
-      /\.style\(\s*(['"])background\1\s*,\s*(['"])#e8eeea\2\s*\)/g,
-      ".style('background', 'var(--ui-hover)')",
-    )
-    .replace(
-      /\.style\(\s*(['"])color\1\s*,\s*(['"])#464b49\2\s*\)/g,
-      ".style('color', 'var(--ui-text)')",
-    );
+  if (typeof source !== 'string') return source;
+  const stock = source.includes('// A real serial message controls the drawing') ||
+    source.includes('// Values come from Arduino at 9600 baud') ||
+    source.includes('ARDUINO → SERIAL → P5');
+  return stock ? fixedDemoColors(source) : source;
 }

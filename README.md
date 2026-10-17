@@ -432,4 +432,13 @@ replay limitations. MCP configuration example: [mcp.example.json](mcp.example.js
 - [Electronics foundation models and audio](docs/electronics-foundations.md)
 - [Make your own element](docs/diy-elements.md)
 
-Fresh workspaces start with **HelloLED**, including the minimal Uno + inserted LED circuit, editable Arduino/p5 code and cached firmware. Valid saved workspaces are restored. All 24 catalog demos and their source/firmware data ship with the static Pages build; analog-only lessons require no compiler service.
+Fresh workspaces start with **HelloLED**, including the minimal Uno + inserted LED circuit, editable Arduino/p5 code and cached firmware. Valid saved workspaces are restored. All 25 catalog demos and their source/firmware data ship with the static Pages build; analog-only lessons require no compiler service.
+
+p5 previews and ZIP exports default to **p5 2.3.4**. A project can select
+**p5 1.x compatibility** in Settings. Generated communications code supports both
+lifecycles and provides its own Connect Arduino button when copied outside
+p5comp. See [portable serial sketches](docs/simulation-and-lessons.md#p5-versions-and-portable-serial-sketches).
+
+For teaching and custom protocols, see the [Arduino ↔ p5 communications guide](docs/arduino-p5-communications.md).
+Examples → Communications includes a separate **Serial basics · two-way LED**
+project with small standalone sources and no communications framework.

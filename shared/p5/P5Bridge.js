@@ -101,7 +101,7 @@ export class P5Bridge extends EventTarget {
       this.frame.setAttribute?.("sandbox", "allow-scripts");
       this.frame.srcdoc = html.replace(
         /<head>/i,
-        `<head><base href="${href}"><meta name="p5comp-detached" content="${detached}">`,
+        `<head><base href="${href}"><meta name="p5comp-detached" content="${detached}"><meta name="p5comp-p5-major" content="${project.p5Major === 1 ? 1 : 2}">`,
       );
     } catch (error) {
       if (generation === this.generation) this.#error(error.message);
@@ -171,7 +171,7 @@ export class P5Bridge extends EventTarget {
       this.frame.replaceWith(next);
       this.frame = next;
     }
-    this.frame.src = runtimeURL + "?run=" + Date.now();
+    this.frame.src = runtimeURL + "?run=" + Date.now() + "&p5=" + (this.project?.p5Major === 1 ? 1 : 2);
   }
   #status(message) {
     this.dispatchEvent(new CustomEvent("status", { detail: message }));

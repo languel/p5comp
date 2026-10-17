@@ -1,5 +1,7 @@
 import { createAgentRelay } from "./agentRelay.js";
 import express from "express";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { spawn } from "node:child_process";
 import {
   access,
@@ -38,6 +40,13 @@ app.use((request, response, next) => {
 });
 app.use("/api/agent", createAgentRelay());
 app.use(express.json({ limit: "512kb", strict: true }));
+
+app.get("/api/serial-ports", async (_request, response) => {
+  try {
+    const {stdout} = await promisify(execFile)("arduino-cli", ["board", "list", "--format", "json"], {timeout: 5000, maxBuffer: 1024 * 1024});
+    response.json({ports: JSON.parse(stdout).detected_ports || []});
+  } catch { response.status(503).json({ports: [], error: "Local serial discovery unavailable"}); }
+});
 
 app.post("/api/compile", async (request, response) => {
   const { board: boardId, source, files = {} } = request.body ?? {};

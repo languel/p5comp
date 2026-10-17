@@ -157,3 +157,11 @@ test("a loaded document waiting on sketch setup reports a timeout without restar
     assert.match(frame.srcdoc, /sandbox.html/);
     assert.match(message, /Try Run p5 again/);
   }));
+
+test("preview defaults to p5 2 and carries the explicit compatibility selection", () =>
+  fixture(async ({bridge, frame}) => {
+    await bridge.run("function setup(){}", {});
+    assert.match(frame.srcdoc, /p5comp-p5-major" content="2"/);
+    await bridge.run("function setup(){}", {p5Major:1});
+    assert.match(frame.srcdoc, /p5comp-p5-major" content="1"/);
+  }));

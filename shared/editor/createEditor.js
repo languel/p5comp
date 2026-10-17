@@ -1,3 +1,4 @@
+import "./editorChrome.css";
 import { markdown } from "@codemirror/lang-markdown";
 import { StreamLanguage } from "@codemirror/language";
 import { stexMath } from "@codemirror/legacy-modes/mode/stex";
@@ -78,6 +79,41 @@ export function createEditor({
     ],
   });
   const editor = new EditorView({ state, parent });
+  const copy = document.createElement("button");
+  copy.type = "button";
+  copy.className = "cm-copy-code";
+  copy.title = "Copy code";
+  copy.setAttribute("aria-label", "Copy code");
+  copy.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg>';
+  let copyFeedback;
+  copy.onmousedown = e => e.preventDefault();
+  copy.onclick = async e => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(editor.state.doc.toString());
+      copy.title = "Copied";
+      copy.setAttribute("aria-label", "Copied");
+      clearTimeout(copyFeedback);
+      copyFeedback = setTimeout(() => {
+        copy.title = "Copy code";
+        copy.setAttribute("aria-label", "Copy code");
+      }, 1500);
+    } catch (error) {
+      document.dispatchEvent(new CustomEvent("p5comp:editor-error", {detail: "Could not copy code: " + error.message}));
+    }
+  };
+  editor.dom.append(copy);
+  const copyProximity = e => {
+    const rect = copy.getBoundingClientRect();
+    const distance = Math.hypot(
+      Math.max(rect.left - e.clientX, 0, e.clientX - rect.right),
+      Math.max(rect.top - e.clientY, 0, e.clientY - rect.bottom),
+    );
+    copy.classList.toggle("is-near", distance <= 28);
+  };
+  const hideCopy = () => copy.classList.remove("is-near");
+  editor.dom.addEventListener("pointermove", copyProximity);
+  editor.dom.addEventListener("pointerleave", hideCopy);
   editor.setLanguage = (next) => {
     language = next;
     editor.dispatch({ effects: syntax.reconfigure(languageSupport(next)) });
@@ -136,6 +172,9 @@ export function createEditor({
   document.addEventListener("p5comp:editor-settings", apply);
   const destroy = editor.destroy.bind(editor);
   editor.destroy = () => {
+    clearTimeout(copyFeedback);
+    editor.dom.removeEventListener("pointermove", copyProximity);
+    editor.dom.removeEventListener("pointerleave", hideCopy);
     document.removeEventListener("physical-p5:themechange", apply);
     document.removeEventListener("p5comp:editor-settings", apply);
     destroy();

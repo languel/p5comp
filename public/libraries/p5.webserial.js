@@ -104,14 +104,14 @@
       // incomplete trailing characters
       let characters = 0;
       for (let i=0; i < view.length; i++) {
-        const byte = view[i];
-        if (byte >> 7 == 0b0) {
+        const serialByte = view[i];
+        if (serialByte >> 7 == 0b0) {
           characters++;
-        } else if (byte >> 5 == 0b110 && i < view.length-1) {
+        } else if (serialByte >> 5 == 0b110 && i < view.length-1) {
           characters++;
-        } else if (byte >> 4 == 0b1110 && i < view.length-2) {
+        } else if (serialByte >> 4 == 0b1110 && i < view.length-2) {
           characters++;
-        } else if (byte >> 3 == 0b11110 && i < view.length-3) {
+        } else if (serialByte >> 3 == 0b11110 && i < view.length-3) {
           characters++;
         }
       }
@@ -209,20 +209,20 @@
       let byteLength = null;
 
       for (let i=view.length-1; 0 <= i; i--) {
-        const byte = view[i];
-        if (byte >> 7 == 0b0) {
+        const serialByte = view[i];
+        if (serialByte >> 7 == 0b0) {
           startByteOffset = i;
           byteLength = 1;
           break;
-        } else if (byte >> 5 == 0b110 && i < view.length-1) {
+        } else if (serialByte >> 5 == 0b110 && i < view.length-1) {
           startByteOffset = i;
           byteLength = 2;
           break;
-        } else if (byte >> 4 == 0b1110 && i < view.length-2) {
+        } else if (serialByte >> 4 == 0b1110 && i < view.length-2) {
           startByteOffset = i;
           byteLength = 3;
           break;
-        } else if (byte >> 3 == 0b11110 && i < view.length-3) {
+        } else if (serialByte >> 3 == 0b11110 && i < view.length-3) {
           startByteOffset = i;
           byteLength = 4;
           break;
@@ -231,7 +231,7 @@
 
       if (startByteOffset !== null) {
         const out = new Uint8Array(this.inBuf, startByteOffset, byteLength);
-        const str = this.textDecoder.decode(out);
+        const serialText = this.textDecoder.decode(out);
 
         // shift input buffer
         if (startByteOffset+byteLength < this.inLen) {
@@ -239,7 +239,7 @@
         }
         this.inLen -= startByteOffset+byteLength;
 
-        return str;
+        return serialText;
       } else {
         return '';
       }
@@ -385,23 +385,23 @@
       let charLength = 0;
 
       for (let i=0; i < view.length; i++) {
-        const byte = view[i];
+        const serialByte = view[i];
         //console.log('Byte', byte);
 
         let codepointStart;
-        if (byte >> 7 == 0b0) {
+        if (serialByte >> 7 == 0b0) {
           codepointStart = true;
           bytesToConsume = 0;
           //console.log('ASCII character');
-        } else if (byte >> 5 == 0b110) {
+        } else if (serialByte >> 5 == 0b110) {
           codepointStart = true;
           bytesToConsume = 1;
           //console.log('Begin 2-byte codepoint');
-        } else if (byte >> 4 == 0b1110) {
+        } else if (serialByte >> 4 == 0b1110) {
           codepointStart = true;
           bytesToConsume = 2;
           //console.log('Begin 3-byte codepoint');
-        } else if (byte >> 3 == 0b11110) {
+        } else if (serialByte >> 3 == 0b11110) {
           codepointStart = true;
           bytesToConsume = 3;
           //console.log('Begin 4-byte codepoint');
@@ -428,7 +428,7 @@
 
       if (startByteOffset !== null && byteLength !== null) {
         const out = new Uint8Array(this.inBuf, startByteOffset, byteLength);
-        const str = this.textDecoder.decode(out);
+        const serialText = this.textDecoder.decode(out);
         //console.log('String is', str);
 
         // shift input buffer
@@ -437,7 +437,7 @@
         }
         this.inLen -= startByteOffset+byteLength;
 
-        return str;
+        return serialText;
       } else {
         return '';
       }
@@ -458,17 +458,17 @@
       let startByteOffset = null;
 
       for (let i=0; i < out.length; i++) {
-        const byte = out[i];
-        if (byte >> 7 == 0b0) {
+        const serialByte = out[i];
+        if (serialByte >> 7 == 0b0) {
           startByteOffset = i;
           break;
-        } else if (byte >> 5 == 0b110) {
+        } else if (serialByte >> 5 == 0b110) {
           startByteOffset = i;
           break;
-        } else if (byte >> 4 == 0b1110) {
+        } else if (serialByte >> 4 == 0b1110) {
           startByteOffset = i;
           break;
-        } else if (byte >> 3 == 0b11110) {
+        } else if (serialByte >> 3 == 0b11110) {
           startByteOffset = i;
           break;
         }
@@ -1257,15 +1257,15 @@
           polyfillOptions = Object.assign(Object.assign({}, kDefaultPolyfillOptions), polyfillOptions);
           const usbFilters = [];
           if (options && options.filters) {
-              for (const filter of options.filters) {
+              for (const usbPortFilter of options.filters) {
                   const usbFilter = {
                       classCode: polyfillOptions.usbControlInterfaceClass,
                   };
-                  if (filter.usbVendorId !== undefined) {
-                      usbFilter.vendorId = filter.usbVendorId;
+                  if (usbPortFilter.usbVendorId !== undefined) {
+                      usbFilter.vendorId = usbPortFilter.usbVendorId;
                   }
-                  if (filter.usbProductId !== undefined) {
-                      usbFilter.productId = filter.usbProductId;
+                  if (usbPortFilter.usbProductId !== undefined) {
+                      usbFilter.productId = usbPortFilter.usbProductId;
                   }
                   usbFilters.push(usbFilter);
               }

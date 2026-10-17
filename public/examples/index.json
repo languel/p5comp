@@ -10,6 +10,11 @@
     "folder": "Getting started"
   },
   {
+    "name": "Serial basics · two-way LED (minimal)",
+    "project": "examples/serial-basics.json",
+    "folder": "Communications"
+  },
+  {
     "name": "DIP switches · eight digital inputs",
     "project": "examples/dip-inputs.json",
     "folder": "Inputs"

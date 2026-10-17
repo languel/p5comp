@@ -12,8 +12,8 @@ test("communications adapters preserve custom drawing code and replace only thei
   new Function(native);
   const web = embedComms(native, "webserial");
   assert.equal(web.split("// p5comp communications: begin").length, 2);
-  assert.match(web, /createSerial\(\)/);
-  assert.doesNotMatch(web, /navigator.serial/);
+  assert.match(web, /new \(ArduinoSerialPort/);
+  assert.doesNotMatch(web, /this.port.readable.getReader/);
   new Function(web);
   const none = embedComms(web, "none");
   assert.ok(none.startsWith(source));
@@ -41,7 +41,8 @@ test("Firmata adapter embeds the actual parser/client and uses its firmware baud
     ),
   };
   const source = embedComms("function setup(){}", "firmata", sources);
-  assert.match(source, /baudRate:57600/);
+  assert.match(source, /SERIAL_BAUD_RATE = 57600/);
+  assert.match(source, /baudRate:SERIAL_BAUD_RATE/);
   assert.match(source, /class FirmataClient/);
   assert.match(source, /class FirmataParser/);
   new Function(source);
@@ -59,7 +60,28 @@ test("HelloLED and four-signal sketches switch API without retaining an inline s
     assert.match(native, /function acceptLine/);
     new Function(native);
     const web = embedComms(native, "webserial");
-    assert.equal(web.match(/createSerial\(/g).length, 1);
+    assert.equal(web.match(/new \(ArduinoSerialPort/g).length, 1);
     new Function(web);
   }
+});
+
+test('managed serial handler migration preserves nested logic and p5 line drawing', () => {
+  const source = 'function acceptLine(line) { if (line) { console.log(line); } }\nfunction draw(){line(0,0,1,1);}';
+  const result = embedComms(source, 'native');
+  assert.match(result, /acceptLine\(serialLine\)/);
+  assert.match(result, /console.log\(serialLine\)/);
+  assert.match(result, /line\(0,0,1,1\)/);
+});
+
+test('baud and connection preferences survive transport switches and managed refreshes',()=>{
+ let source=embedComms('function setup(){}','webserial')
+   .replace('SERIAL_BAUD_RATE = 9600','SERIAL_BAUD_RATE = 115200')
+   .replace('SERIAL_AUTO_CONNECT = false','SERIAL_AUTO_CONNECT = true')
+   .replace("SERIAL_CONTROLS = 'always'","SERIAL_CONTROLS = 'hover'");
+ source=embedComms(source,'native');
+ assert.match(source,/SERIAL_BAUD_RATE = 115200/);
+ assert.match(source,/SERIAL_AUTO_CONNECT = true/);
+ assert.match(source,/SERIAL_CONTROLS = 'hover'/);
+ assert.match(source,/baudRate:SERIAL_BAUD_RATE/);
+ assert.match(embedComms(source,'firmata'),/SERIAL_BAUD_RATE = 57600/);
 });

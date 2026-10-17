@@ -1,3 +1,4 @@
+import communicationsGuide from "../docs/arduino-p5-communications.md?raw";
 import foundationGuide from "../docs/electronics-foundations.md?raw";
 import diyGuide from "../docs/diy-elements.md?raw";
 import {releaseReferenceStream} from "./selectionDeletion.js";
@@ -201,6 +202,13 @@ export class Workbench {
         $("themeToggle").click();
       syncPreferences();
     };
+    const versionRow = node("label", "", 'p5 version <select id="p5Major" aria-label="p5 version"><option value="2">p5 2.x</option><option value="1">p5 1.x (compatibility)</option></select>');
+    $("globalSettings").append(versionRow);
+    $("p5Major").onchange = () => {
+      this.settings.p5Major = Number($("p5Major").value);
+      ctx.persist();
+      ctx.runP5();
+    };
     $("editorTheme").onchange = () =>
       setEditorPreferences({ theme: $("editorTheme").value });
     $("editorWordWrap").onchange = () =>
@@ -238,7 +246,16 @@ export class Workbench {
     const electronicsBody=node("div","lesson-note");
     electronicsBody.innerHTML=lessonHTML(foundationGuide,"markdown");
     electronicsGuide.append(electronicsBody);
-    this.editorPanel.querySelector("#helpHome").append(guide,electronicsGuide);
+    const commsGuide = node("details", "diy-guide");
+    commsGuide.append(node("summary", "", "Arduino ↔ p5 communications"));
+    const commsBody = node("div", "lesson-note");
+    commsBody.innerHTML = lessonHTML(communicationsGuide, "markdown");
+    for (const link of commsBody.querySelectorAll('a[href^="../public/"]')) {
+      link.href = basePath(link.getAttribute("href").slice("../public/".length));
+      link.setAttribute("download", "");
+    }
+    commsGuide.append(commsBody);
+    this.editorPanel.querySelector("#helpHome").append(commsGuide,guide,electronicsGuide);
     $("code").hidden = true;
     main.append(this.editorPanel);
     const settingsButton = this.editorPanel.querySelector(
@@ -637,7 +654,7 @@ export class Workbench {
       this.action(async () => {
         const libraries = {};
         for (const [file, url] of [
-          ["p5.js", "libraries/p5.min.js"],
+          ["p5.js", this.settings.p5Major === 1 ? "libraries/p5-v1.min.js" : "libraries/p5.min.js"],
           ["p5.webserial.js", "libraries/p5.webserial.js"],
           ["LICENSE-p5.txt", "licenses/p5-LGPL.txt"],
           ["LICENSE-p5-webserial.txt", "licenses/LGPL-2.1.txt"],
@@ -1045,6 +1062,7 @@ export class Workbench {
   }
   p5Project() {
     return {
+      p5Major: this.settings.p5Major === 1 ? 1 : 2,
       html: this.files["index.html"],
       css: Object.entries(this.files)
         .filter(([n]) => n.endsWith(".css"))
@@ -1266,6 +1284,7 @@ export class Workbench {
     $("workbenchColor").value = this.settings.background || "#484b4d";
     $("outputColor").value = this.settings.output || "#242728";
     $("compilerURL").value = this.settings.compiler || "";
+    $("p5Major").value = String(this.settings.p5Major === 1 ? 1 : 2);
     $("exportCode").checked = this.settings.exportCode !== false;
   }
   selectPart() {

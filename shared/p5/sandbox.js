@@ -1,5 +1,10 @@
 import { basePath } from "../basePath.js";
-import p5 from "p5";
+const legacyP5 = document.querySelector('meta[name="p5comp-p5-major"]')?.content === "1" || new URLSearchParams(location.search).get("p5") === "1";
+const {default: p5} = await (legacyP5 ? import("p5-v1") : import("p5"));
+function lifecycleHook(modern, legacy, callback) {
+  if (p5.registerAddon) p5.registerAddon((_p5, _prototype, lifecycles) => { lifecycles[modern] = callback; });
+  else p5.prototype.registerMethod(legacy, callback);
+}
 import { installSerialProxy } from "./serialProxy.js";
 
 let host = parent;
@@ -35,7 +40,7 @@ function mirrorRender() {
 }
 let lastDraw = 0,
   lastSize = "";
-p5.prototype.registerMethod("post", () => {
+lifecycleHook("postdraw", "post", () => {
   lastDraw = performance.now();
   if (p5Instance?.canvas) {
     const size = `${p5Instance.width},${p5Instance.height}`;
@@ -89,6 +94,7 @@ let p5Instance = null;
 window.signals = signals;
 window.pins = pins;
 window.pin = (name) => pins[name];
+window.p5compHostSerial = true;
 window.serialConnected = false;
 window.send = (name, value) => {
   if (typeof name !== "string" || !/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) {
@@ -107,6 +113,7 @@ window.sendLine = (text) => {
 
 const safeValue = (value) => {
   if (typeof value === "string") return value;
+  if (value?.message) return {message: value.message, stack: value.stack};
   try {
     return JSON.parse(JSON.stringify(value));
   } catch {
@@ -142,7 +149,7 @@ window.addEventListener("error", (event) => {
 });
 window.addEventListener("unhandledrejection", (event) => {
   host.postMessage(
-    { type: "runtimeError", message: String(event.reason) },
+    { type: "runtimeError", message: event.reason?.message || JSON.stringify(event.reason) || String(event.reason) },
     "*",
   );
 });
@@ -337,7 +344,7 @@ window.addEventListener("message", async (event) => {
     for (const script of scripts.filter((s) => !s.getAttribute("src")))
       window.eval(script.textContent);
     window.eval(`${message.source}\n//# sourceURL=student-sketch.js`);
-    p5.prototype.registerMethod("afterSetup", () =>
+    lifecycleHook("postsetup", "afterSetup", () =>
       host.postMessage({ type: "ready" }, "*"),
     );
     p5Instance = new p5(undefined, document.getElementById("canvas"));

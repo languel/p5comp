@@ -1,3 +1,6 @@
+import {formatCode} from "../shared/editor/formatCode.js";
+import {matchingPortName} from "../shared/serial/portIdentity.js";
+import {createSerialActivity} from "./serialActivity.js";
 import {startupProject} from "./startupProject.js";
 import {CircuitAudio} from "./circuitAudio.js";
 import "./foundationElements.js";
@@ -19,7 +22,7 @@ import {
 } from "./breadboard.js";
 import firmataParserSource from "../firmata/FirmataParser.js?raw";
 import firmataClientSource from "../firmata/FirmataClient.js?raw";
-import { embedComms, commsExample } from "./commsCode.js";
+import { COMMS_VERSION, embedComms, commsExample } from "./commsCode.js";
 import { resistance } from "./passiveStates.js";
 import { Workbench } from "./Workbench.js";
 import { basePath } from "../shared/basePath.js";
@@ -47,8 +50,6 @@ import {
   isMomentarySwitch,
 } from "./circuit.js";
 import {
-  webserialSketch,
-  nativeSketch,
   upgradeClassSketchTheme,
 } from "./examples.js";
 import lessonSource from "./classroom.ino?raw";
@@ -65,6 +66,12 @@ const $ = (id) => document.getElementById(id),
 initializeTheme();
 let cachedProjectText=null;
 try { cachedProjectText=localStorage.getItem(key); } catch {}
+function upgradeManagedComms(source, api) {
+  const themed = upgradeClassSketchTheme(source);
+  return themed.includes("// p5comp communications: begin") && !themed.includes(COMMS_VERSION)
+    ? embedComms(themed, api, {parser: firmataParserSource, client: firmataClientSource})
+    : themed;
+}
 const initialProject=startupProject(cachedProjectText);
 let savedCanvas = initialProject.canvas || {},
   workbench = null,
@@ -72,7 +79,7 @@ let savedCanvas = initialProject.canvas || {},
 let diagram = initialProject.diagram,
   controls = initialProject.controls || {},
   api = ["native", "none", "firmata"].includes(initialProject.api) ? initialProject.api : "webserial",
-  savedP5 = Object.fromEntries(Object.entries(initialProject.p5 || {}).map(([api,source])=>[api,upgradeClassSketchTheme(source)])),
+  savedP5 = Object.fromEntries(Object.entries(initialProject.p5 || {}).map(([api,source])=>[api,upgradeManagedComms(source,api)])),
   artifact = initialProject.artifact || null;
 const circuitAudio=new CircuitAudio({onError:message=>log(message),onInput:value=>{
   if(value==null)return;
@@ -92,6 +99,8 @@ let running = false,
   lines = [],
   topology = null;
 const serial = new SerialConnection();
+const serialActivity = createSerialActivity();
+const serialBoard = () => document.querySelector("wokwi-arduino-uno,wokwi-arduino-nano,wokwi-arduino-mega");
 const log = (line) => {
   agentSurface?.emit("console", { line: String(line) });
   lines.push(line);
@@ -105,10 +114,24 @@ const notice = (message) => {
   $("notice").textContent = message || "";
 };
 const boardLabel = () => boardKind(diagram.parts.find(p => isAVRBoard(p.type))?.type).toUpperCase();
+const portNames = new WeakMap();
+async function discoverPortName(port) {
+  try {
+    const compiler = workbench?.compilerURL() || basePath("api/compile");
+    const response = await fetch(new URL("serial-ports", new URL(compiler, location.href)), {signal: AbortSignal.timeout(6000)});
+    if (!response.ok) return;
+    const name = matchingPortName(port.getInfo(), (await response.json()).ports || []);
+    if (name) portNames.set(port, name);
+    if (serial.port === port) {
+      updateConnection();
+      if ($("status").textContent.startsWith("Connected")) status(`Connected · ${usbIdentity()} (${boardLabel()})`);
+    }
+  } catch {}
+}
 function usbIdentity() {
   const port = serial.port;
   const info = port?.getInfo?.() || {};
-  return port?.deviceName || port?.name || port?.path || (info.usbVendorId != null
+  return portNames.get(port) || port?.deviceName || port?.name || port?.path || (info.usbVendorId != null
     ? `USB ${info.usbVendorId.toString(16).padStart(4, "0")}:${(info.usbProductId || 0).toString(16).padStart(4, "0")}`
     : "USB serial device");
 }
@@ -149,7 +172,7 @@ const arduinoEditor = createEditor({
 });
 const p5Editor = createEditor({
   parent: $("p5Editor"),
-  value: savedP5[api] || (api === "native" ? nativeSketch : webserialSketch),
+  value: savedP5[api] || commsExample(api, {parser: firmataParserSource, client: firmataClientSource}),
   language: "javascript",
   onChange: () => {
     persist();
@@ -233,6 +256,7 @@ function runP5() {
 }
 
 function receive(bytes) {
+  if (bytes.length) serialActivity.pulse(serialBoard(), "TX");
   if (api !== "none") bridge.serialBytes(bytes);
   serialBuffer += new TextDecoder().decode(Uint8Array.from(bytes));
   const chunks = serialBuffer.split("\n");
@@ -256,6 +280,7 @@ async function writeBytes(bytes) {
       worker.postMessage({ type: "write", bytes: Array.from(bytes) });
     }
     if (mode === "simulation" && !agentMuteActions) agentSurface?.action("serial", { action: "write", text: new TextDecoder().decode(bytes) });
+    if (bytes.length) serialActivity.pulse(serialBoard(), "RX");
     log("→ " + new TextDecoder().decode(bytes).trim());
   } catch (e) {
     notice(e.message);
@@ -516,6 +541,7 @@ function stop() {
   running = false;
   paused = false;
   $("pause").disabled = true;
+  serialActivity.clear();
   status("Stopped · simulated Arduino");
   const board = document.querySelector(
     "wokwi-arduino-uno,wokwi-arduino-nano,wokwi-arduino-mega",
@@ -1180,13 +1206,12 @@ $("comms").onchange = async () => {
   api = $("comms").value;
   $("monitorBaud").value = api === "firmata" ? "57600" : "9600";
   monitorBaud = Number($("monitorBaud").value);
-  setCode(
-    p5Editor,
-    embedComms(sourceValue(p5Editor), api, {
-      parser: firmataParserSource,
-      client: firmataClientSource,
-    }),
-  );
+  let updatedComms = embedComms(sourceValue(p5Editor), api, {
+    parser: firmataParserSource,
+    client: firmataClientSource,
+  });
+  try { updatedComms = await formatCode(updatedComms, "javascript"); } catch {}
+  setCode(p5Editor, updatedComms);
   workbench?.syncCommsLibrary(api);
   persist();
   if (api === "firmata")
@@ -1305,14 +1330,14 @@ function openProject(d) {
     savedP5 = Object.fromEntries(
       Object.entries(d.p5).map(([api, source]) => [
         api,
-        upgradeClassSketchTheme(source),
+        upgradeManagedComms(source,api),
       ]),
     );
     api = ["native", "none", "firmata"].includes(d.api) ? d.api : "webserial";
     $("comms").value = api;
     setCode(
       p5Editor,
-      savedP5[api] || (api === "native" ? nativeSketch : webserialSketch),
+      savedP5[api] || commsExample(api, {parser: firmataParserSource, client: firmataClientSource}),
     );
   }
   artifact = d.artifact || null;
@@ -1388,12 +1413,14 @@ $("clearLog").onclick = () => {
 };
 serial.addEventListener("bytes", (e) => receive(e.detail));
 serial.addEventListener("connect", () => {
+  discoverPortName(serial.port);
   mode = "usb";
   status(`Connected · ${usbIdentity()} (${boardLabel()})`);
   updateConnection();
   runP5();
 });
 serial.addEventListener("disconnect", () => {
+  serialActivity.clear();
   status("USB disconnected");
   updateConnection();
 });
@@ -1681,7 +1708,7 @@ workbench = new Workbench({
   lesson: () => ({
     diagram: classroomCircuit(),
     arduino: lessonSource,
-    p5: { webserial: webserialSketch },
+    p5: { webserial: commsExample("webserial") },
     api: "webserial",
   }),
 });

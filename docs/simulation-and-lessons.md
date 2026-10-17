@@ -122,13 +122,73 @@ is also available in Settings alongside editor font size.
 
 The USB control opens connection options on every click, including choosing a
 different device or disconnecting the current device. Connected USB has a green
-indicator; disconnected USB has a hollow indicator. Device status includes the
+glow; disconnected USB uses a faint dotted cross over the USB glyph. Device status includes the
 board type; simulation uses `(UNO sim)` (or the selected board). Web Serial does
-not normally expose a macOS device path, so USB vendor/product identifiers are
-shown when a device name/path is unavailable.
+not normally expose a macOS device path. The local helper resolves names such
+as `usbmodem2101` when the USB identity has a unique match; vendor/product
+identifiers remain the fallback when discovery is unavailable or ambiguous.
 
 Compile and upload can start while disconnected: choose the device first. When
 already connected, it compiles the current sketch, releases the serial monitor
 port, uploads and verifies the firmware, then reopens the runtime connection at
 the selected baud rate. Hardware and simulation remain mutually exclusive.
 Mega hardware upload still requires a separate STK500v2 uploader.
+
+### p5 versions and portable serial sketches
+
+p5 2.3.4 is now the default preview and ZIP-export runtime. Settings → p5 version
+can select p5 1.11.10 for older sketches and libraries. The choice is saved with
+the project and applies to exported `p5.js` too. Bundled serial examples use
+`const`/`let`, avoid p5 reserved names for serial messages, and register modern
+p5 2 lifecycle callbacks, with a guarded p5 1 fallback.
+
+Inside p5comp, a preview's serial port is a proxy: the app owns the actual USB
+port and supplies either physical or simulated serial bytes to the sketch. A
+second browser port chooser would compete for the same device, so the preview
+shares the app's selection. Copying a managed sketch outside p5comp instead
+creates a **Connect Arduino** button, which opens the real browser port chooser.
+Disconnect p5comp (or any other serial monitor) before connecting externally.
+Native navigator.serial sketches need only p5. The p5.webserial adapter contains
+its loader inside sketch.js: it uses an already-loaded library, tries
+`./p5.webserial.js`, and then falls back to the pinned jsDelivr URL. No HTML edit
+is required when copying the sketch. Offline ZIP exports include both libraries;
+use a localhost server or HTTPS.
+
+Existing managed communications blocks are upgraded when a project opens;
+student drawing code remains intact. Custom third-party p5 1 libraries are not
+automatically converted. `node scripts/vendor-p5.mjs` refreshes the bundled
+libraries; its serial-library compatibility patch renames a few library-local
+bindings which p5 2's name checker flags as p5 function collisions.
+
+
+#### Browser support and p5 Web Editor connections
+
+Safari does not implement Web Serial. Neither the native adapter nor
+p5.webserial can connect directly to USB serial in Safari; p5.webserial relies
+on the same browser API. Use Chrome, Edge, or another browser that implements
+Web Serial. The copied sketch detects missing support and explains it beside
+the disabled Connect control. Simulation inside p5comp uses its host proxy.
+
+A cancelled chooser (`NotFoundError`) is a normal state: click Connect again
+and select the Arduino USB port. A busy-port error means another connection,
+such as p5comp or Arduino Serial Monitor, must be disconnected first. The
+native adapter pumps one asynchronous read per callback, rather than keeping
+a `while` loop alive across reads. This avoids the p5 Web Editor's loop timer
+mistaking the time spent waiting for hardware for a busy JavaScript loop.
+
+References: [p5.webserial](https://github.com/gohai/p5.webserial#readme),
+[Web Serial browser support](https://developer.mozilla.org/en-US/docs/Web/API/Web_Serial_API#browser_compatibility),
+[requestPort cancellation](https://developer.mozilla.org/en-US/docs/Web/API/Serial/requestPort#exceptions).
+
+### Editor and serial feedback
+
+Alt+Z toggles code wrapping. Every CodeMirror editor has a borderless copy
+button at the top right, revealed when the pointer approaches it or it receives
+keyboard focus. It copies the complete editor contents.
+
+The simulated board's TX and RX LEDs pulse on serial traffic: TX means bytes
+leaving Arduino, and RX means bytes arriving at Arduino. These indicators show
+observed traffic; physical mode does not mirror the hardware's pin state.
+
+For baud constants, optional auto-connect, hidden connection controls, and custom
+message protocols, see the [Arduino ↔ p5 communications guide](arduino-p5-communications.md).
