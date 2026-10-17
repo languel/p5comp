@@ -1,6 +1,6 @@
 # Handoff: integrating Poliplan, the drawing editor, into p5comp
 
-State on 17 Oct 2026. Branch `ams-editor-integration`, five commits on top of p5comp `main` at `3af325d` (history is linear, so a fast-forward merge works), also checked out as the git worktree `~/dev/arduino/p5comp-ams`. Pushed to `origin/ams-editor-integration`. The editor itself lives in the studio repo, branch `embed-editor`, checked out as the worktree `~/dev/artistmodelstudio-embed` (pushed too; the studio's own checkout stays on `main`).
+State on 17 Oct 2026. The integration was merged into `main` (`e9fd570`) from the branch `ams-editor-integration`, which was then retired. Poliplan itself is built from the studio repo's `main`.
 
 ## What it is
 
@@ -28,7 +28,7 @@ npm run vendor:poliplan              # the lean editor (canvas, tools, the panel
 AMS_FULL=1 npm run vendor:poliplan   # the chunky build with every studio panel
 ```
 
-Both build `~/dev/artistmodelstudio-embed` (a git worktree of the studio on branch `embed-editor`; `AMS_DIR` to change) and copy the result into `public/vendor/ams-editor/` with a `VERSION` file.
+Both build `~/dev/artistmodelstudio` (the studio's `main`; `AMS_DIR` to change) and copy the result into `public/vendor/ams-editor/` with a `VERSION` file.
 
 Easiest test, in the worktree (it has `node_modules` copied from the main checkout; run `npm install` there if dependencies changed):
 
@@ -70,4 +70,4 @@ Poliplan is the product name; the code keeps its older names (`public/vendor/ams
 
 ## Where the other half lives
 
-`~/dev/artistmodelstudio-embed` (a worktree of `~/dev/artistmodelstudio`), branch `embed-editor`: `docs/EMBEDDING.md` (plan, protocol, what was built, lean and chunky builds), `src/embed/` (the bridge and the client `ams-editor.js`), `embed.html`, `vite.embed.config.js`, `scripts/sync-embed.sh`, `embed-demo.html` (a bare host page to try every call). If the editor needs a change, change it there and run `npm run vendor:poliplan` again; tell the agent working there what the protocol lacked.
+`~/dev/artistmodelstudio`, branch `main` (Poliplan is a build target there): `docs/EMBEDDING.md` (plan, protocol, what was built, lean and chunky builds), `src/embed/` (the bridge and the client `ams-editor.js`), `embed.html`, `vite.embed.config.js`, `scripts/sync-embed.sh`, `embed-demo.html` (a bare host page to try every call). If the editor needs a change, change it there and run `npm run vendor:poliplan` again; tell the agent working there what the protocol lacked.
