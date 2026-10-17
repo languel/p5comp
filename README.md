@@ -448,5 +448,8 @@ project with small standalone sources and no communications framework.
 Use the circuit toolbar's pencil or Alt+Z to draw over the circuit with shared
 pan and zoom. The Draw tab opens the full editor. Right-click a drawing to save
 a PNG or SVG into project assets. See [drawing setup and limitations](docs/drawing.md).
+Poliplan is packaged with the app, including GitHub Pages; no local studio checkout
+is needed to use it. Maintainers refresh it with `npm run vendor:poliplan` and
+commit the generated bundle.
 Agents can use `p5comp_drawing` through MCP, WebMCP, or the browser/HTTP API;
 see [drawing automation](docs/agents.md#poliplan-drawing).

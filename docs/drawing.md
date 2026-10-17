@@ -16,7 +16,7 @@ The drawing editor is **Poliplan**, the lean embeddable build of the Artist Mode
 
 Two builds: Poliplan, the lean one (default, 780 KB: the canvas, tools, brushes, color pickers, exports, and the Boards, Layers (Outliner) and Properties panels, opened on demand with Cmd+B, the palette or the menu; no scenes, assets, recording, lessons, docs, assistant or code editor) and the chunky one with every studio panel: `AMS_FULL=1 npm run vendor:poliplan`.
 
-The built editor is ignored here (about 784 KB for Poliplan; about 13 MB for the full studio build). With the Artist Model Studio checked out at `~/dev/artistmodelstudio` (the studio's `main`; `AMS_DIR` to change):
+The lean Poliplan bundle (about 788 KB) is committed here so fresh clones and GitHub Pages include it. With the Artist Model Studio checked out at `~/dev/artistmodelstudio` (the studio's `main`; `AMS_DIR` to change):
 
 ```sh
 npm run vendor:poliplan
@@ -29,7 +29,7 @@ It builds the editor there (`npm run build:embed`) and copies it to `public/vend
 - The projection windows mirror the circuit and p5 output, not the drawing.
 - Marks live on one large transparent board (2400 × 1600 at the origin); marks outside it are kept but are not in the PNG.
 - Undo in the editor and undo in the circuit are separate; the editor's follows its own history.
-- Deployed builds (`PAGES_BASE`) need the vendored folder committed or copied in the build step.
+- GitHub Pages includes the tracked editor bundle; CI verifies every bundled file after building.
 
 - **Alt+Z** on the circuit switches the drawing layer and its toolbar on and off (in the Draw tab it is the editor's own zen). **Theme:** the editor follows p5comp's theme (`data-theme` on `<html>`) automatically.
 

@@ -17,12 +17,12 @@ State on 17 Oct 2026. The integration was merged into `main` (`e9fd570`) from th
 - `sim/DrawingBoard.js` (new): the layer, camera sync, persistence, the right-click actions, the mode and UI requests (`applyUI`). Read its header comment first.
 - `sim/Workbench.js`: imports it; creates it after the split divider (with `assetNames` for unique asset names); the Draw tab button; `mainView()` hides circuit and p5 for the Draw tab and calls `drawing.setView`; `snapshot()` and `restore()` carry `drawing`.
 - `sim/workbench.css`: `.draw-layer`, `.draw-status`, `.draw-layer.tab` (appended at the end).
-- `package.json`: `npm run vendor:poliplan`. `.gitignore`: `public/vendor/ams-editor/`. `docs/drawing.md`: user-facing notes.
+- `package.json`: `npm run vendor:poliplan`. The generated `public/vendor/ams-editor/` bundle is tracked. `docs/drawing.md`: user-facing notes.
 
 ## To try it
 
-The lean editor build is about 784 KB and is not committed. It is generated into
-the ignored `public/vendor/ams-editor/` folder:
+The lean editor bundle is committed in `public/vendor/ams-editor/` and ships
+with p5comp. To refresh it from the studio source:
 
 ```sh
 npm run vendor:poliplan              # the lean editor (canvas, tools, the panels an editor needs)
@@ -63,7 +63,7 @@ The p5comp test suite and production build pass after integration. Not verified:
 - Projection windows mirror the circuit and p5, not the drawing.
 - Marks live on one transparent board (2400 × 1600 at the origin); marks outside it are kept but are not in a whole-drawing PNG.
 - The editor's undo and the circuit's undo are separate.
-- A deployed build needs the vendored folder committed or copied in the build step.
+- The vendored editor is committed and packaged by Pages; `npm run verify:drawing` checks the deployed files.
 - In Vite's dev server a script in `/public` cannot be `import()`ed, so `DrawingBoard` reads the client as text and imports it from a blob; a built site could import it directly.
 - The lean editor is 780 KB (one 700 KB script); about 70 KB more could go (p5 export code, studio-only tools).
 

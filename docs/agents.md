@@ -185,5 +185,6 @@ changes are captured as project changes in semantic recordings. Transient tool
 selection and editor UI are not recorded. The Draw tab has an independent
 camera; circuit overlay mode shares the circuit camera.
 
-The generated editor bundle remains Git-ignored. The current Pages workflow
-does not vendor it; deployment must supply that folder before building.
+The generated editor bundle is tracked and ships with Pages. After updating
+the studio source, run `npm run vendor:poliplan`, commit the regenerated bundle,
+and run `npm run build && npm run verify:drawing`. CI checks the packaged files.
