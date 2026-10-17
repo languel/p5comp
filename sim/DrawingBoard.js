@@ -29,8 +29,8 @@ export class DrawingBoard {
     this.bar.className = "draw-tools";
     this.bar.hidden = true;
     this.bar.innerHTML =
-      '<button data-draw="asset" title="Put a PNG of the drawing in the project assets, so the p5 sketch can load it: loadImage(\'drawing.png\')" aria-label="Use as p5 image">▣ p5 image</button>' +
-      '<button data-draw="svg" title="Save the drawing as SVG" aria-label="Save SVG">SVG</button>' +
+      '<button data-draw="asset" title="Put a PNG of the drawing in the project assets, so the p5 sketch can load it: loadImage(\'drawing.png\')" aria-label="Use as p5 image">▣</button>' +
+      '<button data-draw="svg" title="Save the drawing as SVG" aria-label="Save SVG">⤓</button>' +
       '<span class="draw-status" role="status"></span>';
     this.layer.append(this.bar);
     this.status = this.bar.querySelector(".draw-status");
@@ -41,7 +41,7 @@ export class DrawingBoard {
     this.toggle.setAttribute("aria-pressed", "false");
     this.toggle.title = "Draw on the circuit: pen, brushes, shapes and colors in a layer over it";
     this.toggle.setAttribute("aria-label", "Draw on the circuit");
-    this.toggle.textContent = "✎ Draw";
+    this.toggle.textContent = "✎";
     this.toggle.onclick = () => this.setActive(!this.active);
     tools.append(this.toggle);
     new ResizeObserver(() => this.place()).observe(stage);
@@ -69,8 +69,8 @@ export class DrawingBoard {
     const was = this.tab;
     this.tab = tab;
     this.circuitShown = circuit;
-    if (tab) this.start().then(() => this.editor?.setUI({ tools: true }).then(() => this.editor.focus()));
-    else if (was) { this.editor?.setUI({ tools: this.active }); this.follow(true); }
+    if (tab) this.start().then(() => this.editor?.setUI({ tools: true, view: true }).then(() => this.editor.focus()));
+    else if (was) { this.editor?.setUI({ tools: this.active, view: this.active }); this.follow(true); }
     this.place();
   }
 
@@ -95,9 +95,9 @@ export class DrawingBoard {
     this.active = on;
     this.toggle.setAttribute("aria-pressed", String(on));
     this.place();
-    if (on) this.start().then(() => this.editor?.setUI({ tools: true }).then(() => this.editor.focus()));
+    if (on) this.start().then(() => this.editor?.setUI({ tools: true, view: true }).then(() => this.editor.focus()));
     else {
-      this.editor?.setUI({ tools: false });
+      this.editor?.setUI({ tools: false, view: false });
       this.editor?.getDocument().then((r) => this.remember(r)).catch(() => {});
     }
   }
@@ -119,7 +119,8 @@ export class DrawingBoard {
           boards: [BOARD],
           document: this.doc || undefined,
           overlay: true,
-          ui: { tools: this.active },
+          ui: { tools: this.active || this.tab, view: this.active || this.tab },
+          dock: "left",
           camera: this.camera(),
         });
         this.editor = editor;
@@ -131,7 +132,7 @@ export class DrawingBoard {
         ).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
         this.say("");
       } catch (error) {
-        this.say("The drawing editor is not installed: run npm run vendor:ams");
+        this.say("The drawing editor is not installed: run npm run vendor:ams", 12000);
         console.warn("Drawing editor:", error);
       } finally {
         this.starting = null;
@@ -175,8 +176,11 @@ export class DrawingBoard {
     this.persist();
   }
 
-  say(text) {
+  /** A message beside the buttons; it goes away by itself (the one for a failure stays longer). */
+  say(text, ms = 3500) {
+    clearTimeout(this.sayTimer);
     this.status.textContent = text;
+    if (text) this.sayTimer = setTimeout(() => (this.status.textContent = ""), ms);
   }
 
   async useInP5() {

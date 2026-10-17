@@ -4,9 +4,9 @@ The drawing editor is the Artist Model Studio's, embedded (branch `ams-editor-in
 
 ## Use
 
-- **✎ Draw** in the circuit's canvas tools switches a transparent layer on over the circuit. The pointer then draws (pen, brushes, shapes, colors, sculpting: the editor's own tools appear on the canvas) instead of moving parts. Switched off, the drawing stays visible and the circuit is edited as before. The drawing and the circuit share one camera: pan or zoom either and the other follows.
+- **✎** in the circuit's canvas tools switches a transparent layer on over the circuit. The pointer then draws (pen, brushes, shapes, colors, sculpting: the editor's tool strip appears down the left edge of the canvas, with its menu strip) instead of moving parts. Switched off, the drawing stays visible and the circuit is edited as before. The drawing and the circuit share one camera: pan or zoom either and the other follows.
 - **The Draw tab** (pencil, next to Circuit and p5) shows the same drawing over the whole work area on a plain ground, with its own camera.
-- **▣ p5 image** puts a transparent PNG of the drawing in the project assets as `drawing.png`; the sketch loads it with `loadImage('drawing.png')`. **SVG** saves it as a vector file.
+- **▣** (p5 image) puts a transparent PNG of the drawing in the project assets as `drawing.png`; the sketch loads it with `loadImage('drawing.png')`. **⤓** saves it as an SVG file. The message after either goes away by itself.
 - The drawing is saved in the project (`workbench.drawing`, the editor's JSON) and in project files; opening a project replaces it.
 - Right-click menus, Ctrl+right-click (colors), Shift+Space (radial tool menu) and the other shortcuts of the editor work while drawing; Cmd+K is its command palette.
 

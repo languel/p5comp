@@ -6,10 +6,10 @@ State on 17 Oct 2026. Branch `ams-editor-integration`, one commit (`3ac9be3`) on
 
 The Artist Model Studio drawing editor, embedded as an iframe through a small message protocol (`ams-editor-v1`). Two ways to use it:
 
-- **✎ Draw** (a new button in the circuit's canvas tools): a transparent layer over the circuit canvas. The pointer draws instead of moving parts; the editor's own tools appear. Off, the drawing stays visible and the circuit is edited as before. Pan and zoom are shared: move either and the other follows.
+- **✎** (a new button in the circuit's canvas tools): a transparent layer over the circuit canvas. The pointer draws instead of moving parts; the editor's own tools appear. Off, the drawing stays visible and the circuit is edited as before. Pan and zoom are shared: move either and the other follows.
 - **The Draw tab** (pencil icon, next to Circuit and p5): the same drawing over the whole work area, with its own camera.
 
-**▣ p5 image** saves a transparent PNG of the drawing as the project asset `drawing.png` (`loadImage('drawing.png')`); **SVG** downloads a vector file. The drawing is saved in the project (`workbench.drawing`) and restored when a project opens.
+**▣** saves a transparent PNG of the drawing as the project asset `drawing.png` (`loadImage('drawing.png')`); **⤓** downloads an SVG. Both tool strips (tools, menu) show only while drawing, tucked down the left edge; the status message fades after a few seconds. The pencil is the same glyph on the Draw tab and the canvas button. The drawing is saved in the project (`workbench.drawing`) and restored when a project opens.
 
 ## Files (the whole integration)
 
@@ -37,10 +37,10 @@ To take it into the main checkout instead: `git merge ams-editor-integration` (o
 
 ## Checklist (what was verified, with synthetic events in the browser)
 
-1. Click ✎ Draw: the layer lies exactly over the stage; the editor's tools appear; drawing works; circuit parts are not moved meanwhile.
+1. Click ✎: the layer lies exactly over the stage; the editor's tools appear; drawing works; circuit parts are not moved meanwhile.
 2. Ctrl+scroll on the circuit: the drawing zooms with it (and the reverse).
 3. Reload: the drawing is back (it is in the project JSON in `localStorage`).
-4. ▣ p5 image: `drawing.png` appears in the project assets; `loadImage('drawing.png')` in a sketch.
+4. ▣: `drawing.png` appears in the project assets; `loadImage('drawing.png')` in a sketch.
 5. Draw tab: the drawing over the whole area; back to Circuit: the layer returns over the stage.
 
 Not verified: a real mouse or pen (only dispatched events), touch, saving to and opening a project file with a drawing, the p5comp test suite (`npm test`).

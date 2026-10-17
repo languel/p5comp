@@ -1869,7 +1869,7 @@ button[data-running="true"][aria-label="Stop p5"] {
 .draw-tools {
   position: absolute;
   right: 8px;
-  bottom: 8px;
+  top: 8px;
   z-index: 7;
   display: flex;
   align-items: center;
@@ -1889,6 +1889,9 @@ button[data-running="true"][aria-label="Stop p5"] {
 }
 .draw-status {
   opacity: 0.7;
+}
+.draw-status:empty {
+  display: none;
 }
 .draw-layer.tab {
   background: var(--ui-panel);   /* the Draw tab: the drawing on a plain ground, the circuit hidden behind it */
