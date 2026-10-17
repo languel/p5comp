@@ -57,7 +57,7 @@ Not verified: a real mouse or pen (only dispatched events), touch, saving to and
 - The editor's undo and the circuit's undo are separate.
 - A deployed build needs the vendored folder committed or copied in the build step.
 - In Vite's dev server a script in `/public` cannot be `import()`ed, so `DrawingBoard` reads the client as text and imports it from a blob; a built site could import it directly.
-- The lean editor's main script is still about 2 MB; more can be cut (lessons, walkthroughs, recorder, sources code).
+- The lean editor is 780 KB (one 700 KB script); about 70 KB more could go (p5 export code, studio-only tools).
 
 ## Where the other half lives
 

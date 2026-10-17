@@ -14,7 +14,7 @@ The drawing editor is the Artist Model Studio's, embedded (branch `ams-editor-in
 
 ## Install the editor
 
-Two builds: the lean one (default; the canvas, tools and the panels an editor needs: Boards, Outliner, Properties, Settings, Shortcuts, History, Log, opened on demand with Cmd+B, the palette or the menu) and the chunky one with every studio panel: `AMS_FULL=1 npm run vendor:ams`.
+Two builds: the lean one (default, 780 KB: the canvas, tools, brushes, color pickers, exports, and the Boards, Layers (Outliner) and Properties panels, opened on demand with Cmd+B, the palette or the menu; no scenes, assets, recording, lessons, docs, assistant or code editor) and the chunky one with every studio panel: `AMS_FULL=1 npm run vendor:ams`.
 
 The built editor is not committed here (13 MB). With the Artist Model Studio checked out at `~/dev/artistmodelstudio` (or `AMS_DIR`):
 
