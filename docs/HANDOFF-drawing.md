@@ -1,10 +1,10 @@
-# Handoff: drawing on the circuit (Artist Model Studio editor)
+# Handoff: integrating Poliplan, the drawing editor, into p5comp
 
 State on 17 Oct 2026. Branch `ams-editor-integration`, five commits on top of p5comp `main` at `3af325d` (history is linear, so a fast-forward merge works), also checked out as the git worktree `~/dev/arduino/p5comp-ams`. Pushed to `origin/ams-editor-integration`. The editor itself lives in the studio repo, branch `embed-editor`, checked out as the worktree `~/dev/artistmodelstudio-embed` (pushed too; the studio's own checkout stays on `main`).
 
 ## What it is
 
-The Artist Model Studio drawing editor, embedded as an iframe through a small message protocol (`ams-editor-v1`).
+**Poliplan** is the lean embeddable build of the Artist Model Studio drawing editor (780 KB; an iframe plus a small message protocol, `ams-editor-v1`, and a one-file client). This branch embeds it in p5comp.
 
 - **✎** (a button in the circuit's canvas tools): a transparent layer over the circuit canvas. The pointer draws instead of moving parts; only the editor's one toolbar shows, across the top. Switched off, the drawing stays visible and the circuit is edited as before. Pan and zoom are shared: move either and the other follows. The editor has no zoom, fit or frame of its own here (the circuit owns the view), and no presentation menu.
 - **The Draw tab** (✎ in the top bar, next to Circuit and p5): the same drawing over the whole work area, with its own camera and the editor's own interface back (one toolbar with its menu, optional zoom controls toggled in the menu, Layers and Properties in the left sidebar, zen with Alt+Z). This is the editor's standalone mode; back on the circuit it is a bare layer again.
@@ -17,15 +17,15 @@ The Artist Model Studio drawing editor, embedded as an iframe through a small me
 - `sim/DrawingBoard.js` (new): the layer, camera sync, persistence, the right-click actions, the mode and UI requests (`applyUI`). Read its header comment first.
 - `sim/Workbench.js`: imports it; creates it after the split divider (with `assetNames` for unique asset names); the Draw tab button; `mainView()` hides circuit and p5 for the Draw tab and calls `drawing.setView`; `snapshot()` and `restore()` carry `drawing`.
 - `sim/workbench.css`: `.draw-layer`, `.draw-status`, `.draw-layer.tab` (appended at the end).
-- `package.json`: `npm run vendor:ams`. `.gitignore`: `public/vendor/ams-editor/`. `docs/drawing.md`: user-facing notes.
+- `package.json`: `npm run vendor:poliplan`. `.gitignore`: `public/vendor/ams-editor/`. `docs/drawing.md`: user-facing notes.
 
 ## To try it
 
 The editor build is not committed (13 MB). It already sits, ignored, in the worktree's `public/vendor/ams-editor/`. To get it elsewhere:
 
 ```sh
-npm run vendor:ams              # the lean editor (canvas, tools, the panels an editor needs)
-AMS_FULL=1 npm run vendor:ams   # the chunky build with every studio panel
+npm run vendor:poliplan              # the lean editor (canvas, tools, the panels an editor needs)
+AMS_FULL=1 npm run vendor:poliplan   # the chunky build with every studio panel
 ```
 
 Both build `~/dev/artistmodelstudio-embed` (a git worktree of the studio on branch `embed-editor`; `AMS_DIR` to change) and copy the result into `public/vendor/ams-editor/` with a `VERSION` file.
@@ -37,7 +37,7 @@ cd ~/dev/arduino/p5comp-ams && npx vite --host 127.0.0.1 --port 5199
 # open http://127.0.0.1:5199/sim/
 ```
 
-To take it into the main checkout: `git merge ams-editor-integration` (fast-forward) or `git cherry-pick 3ac9be3..554389a`, then `npm run vendor:ams`.
+To take it into the main checkout: `git merge ams-editor-integration` (fast-forward) or `git cherry-pick 3ac9be3..554389a`, then `npm run vendor:poliplan`.
 
 ## Also
 
@@ -64,6 +64,10 @@ Not verified: a real mouse or pen (only dispatched events), touch, saving to and
 - In Vite's dev server a script in `/public` cannot be `import()`ed, so `DrawingBoard` reads the client as text and imports it from a blob; a built site could import it directly.
 - The lean editor is 780 KB (one 700 KB script); about 70 KB more could go (p5 export code, studio-only tools).
 
+## Naming
+
+Poliplan is the product name; the code keeps its older names (`public/vendor/ams-editor/`, the `ams-editor.js` client, `ams-editor-v1`, `AMS_DIR`, `AMS_FULL`). Whether Poliplan becomes a repository of its own is undecided: until then it is built from the studio repo (`npm run vendor:poliplan` here; `npm run build:poliplan` there). The chunky build (`AMS_FULL=1`) is the studio's full panels in an iframe, not Poliplan.
+
 ## Where the other half lives
 
-`~/dev/artistmodelstudio-embed` (a worktree of `~/dev/artistmodelstudio`), branch `embed-editor`: `docs/EMBEDDING.md` (plan, protocol, what was built, lean and chunky builds), `src/embed/` (the bridge and the client `ams-editor.js`), `embed.html`, `vite.embed.config.js`, `scripts/sync-embed.sh`, `embed-demo.html` (a bare host page to try every call). If the editor needs a change, change it there and run `npm run vendor:ams` again; tell the agent working there what the protocol lacked.
+`~/dev/artistmodelstudio-embed` (a worktree of `~/dev/artistmodelstudio`), branch `embed-editor`: `docs/EMBEDDING.md` (plan, protocol, what was built, lean and chunky builds), `src/embed/` (the bridge and the client `ams-editor.js`), `embed.html`, `vite.embed.config.js`, `scripts/sync-embed.sh`, `embed-demo.html` (a bare host page to try every call). If the editor needs a change, change it there and run `npm run vendor:poliplan` again; tell the agent working there what the protocol lacked.

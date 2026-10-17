@@ -1,6 +1,6 @@
-# Drawing on the circuit
+# Drawing on the circuit (Poliplan)
 
-The drawing editor is the Artist Model Studio's, embedded (branch `ams-editor-integration`; plan and protocol in `~/dev/artistmodelstudio/docs/EMBEDDING.md`). It runs in an iframe from `public/vendor/ams-editor/` and is wired in by `sim/DrawingBoard.js`.
+The drawing editor is **Poliplan**, the lean embeddable build of the Artist Model Studio's editor, embedded (branch `ams-editor-integration`; plan and protocol in `~/dev/artistmodelstudio/docs/EMBEDDING.md`). It runs in an iframe from `public/vendor/ams-editor/` and is wired in by `sim/DrawingBoard.js`.
 
 ## Use
 
@@ -14,12 +14,12 @@ The drawing editor is the Artist Model Studio's, embedded (branch `ams-editor-in
 
 ## Install the editor
 
-Two builds: the lean one (default, 780 KB: the canvas, tools, brushes, color pickers, exports, and the Boards, Layers (Outliner) and Properties panels, opened on demand with Cmd+B, the palette or the menu; no scenes, assets, recording, lessons, docs, assistant or code editor) and the chunky one with every studio panel: `AMS_FULL=1 npm run vendor:ams`.
+Two builds: Poliplan, the lean one (default, 780 KB: the canvas, tools, brushes, color pickers, exports, and the Boards, Layers (Outliner) and Properties panels, opened on demand with Cmd+B, the palette or the menu; no scenes, assets, recording, lessons, docs, assistant or code editor) and the chunky one with every studio panel: `AMS_FULL=1 npm run vendor:poliplan`.
 
 The built editor is not committed here (13 MB). With the Artist Model Studio checked out at `~/dev/artistmodelstudio-embed` (a git worktree of the studio on branch `embed-editor`; `AMS_DIR` to change):
 
 ```sh
-npm run vendor:ams
+npm run vendor:poliplan
 ```
 
 It builds the editor there (`npm run build:embed`) and copies it to `public/vendor/ams-editor/` with a `VERSION` file. Without it the Draw button says so.
