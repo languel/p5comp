@@ -1,3 +1,4 @@
+import { dipCount } from "./switchTypes.js";
 import {analogTopology} from "./analogTopology.js";
 import { isNeoPixel, pixelCount } from "./outputModels.js";
 import { isPot, isSensorInput } from "./inputModels.js";
@@ -367,16 +368,16 @@ export function resolveCircuit(diagram, contacts = []) {
         b: net(p.id + ":" + b),
         ...extra,
       });
-    if (p.type === "wokwi-dip-switch-8")
-      for (let i = 0; i < 8; i++)
+    if (dipCount(p.type) > 0)
+      for (let i = 0; i < dipCount(p.type); i++)
         add(i + 1 + "a", i + 1 + "b", {
           kind: "dip",
           index: i,
-          initial: p.attrs?.values || Array(8).fill(0),
+          initial: p.attrs?.values || Array(dipCount(p.type)).fill(0),
         });
     if (p.type === "p5comp-toggle-switch")
       add("1", "2", { kind: "toggle", initial: Number(p.attrs?.value || 0) });
-    if (p.type === "wokwi-slide-switch") {
+    if (["wokwi-slide-switch", "p5comp-slide-switch"].includes(p.type)) {
       add("2", "1", {
         kind: "slide",
         position: 0,

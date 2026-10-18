@@ -74,18 +74,30 @@ class SimplePart extends LitElement {
 class SimpleToggle extends SimplePart {
   get pinInfo() {
     return [
-      { name: "1", x: 14, y: 55, signals: [] },
-      { name: "2", x: 33, y: 55, signals: [] },
+      { name: "1", x: 19, y: 29, signals: [] },
+      { name: "2", x: 28.5, y: 29, signals: [] },
     ];
   }
   render() {
     const on = Number(this.value) !== 0;
-    return html`<svg width="48" height="55" viewBox="0 0 48 55">
-      <path class="lead" d="M14 39v16m19-16v16" />
-      <rect class="body" x="3" y="18" width="42" height="23" rx="4" />
-      <text x="7" y="30">O</text>
-      <text x="36" y="30">I</text>
-      <circle cx="24" cy="28" r="9" fill="#797e83" />
+    return html`<svg width="48" height="29" viewBox="0 0 48 29">
+      <defs>
+        <linearGradient id="plate" x2="0" y2="1">
+          <stop stop-color="#e3e4df" /><stop offset="1" stop-color="#b0b4b3" />
+        </linearGradient>
+        <linearGradient id="lever" x2="0" y2="1">
+          <stop stop-color="#f3f4f2" /><stop offset=".45" stop-color="#c7cccd" /><stop offset="1" stop-color="#858c8f" />
+        </linearGradient>
+      </defs>
+      <path class="lead" d="M19 22v7m9.5-7v7" />
+      <rect x="1" y="1" width="46" height="22" rx="4" fill="url(#plate)" stroke="#777d7f" stroke-width="1" />
+      <rect x="3" y="8" width="11" height="8" rx="1.5" fill=${on ? "#4a4e50" : "#272b2d"} />
+      <rect x="34" y="8" width="11" height="8" rx="1.5" fill=${on ? "#a32f2a" : "#75413d"} />
+      <text x="8.5" y="13.8" text-anchor="middle" style="font:600 5px system-ui;fill:#f1f0e9">OFF</text>
+      <text x="39.5" y="13.8" text-anchor="middle" style="font:600 5px system-ui;fill:#fff2e8">ON</text>
+      <path d="M24 3.5l7.5 4.2v8.6L24 20.5l-7.5-4.2V7.7z" fill="#bfc3c2" stroke="#747b7d" stroke-width=".8" />
+      <circle cx="24" cy="12" r="7" fill="#e4e6e2" stroke="#8c9394" stroke-width=".7" />
+      <circle cx="24" cy="12" r="4.7" fill="#555d60" stroke="#a2a8a7" stroke-width="1" />
       <g
         data-active-control
         role="switch"
@@ -104,13 +116,76 @@ class SimpleToggle extends SimplePart {
       >
         <title>${on ? "On (I)" : "Off (O)"} · click lever</title>
         <path
-          d=${on ? "M24 28L34 4" : "M24 28L14 4"}
-          stroke="#c3c5c7"
-          stroke-width="7"
+          d=${on ? "M24 12L31 12" : "M24 12L17 12"}
+          stroke="#737b7e"
+          stroke-width="6.5"
           stroke-linecap="round"
         />
-        <circle cx=${on ? 34 : 14} cy="4" r="3.5" fill="#a1a4a7" />
+        <path
+          d=${on ? "M24 11.3L31 11.3" : "M24 11.3L17 11.3"}
+          stroke="url(#lever)"
+          stroke-width="5"
+          stroke-linecap="round"
+        />
+        <circle cx=${on ? 31 : 17} cy="11.3" r="2.5" fill="#dde0de" />
       </g>
+    </svg>`;
+  }
+}
+class SimpleSlideSwitch extends SimplePart {
+  get pinInfo() {
+    return [1, 2, 3].map((name, i) => ({ name: String(name), x: 9.5 + i * 9.5, y: 28.5, signals: [] }));
+  }
+  render() {
+    const on = Number(this.value) !== 0;
+    return html`<svg width="38" height="28.5" viewBox="0 0 38 28.5">
+      <path class="lead" d="M9.5 17v11.5M19 17v11.5M28.5 17v11.5" />
+      <rect x="1" y="1" width="36" height="18" rx="3" fill="#55595a" stroke="#777c7d" stroke-width=".7" />
+      <rect x="6" y="4" width="26" height="12" rx=".5" fill="#202425" />
+      <text x=${on ? 12.5 : 25.5} y="11.7" text-anchor="middle" style="font:600 4.5px system-ui;fill:#e5e7e4">${on ? "ON" : "OFF"}</text>
+      <g data-active-control role="switch" tabindex="0" aria-label="Slide switch" aria-checked=${on}
+        style="cursor:ew-resize"
+        @pointerdown=${e => { e.stopPropagation(); this._startX = e.clientX; e.currentTarget.setPointerCapture(e.pointerId); }}
+        @pointerup=${e => { e.stopPropagation(); const dx = e.clientX - this._startX; this.emit(Math.abs(dx) > 3 ? (dx > 0 ? 1 : 0) : (on ? 0 : 1)); }}
+        @keydown=${e => { if ([" ", "Enter", "ArrowLeft", "ArrowRight"].includes(e.key)) { e.preventDefault(); e.stopPropagation(); this.emit(e.key === "ArrowLeft" ? 0 : e.key === "ArrowRight" ? 1 : on ? 0 : 1); } }}>
+        <title>${on ? "ON · 2–3" : "OFF · 2–1"} · slide or click thumb · drag body to move</title>
+        <rect x=${on ? 20 : 6} y="4" width="12" height="12" fill="#343839" />
+        ${[2, 4.5, 7, 9.5].map(x => svg`<path d=${`M${(on ? 20 : 6) + x} 5.5v9`} stroke="#b4b8b8" stroke-width="1.2" />`)}
+      </g>
+    </svg>`;
+  }
+}
+class SimpleDipSwitch extends SimplePart {
+  static properties = { values: { type: Array } };
+  constructor() { super(); this.values = []; }
+  get count() { return Number(this.localName.split("-").at(-1)); }
+  get pinInfo() {
+    return Array.from({ length: this.count }, (_, i) => [
+      { name: `${i + 1}a`, x: 9.5 + i * 9.5, y: 0, signals: [] },
+      { name: `${i + 1}b`, x: 9.5 + i * 9.5, y: 38, signals: [] },
+    ]).flat();
+  }
+  change(i, value) {
+    this.values = Array.from({length:this.count}, (_, n) => n === i ? Number(value) : Number(this.values[n] || 0));
+    this.dispatchEvent(new Event("switch-change", {bubbles:true, composed:true}));
+  }
+  render() {
+    const width = (this.count + 1) * 9.5;
+    return html`<svg width=${width} height="38" viewBox=${`0 0 ${width} 38`}>
+      ${this.pinInfo.map(pin => svg`<path class="lead" d=${`M${pin.x} ${pin.y}v${pin.y ? -6 : 6}`} />`)}
+      <rect x="2" y="5" width=${width-4} height="28" rx="1.5" fill=${this.count === 4 ? "#177bb6" : "#b92b25"} stroke="#6b5551" stroke-width=".6" />
+      <text x="4.5" y="10.5" style="font:600 4px system-ui;fill:#fff">ON ↑</text>
+      ${Array.from({length:this.count}, (_,i) => {
+        const x = 9.5+i*9.5, on = !!this.values[i];
+        return svg`<g data-active-control role="switch" tabindex="0" aria-label=${`DIP switch ${i+1}`} aria-checked=${on}
+          style="cursor:pointer" @pointerdown=${e=>e.stopPropagation()} @click=${()=>this.change(i,!on)}
+          @keydown=${e=>{if(e.key===" "||e.key==="Enter"){e.preventDefault();e.stopPropagation();this.change(i,!on);}}}>
+          <title>Switch ${i+1}: ${on ? "ON" : "OFF"}</title>
+          <rect x=${x-3} y="13" width="6" height="12" rx=".5" fill="#78231f" stroke="#eee" stroke-width=".4" />
+          <rect x=${x-2.5} y=${on ? 13.5 : 19} width="5" height="5.5" fill="#e7e8e1" stroke="#a3a8a5" stroke-width=".5" />
+          <path d=${`M${x-1.7} ${on ? 15.3 : 20.8}h3.4`} stroke="#fff" stroke-width=".7" />
+        </g><text x=${x} y="30" text-anchor="middle" style="font:5px system-ui;fill:white">${i+1}</text>`;
+      })}
     </svg>`;
   }
 }
@@ -511,6 +586,10 @@ class SimpleCapacitor extends SimplePart {
 }
 for (const [tag, type] of [
   ["p5comp-toggle-switch", SimpleToggle],
+  ["p5comp-slide-switch", SimpleSlideSwitch],
+  ["p5comp-dip-switch-1", class extends SimpleDipSwitch {}],
+  ["p5comp-dip-switch-4", class extends SimpleDipSwitch {}],
+  ["p5comp-dip-switch-6", class extends SimpleDipSwitch {}],
   ["p5comp-potentiometer", SimplePot],
   ["p5comp-slide-potentiometer", SimpleSlidePot],
   ["p5comp-photoresistor", SimplePhoto],

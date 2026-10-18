@@ -94,3 +94,22 @@ test("simple slide pot uses analog wiring and accepts engineering resistance val
   d.parts[1].attrs.maxResistance = "-10k";
   assert.throws(() => validateDiagram(d), /positive ohms/);
 });
+
+test('compact DIP variants have independent contacts and correct terminal counts', () => {
+  for (const count of [1,4,6]) {
+    const d = {parts:[p('u','wokwi-arduino-uno'),p('s',`p5comp-dip-switch-${count}`)],connections:[['u:2','s:1a'],['u:GND.1','s:1b']]};
+    validateDiagram(d);
+    const t=resolveCircuit(d), states=Array(20).fill(3);
+    assert.equal(t.digital.contacts.filter(s=>s.id==='s').length,count);
+    assert.equal(digitalLevels(t,states,{s:Array(count).fill(0)})[2],true);
+    assert.equal(digitalLevels(t,states,{s:[1,...Array(count-1).fill(0)]})[2],false);
+    if(count>1) assert.equal(digitalLevels(t,states,{s:[0,1,...Array(count-2).fill(0)]})[2],true);
+  }
+});
+test('compact slide selects either outside contact through its center pin', () => {
+  const d={parts:[p('u','wokwi-arduino-uno'),p('s','p5comp-slide-switch')],connections:[['u:2','s:2'],['u:GND.1','s:1'],['u:5V','s:3']]};
+  validateDiagram(d);
+  const t=resolveCircuit(d), states=Array(20).fill(3);
+  assert.equal(digitalLevels(t,states,{s:0})[2],false);
+  assert.equal(digitalLevels(t,states,{s:1})[2],true);
+});

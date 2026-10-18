@@ -1,3 +1,4 @@
+import { dipCount } from "./switchTypes.js";
 import { drawingCommand } from "./automation/drawing.js";
 import {formatCode} from "../shared/editor/formatCode.js";
 import {matchingPortName} from "../shared/serial/portIdentity.js";
@@ -877,14 +878,14 @@ function renderParts() {
           setControl(p.id, Number(element.value)),
         );
       }
-      if (p.type === "wokwi-dip-switch-8") {
-        controls[p.id] ??= p.attrs?.values || Array(8).fill(0);
+      if (dipCount(p.type) > 0) {
+        controls[p.id] ??= p.attrs?.values || Array(dipCount(p.type)).fill(0);
         element.values = [...controls[p.id]];
         element.addEventListener("switch-change", () =>
           setControl(p.id, [...element.values]),
         );
       }
-      if (["wokwi-slide-switch", "p5comp-toggle-switch"].includes(p.type)) {
+      if (["wokwi-slide-switch", "p5comp-slide-switch", "p5comp-toggle-switch"].includes(p.type)) {
         controls[p.id] ??= Number(p.attrs?.value || 0);
         element.value = controls[p.id];
         element.addEventListener("input", () =>
@@ -1021,13 +1022,13 @@ function setControl(id, value) {
     el &&
     (isPot(el.tagName.toLowerCase()) ||
       [
-        "WOKWI-SLIDE-SWITCH",
+        "WOKWI-SLIDE-SWITCH", "P5COMP-SLIDE-SWITCH",
         "P5COMP-TOGGLE-SWITCH",
         "P5COMP-PHOTORESISTOR",
       ].includes(el.tagName))
   )
     el.value = value;
-  if (el?.tagName === "WOKWI-DIP-SWITCH-8") el.values = [...value];
+  if (dipCount(el?.localName) > 0) el.values = [...value];
   if (el && isMomentarySwitch(el.tagName.toLowerCase()))
     el.pressed = Boolean(value);
   const hold = document.querySelector(`[aria-label="Hold ${id}"]`);
@@ -1057,8 +1058,8 @@ function renderControls() {
       isMomentarySwitch(p.type) ||
       isSensorInput(p.type) ||
       [
-        "wokwi-dip-switch-8",
-        "wokwi-slide-switch",
+        "wokwi-dip-switch-8", "p5comp-dip-switch-1", "p5comp-dip-switch-4", "p5comp-dip-switch-6",
+        "wokwi-slide-switch", "p5comp-slide-switch",
         "p5comp-toggle-switch",
         "p5comp-photoresistor",
         "wokwi-membrane-keypad",
@@ -1074,8 +1075,8 @@ function renderControls() {
     if (
       isSensorInput(p.type) ||
       [
-        "wokwi-dip-switch-8",
-        "wokwi-slide-switch",
+        "wokwi-dip-switch-8", "p5comp-dip-switch-1", "p5comp-dip-switch-4", "p5comp-dip-switch-6",
+        "wokwi-slide-switch", "p5comp-slide-switch",
         "p5comp-toggle-switch",
         "p5comp-photoresistor",
         "wokwi-membrane-keypad",
@@ -1278,11 +1279,11 @@ function addElement(type, attrs = {}, point = null) {
       ? 100
       : type === "p5comp-photoresistor"
         ? Number(attrs.value ?? 100)
-        : type === "wokwi-dip-switch-8"
-          ? attrs.values || Array(8).fill(0)
+        : dipCount(type) > 0
+          ? attrs.values || Array(dipCount(type)).fill(0)
           : type === "wokwi-membrane-keypad"
             ? []
-            : ["wokwi-slide-switch", "p5comp-toggle-switch"].includes(type)
+            : ["wokwi-slide-switch", "p5comp-slide-switch", "p5comp-toggle-switch"].includes(type)
               ? Number(attrs.value || 0)
               : false;
   renderParts();
@@ -1677,7 +1678,7 @@ workbench = new Workbench({
     }
     if (
       ([
-        "wokwi-slide-switch",
+        "wokwi-slide-switch", "p5comp-slide-switch",
         "p5comp-toggle-switch",
         "p5comp-photoresistor",
       ].includes(next.type) ||
@@ -1688,7 +1689,7 @@ workbench = new Workbench({
       const value = Number(next.attrs.value);
       if (!Number.isFinite(value)) throw new Error("Enter a numeric value.");
       controls[next.id] = [
-        "wokwi-slide-switch",
+        "wokwi-slide-switch", "p5comp-slide-switch",
         "p5comp-toggle-switch",
       ].includes(next.type)
         ? value

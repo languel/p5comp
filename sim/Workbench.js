@@ -1389,7 +1389,7 @@ export class Workbench {
             : input.value.trim();
         if (!value) throw new Error("Enter a value.");
         if (
-          ["wokwi-slide-switch", "p5comp-toggle-switch"].includes(part.type) &&
+          ["wokwi-slide-switch", "p5comp-slide-switch", "p5comp-toggle-switch"].includes(part.type) &&
           !["0", "1"].includes(value)
         )
           throw new Error("Switch position must be 0 or 1.");
@@ -1399,7 +1399,7 @@ export class Workbench {
         );
         if (
           [
-            "wokwi-slide-switch",
+            "wokwi-slide-switch", "p5comp-slide-switch",
             "p5comp-toggle-switch",
             "p5comp-photoresistor",
             "p5comp-potentiometer",

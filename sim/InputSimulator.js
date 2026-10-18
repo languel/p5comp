@@ -1,3 +1,4 @@
+import { dipCount } from "./switchTypes.js";
 import { isPot } from "./inputModels.js";
 export class InputSimulator {
   constructor(set, get) {
@@ -62,14 +63,14 @@ export class InputSimulator {
       return input;
     };
     const value = this.get(part.id);
-    if (part.type === "wokwi-dip-switch-8")
-      for (let i = 0; i < 8; i++)
+    if (dipCount(part.type) > 0)
+      for (let i = 0; i < dipCount(part.type); i++)
         add("Switch " + (i + 1), "checkbox", value?.[i], (on) => {
-          const values = [...(this.get(part.id) || Array(8).fill(0))];
+          const values = [...(this.get(part.id) || Array(dipCount(part.type)).fill(0))];
           values[i] = on ? 1 : 0;
           this.set(part.id, values);
         });
-    else if (["wokwi-slide-switch", "p5comp-toggle-switch"].includes(part.type))
+    else if (["wokwi-slide-switch", "p5comp-slide-switch", "p5comp-toggle-switch"].includes(part.type))
       add(
         part.type === "p5comp-toggle-switch"
           ? "Closed"
