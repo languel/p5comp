@@ -162,3 +162,20 @@ void readCommands() {
 Call readCommands() from loop(). Reporting the resulting LED state back lets p5
 confirm what Arduino did. Keep the message format separate from presentation:
 connect → receive a complete message → validate → update state → draw.
+
+### HelloLEDp5: a minimal blink-rate control
+
+Open **File → Examples → Communications → HelloLEDp5**. This is a separate
+example; the original HelloLED stays unchanged. Run the circuit and p5, then
+move the slider: p5 sends one integer plus a newline (milliseconds between LED
+toggles). Arduino uses `millis()` rather than `delay()` so it keeps receiving
+updates while blinking. It reports `0` or `1` after each toggle, and p5 displays
+the actual returned LED state rather than a second blinking animation.
+
+The interval ranges from 50 to 2000 ms; a complete on/off cycle takes twice the
+interval. Both sketches use 9600 baud. The LED plugs directly into D13/GND,
+as in HelloLED. Standalone sources are in `public/examples/helloled-p5/`.
+Outside p5comp use a Web Serial browser (Chrome/Edge), upload the Arduino sketch,
+close other serial clients, then click Connect Arduino in p5. Safari is unsupported.
+
+**Field / feedback** remains in Communications as the richer sensor/artwork demo.

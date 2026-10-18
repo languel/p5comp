@@ -32,6 +32,7 @@ import {
   assetDataURL,
 } from "./projectFiles.js";
 import "./workbench.css";
+const FOLDER_CHEVRON = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m8 3 9 9-9 9"/></svg>';
 const $ = (id) => document.getElementById(id);
 const node = (tag, cls, html = "") => {
   const e = document.createElement(tag);
@@ -68,8 +69,19 @@ export class Workbench {
     const fileMenu = node(
       "details",
       "wb-menu",
-      '<summary>File</summary><div><button id="newProject">New project</button><button id="saveProject">Save project…</button><button id="saveZIP">Download project ZIP</button><button id="openProject">Open project…</button><button id="openFolder">Open folder…</button><button id="saveFolder">Save to folder…</button><hr><button id="addReference">Add image / video…</button><button id="addLessonNote">Add note…</button><button id="componentLibrary">Component editor…</button><button id="exportPNG">Export PNG</button><button id="exportSVG">Export SVG</button><button id="exportPDF">Export PDF with code</button></div>',
+      `<summary>File</summary><div>
+        <details class="example-folder"><summary>New</summary><section><button id="newProject">New project</button></section></details>
+        <details class="example-folder"><summary>Save</summary><section><button id="saveProject">Save project…</button><button id="saveZIP">Download project ZIP</button><button id="saveFolder">Save to folder…</button><button id="saveExample">Save current as example</button></section></details>
+        <details class="example-folder"><summary>Open</summary><section><button id="openProject">Open project…</button><button id="openFolder">Open folder…</button></section></details>
+        <details class="example-folder" id="fileExamples"><summary>Examples</summary><section></section></details>
+        <details class="example-folder"><summary>Export</summary><section><button id="exportPNG">Export PNG</button><button id="exportSVG">Export SVG</button><button id="exportPDF">Export PDF with code</button></section></details>
+        <details class="example-folder"><summary>Add</summary><section><button id="addCircuitElement">Component…</button><button id="addReference">Image…</button><button id="addVideo">Video…</button><button id="addLessonNote">Note…</button><button id="componentLibrary">Component editor…</button></section></details>
+      </div>`,
     );
+    fileMenu.id="fileMenu";
+    fileMenu.querySelectorAll('.example-folder > summary').forEach(summary=>{
+      summary.prepend(node('span','example-folder-mark',FOLDER_CHEVRON));
+    });
     toolbar.querySelector(".brand").after(fileMenu);
     ["save", "open", "lesson"].forEach((id) => ($(id).hidden = true));
     this.title = node("span", "project-name");
@@ -77,15 +89,16 @@ export class Workbench {
     const examples = node(
       "details",
       "wb-menu",
-      '<summary>Examples</summary><div id="exampleLibrary"><details class="example-folder" data-folder="Reference"><summary aria-label="Reference examples"><span class="example-folder-mark">▸</span>Reference</summary><section><button id="classExample">Distance / pot / buttons</button><button id="blinkExample">Built-in LED (legacy)</button><button id="firmataExample">StandardFirmata</button></section></details><hr><button id="saveExample">Save current as example</button></div>',
+      '<summary>Examples</summary><div id="exampleLibrary"><details class="example-folder" data-folder="Reference"><summary aria-label="Reference examples"><span class="example-folder-mark">▸</span>Reference</summary><section><button id="classExample">Distance / pot / buttons</button><button id="blinkExample">Built-in LED (legacy)</button><button id="firmataExample">StandardFirmata</button></section></details></div>',
     );
-    this.title.after(examples);
+    $("fileExamples").querySelector("section").append(examples.querySelector("#exampleLibrary"));
+    $('fileExamples').querySelectorAll('.example-folder-mark').forEach(mark=>mark.innerHTML=FOLDER_CHEVRON);
     const viewMenu = node(
       "details",
       "wb-menu",
       '<summary>View</summary><div><button id="viewTabs" data-layout="tabs">Tabs</button><button id="viewHorizontal" data-layout="horizontal">Horizontal split</button><button id="viewVertical" data-layout="vertical">Vertical split</button><hr><button data-dock="overlay">p5 overlay</button><button id="mirrorP5">p5 projection window</button><button id="mirrorCircuit">Circuit projection window</button><button data-dock="hidden">Hide p5 output</button><button id="showInspector">Show inspector</button></div>',
     );
-    examples.after(viewMenu);
+    this.title.after(viewMenu);
     this.viewMenu = viewMenu;
     viewMenu.querySelectorAll("[data-layout]").forEach((button) => {
       button.onclick = () => {
@@ -106,7 +119,7 @@ export class Workbench {
       "wb-menu",
       '<summary>Settings</summary><div id="globalSettings"><label>Include code in PNG/SVG <input id="exportCode" type="checkbox"></label><label>Workbench <input id="workbenchColor" type="color"></label><label>p5 background <input id="outputColor" type="color"></label><label>Compiler URL <input id="compilerURL" placeholder="http://127.0.0.1:8771/api/compile"></label></div>',
     );
-    examples.after(settingsMenu);
+    this.title.after(settingsMenu);
     $("themeToggle").hidden = true;
     settingsMenu
       .querySelector("div")
@@ -757,7 +770,9 @@ export class Workbench {
     this.imageInput.multiple = true;
     this.imageInput.hidden = true;
     document.body.append(this.imageInput);
-    $("addReference").onclick = () => this.imageInput.click();
+    $("addReference").onclick = () => {this.imageInput.accept="image/*";this.imageInput.click();};
+    $("addVideo").onclick = () => {this.imageInput.accept="video/*";this.imageInput.click();};
+    $("addCircuitElement").onclick = () => $("addElement").click();
     installSceneMedia(this);
     $("addLessonNote").onclick = () => this.editLessonNote();
     $("componentLibrary").onclick = () => this.editComponents();
@@ -839,7 +854,7 @@ export class Workbench {
       classExample: "⌁",
       blinkExample: "☼",
       firmataExample: "∞",
-      saveExample: "+",
+      saveExample: "↓",
       mirrorP5: "↗",
       mirrorCircuit: "↗",
       showInspector: "☷",
@@ -1693,7 +1708,7 @@ export class Workbench {
       const summary = node("summary", "");
       summary.setAttribute("aria-label", name + " examples");
       summary.append(
-        node("span", "example-folder-mark", "▸"),
+        node("span", "example-folder-mark", FOLDER_CHEVRON),
         document.createTextNode(name),
       );
       folder.append(summary, node("section", ""));

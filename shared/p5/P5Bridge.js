@@ -210,6 +210,9 @@ export class P5Bridge extends EventTarget {
     this.frame.src = "about:blank";
     this.#status("p5 stopped");
   }
+  setParameter(name, value) {
+    this.#post({ type: "setParameter", name, value });
+  }
   mirrorControl(id, value) {
     this.#post({ type: "mirrorControl", id, value });
   }
@@ -274,6 +277,8 @@ export class P5Bridge extends EventTarget {
       return;
     }
     if (
+      message.type === "parameters" ||
+      message.type === "parameterError" ||
       message.type === "mirrorFrame" ||
       message.type === "mirrorError" ||
       message.type === "renderSize"

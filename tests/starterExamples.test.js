@@ -59,3 +59,19 @@ test("Four signals firmware maps button to LED and pot to fading RGB brightness"
   assert.equal(r.snapshot().parts.led.lit, false);
   assert.deepEqual(lines().at(-1).split(",").map(Number), [0, 0, 0, 0, 0, 0]);
 });
+
+test('HelloLEDp5 changes its real firmware blink interval over serial', () => {
+  const { runtime: r, lines } = example('helloled-p5');
+  r.advance(9e6);
+  assert.equal(lines().at(-1), '1');
+  r.write(new TextEncoder().encode('100\n'));
+  r.advance(3e6);
+  const fastCount = lines().length;
+  r.advance(4e6);
+  assert.ok(lines().length >= fastCount + 2, '100ms interval produces repeated toggles');
+  r.write(new TextEncoder().encode('2000\n'));
+  r.advance(1e6);
+  const slowCount = lines().length;
+  r.advance(8e6);
+  assert.equal(lines().length, slowCount, '2000ms interval holds its current state');
+});

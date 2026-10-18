@@ -138,6 +138,7 @@ export function createAgentAdapter(ctx) {
           base64: data.split(",")[1],
         };
       }
+      if (op === "p5_parameters") return ctx.p5Parameters(a);
       if (op === "catalog")
         return elementCatalog.filter(
           (p) =>

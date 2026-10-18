@@ -10,6 +10,11 @@
     "folder": "Getting started"
   },
   {
+    "name": "HelloLEDp5 · blink rate from p5",
+    "project": "examples/helloled-p5.json",
+    "folder": "Communications"
+  },
+  {
     "name": "Serial basics · two-way LED (minimal)",
     "project": "examples/serial-basics.json",
     "folder": "Communications"

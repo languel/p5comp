@@ -467,3 +467,11 @@ and side views. Find it under Examples → Communications.
 The serial monitor offers Latest (⥨) with fixed RX/TX rows and Stream follow (⟱)
 with chronological messages. Pause freezes either view for reading and scrolling. Pausing the display leaves the
 serial connection and sketches running.
+
+The File menu groups New, Save, Open, Examples, Export, and Add into nested
+folders. File → Add and the canvas Add element picker both offer Image, Video,
+and Webcam. Adding a webcam overlay does not start camera capture until requested.
+
+[Live p5 parameters](docs/p5-parameters.md) expose real `let` variables through
+`@param`, read live values through `@watch`, and connect circuit/code rows with
+`@link`. The Field / feedback example includes working mappings and live sliders.

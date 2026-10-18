@@ -188,3 +188,10 @@ camera; circuit overlay mode shares the circuit camera.
 The generated editor bundle is tracked and ships with Pages. After updating
 the studio source, run `npm run vendor:poliplan`, commit the regenerated bundle,
 and run `npm run build && npm run verify:drawing`. CI checks the packaged files.
+
+### Live p5 parameters
+
+`p5comp_p5_parameters` returns live annotated rows and signal links. Supply
+`name` and numeric/boolean `value` to edit a writable parameter without restarting
+p5. Values persist with project settings and edits participate in action recording.
+See [annotation syntax](p5-parameters.md).

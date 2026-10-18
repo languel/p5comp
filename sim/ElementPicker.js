@@ -79,7 +79,12 @@ export class ElementPicker {
       "lesson note markdown mkd html latex katex text".includes(
         this.search.value.trim().toLowerCase(),
       );
+    const media = ['Image','Video','Webcam'].map(name=>({
+      type:'p5comp-media-'+name.toLowerCase(),name,group:'Media',modeled:true,
+      modelDescription:'Add '+name.toLowerCase()+' to the scene',
+    })).filter(info=>!this.search.value.trim() || info.name.toLowerCase().includes(this.search.value.trim().toLowerCase()));
     const found = [
+        ...media,
         ...(showNote ? [note] : []),
         ...searchElements(this.search.value).map((info) =>
           isBreadboard(info.type) ? { ...info, group: "Breadboards" } : info,
@@ -88,6 +93,7 @@ export class ElementPicker {
       groups = [
         "Favorites",
         "Notes",
+        "Media",
         "Breadboards",
         "Custom",
         "Basic",
@@ -130,7 +136,8 @@ export class ElementPicker {
         const body = document.createElement("span");
         body.className = "thumb-body";
         thumb.append(body);
-        if (info.type === "p5comp-note") thumb.textContent = "▤";
+        if (info.type.startsWith("p5comp-media-")) thumb.textContent = info.name === "Webcam" ? "◉" : "▧";
+        else if (info.type === "p5comp-note") thumb.textContent = "▤";
         else if (isBreadboard(info.type)) {
           thumb.innerHTML = breadboardSVG(info);
           const svg = thumb.querySelector("svg");

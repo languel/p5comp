@@ -1572,9 +1572,17 @@ input[type="checkbox"]:focus-visible {
   gap: 8px;
 }
 .example-folder-mark {
-  display: inline-block;
-  color: var(--ui-quiet);
+  display: inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:14px;
+  height:14px;
+  flex:0 0 14px;
+  color:var(--ui-quiet);
+  transform-origin:center;
+  transition:transform 120ms ease;
 }
+.example-folder-mark svg { display:block; width:100%; height:100%; }
 .example-folder[open] > summary .example-folder-mark {
   transform: rotate(90deg);
 }
@@ -1915,3 +1923,90 @@ body.resizing-bottom, body.resizing-bottom * { cursor:row-resize !important; use
 #stage.box-select-mode, #stage.box-select-mode * { cursor:crosshair !important; }
 #stage.box-select-mode.pan-ready, #stage.box-select-mode.pan-ready * { cursor:grab !important; }
 .unified #selectTool[aria-pressed="true"] { background:var(--ui-selected, var(--selected)); color:var(--ui-text); }
+
+/* Simulation signals: endpoint controls with optional communication plots. */
+.unified .wb-bottom #controls { position:relative; grid-template-columns:repeat(2,minmax(280px,1fr)); column-gap:64px; row-gap:12px; min-width:624px; }
+.simulation-group { position:relative; z-index:1; }
+.simulation-group h3 { display:flex;align-items:center;gap:5px;padding-left:0; }
+.simulation-group h3 .ui-icon {width:14px;height:14px;flex-basis:14px;}
+.code-signal-rows { display:grid; gap:1px; }
+.code-signal { display:grid;grid-template-columns:minmax(80px,1fr) 65px minmax(40px,.7fr);gap:6px;align-items:center;min-height:28px;background:var(--ui-panel); }
+.code-signal code { overflow:hidden;text-overflow:ellipsis;font:11px ui-monospace,monospace; }
+.code-signal output { text-align:right;font:11px ui-monospace,monospace;font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.code-signal input[type="range"] { min-width:35px;width:100%; }
+.signal-connections {position:absolute;left:0;top:0;z-index:0;pointer-events:none;overflow:visible;}
+.signal-connections path {fill:none;stroke:var(--ui-quiet);stroke-width:1;stroke-dasharray:2 4;opacity:.55;}
+.code-signal:not(:has(input)) { grid-template-columns:minmax(65px,1fr) minmax(95px,120px); }
+
+.signal-circuit-in { grid-column:1;grid-row:1; }
+.signal-p5-out { grid-column:2;grid-row:1; }
+.signal-circuit-out { grid-column:1;grid-row:2; }
+.signal-p5-in { grid-column:2;grid-row:2; }
+
+.unified .wb-bottom #controls.signal-flow-mode {display:block;min-width:830px;}
+.communication-flow {max-width:none;margin:0;}
+.communication-heading,.communication-row {display:grid;gap:16px;align-items:center;grid-template-columns:minmax(340px,1fr) minmax(100px,.7fr) minmax(340px,1fr);}
+.communication-heading {font-size:11px;color:var(--ui-muted);margin-bottom:4px;}
+.communication-row {min-height:30px;font:11px ui-monospace,monospace;}
+.communication-source {align-items:center;min-width:0;
+  display:grid;gap:8px;grid-template-columns:100px 140px 15px minmax(65px,1fr);}
+.communication-source input[type=range] {width:140px;min-width:60px;}
+.communication-link {position:relative;display:flex;justify-content:center;align-items:center;min-height:26px;}
+.communication-link::before {content:'';position:absolute;left:0;right:0;border-top:1px dotted var(--ui-quiet);}
+.communication-link::after {position:absolute;color:var(--ui-muted);content:''!important;width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;}
+.communication-link[data-direction=right]::after {content:'›';border-left:8px solid var(--ui-text);right:-1px;}
+.communication-link[data-direction=left]::after {content:'‹';border-right:8px solid var(--ui-text);left:-1px;}
+#controls .simulation-group[hidden] {display:none;}
+#controls.signal-flow-mode > .signal-connections {display:none;}
+
+.communication-endpoint {display:flex;align-items:center;gap:7px;min-width:0;}
+.communication-endpoint > .ui-icon,.communication-source > .ui-icon,.endpoint-role {width:15px;height:15px;flex:0 0 15px;color:var(--ui-muted);}
+.physical-endpoint .control {grid-template-columns:15px minmax(80px,1fr) 42px auto;max-width:none;gap:6px;}
+.physical-endpoint .control > .simulator-dot-space {display:none;}
+.physical-endpoint .control > .endpoint-role {grid-column:1;}
+.physical-endpoint .control > label {grid-column:2;}
+.physical-endpoint .control > output {grid-column:3;text-align:right;justify-self:stretch;}
+.physical-endpoint .simulation-widgets {grid-column:4;}
+.physical-endpoint .control > * {grid-row:1;}
+.physical-endpoint .control > .simulator-dot {grid-column:1;z-index:2;}
+.physical-endpoint .control:has(> .simulator-dot) > .endpoint-role {visibility:hidden;}
+.physical-endpoint .control.output-control {grid-template-columns:15px minmax(65px,1fr) minmax(60px,95px) auto;}
+.physical-endpoint .control .simulation-widgets {min-width:0;}
+.physical-endpoint .control output {white-space:nowrap;}
+.simulation-widgets input[type="checkbox"] {order:-1;flex-shrink:0;}
+
+.simulation-reading {grid-column:3;grid-row:1;display:flex;align-items:center;justify-content:flex-end;gap:6px;}
+.simulation-reading input[type=checkbox] {margin:0;flex-shrink:0;}
+.physical-endpoint .control:has(> .simulation-reading) {grid-template-columns:15px minmax(65px,1fr) 70px auto;}
+/* Shared Arduino columns: role, label, right-aligned reading, control. */
+.physical-endpoint .control,
+.physical-endpoint .control.output-control,
+.physical-endpoint .control:has(> .simulation-reading) {
+  grid-template-columns:15px minmax(65px,1fr) 100px 140px;
+}
+.physical-endpoint .control > .simulation-reading {justify-content:flex-end;}
+.physical-endpoint .control > .simulation-widgets {width:140px;justify-content:flex-start;}
+.physical-endpoint .simulation-widgets > input[type=range] {width:140px;max-width:140px;}
+.physical-endpoint .simulation-widgets:not(:has(input[type=range])) {justify-content:center;}
+.physical-endpoint .control .simulation-widgets > button[data-digital-control] {
+  width:30px;height:30px;min-width:30px;padding:0;
+}
+.communication-source > input {grid-row:1;grid-column:2;}
+.communication-source > .ui-icon {grid-row:1;grid-column:3;}
+.communication-source > code {grid-row:1;grid-column:4;}
+
+.physical-endpoint .control > .endpoint-test {grid-column:1;grid-row:1;width:24px;height:24px;min-width:24px;padding:4px;margin-left:-4px;border:0;}
+.simulation-group .control .simulator-dot:has(svg)::after {display:none;}
+.simulation-group .control .simulator-dot .ui-icon {width:15px;height:15px;}
+
+/* Values belong to their endpoint; the middle is reserved for signal flow. */
+.communication-source > output {grid-column:1;grid-row:1;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;}
+.communication-heading > span:nth-child(2) {display:flex;justify-content:center;}
+.signal-plot-toggle {width:24px;height:24px;padding:4px;}
+.signal-history {position:absolute;inset:0;width:100%;height:24px;display:none;pointer-events:none;}
+.show-signal-plots .signal-history {display:block;}
+.signal-history path {fill:none;stroke:var(--ui-text);stroke-width:1;vector-effect:non-scaling-stroke;opacity:.75;}
+.signal-history path[data-channel="1"] {stroke:#8bb5a0;}
+.signal-history path[data-channel="2"] {stroke:#b8a0cf;}
+.show-signal-plots .communication-link::before {opacity:.3;}
+.communication-heading > span:last-child {text-align:right;}

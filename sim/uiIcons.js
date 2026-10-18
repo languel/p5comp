@@ -1,6 +1,10 @@
 // Interface icon reference: 24-unit viewBox, 20-unit ink box, 1.75-unit stroke.
 // Keep this geometry shared: matching CSS boxes alone cannot normalize glyphs.
 const paths = {
+  plot: "M3 2v19h19M6 16l4-7 4 4 6-9",
+  signalInput: "M3 12h15M12 6l6 6-6 6M21 4v16",
+  signalOutput: "M3 4v16M7 12h14M15 6l6 6-6 6",
+  signalLight: "M8 16c0-3-3-3-3-7a7 7 0 0 1 14 0c0 4-3 4-3 7ZM8 19h8M10 22h4",
   record:
     "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20ZM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z",
   serialLatest: "M2 8h19M16 3l5 5-5 5M22 16H3M8 11l-5 5 5 5",

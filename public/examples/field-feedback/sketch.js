@@ -5,6 +5,38 @@
 // Switch -> reverse circulation. p5 -> RGB commands. Arduino -> sensor + applied RGB data.
 // P: plots on/off. O: side/overlay. R: restart the field.
 
+// @param hue = 190 (0..360 step:1)
+let hue = 190;
+// @param motionGain = 1 (0..3 step:0.05)
+let motionGain = 1;
+// @param spacingScale = 1 (0.5..2 step:0.05)
+let spacingScale = 1;
+// @param colorSpeed = 1 (0..4 step:0.1)
+let colorSpeed = 1;
+// Live readouts and the real signal paths used below.
+// @watch in sensor.pot
+// @watch in sensor.cm
+// @watch in sensor.hold
+// @watch out strength
+// @watch out reach
+// @watch out energy
+// @watch out hueValue
+// @watch out requestedRGB
+// @link A0 -> sensor.pot
+// @link sonar -> sensor.cm
+// @link D7 -> sensor.hold
+// @link sensor.pot -> strength
+// @link sensor.cm -> reach
+// @link spacingScale -> reach
+// @link motionGain -> energy
+// @link energy -> hueValue
+// @link colorSpeed -> hueValue
+// @link hueValue -> requestedRGB
+// @link requestedRGB -> rgbled
+let strength = 0,
+  reach = 0,
+  hueValue = 0;
+
 const WINDOW_SECONDS = 8;
 const MAX_AGENTS = 64;
 let sensor = { tick: 0, pot: 0, cm: -1, hold: 0, rgb: [0, 0, 0], ack: -1 };
@@ -44,8 +76,9 @@ function setup() {
     .style("align-items", "center");
   controls.style("font", "12px monospace").style("color", "#bfbfbf");
   createSpan("Hue").parent(controls);
-  hueSlider = createSlider(0, 360, 190, 1).parent(controls);
+  hueSlider = createSlider(0, 360, hue, 1).parent(controls);
   hueSlider.style("width", "76px").attribute("aria-label", "p5 color hue");
+  hueSlider.input(() => { hue = Number(hueSlider.value()); });
   plotButton = createButton("Plots · P").parent(controls);
   plotButton.mousePressed(() => (dataVisible = !dataVisible));
   layoutButton = createButton("Side / overlay · O").parent(controls);
@@ -112,6 +145,7 @@ function acceptLine(serialLine) {
 }
 
 function draw() {
+  if (Number(hueSlider.value()) !== hue) hueSlider.value(hue);
   background("#181818");
   const live = millis() - lastPacket < 1500;
   const wide = width >= 780;
@@ -133,17 +167,14 @@ function draw() {
     ink.pixelDensity(1);
   }
   art = nextArt;
-  const strength = live ? sensor.pot / 1023 : 0;
+  strength = live ? sensor.pot / 1023 : 0;
   const count = MAX_AGENTS;
-  const reach = map(
-    constrain(sensor.cm < 0 ? 100 : sensor.cm, 2, 400),
-    2,
-    400,
-    22,
-    110,
-  );
-  const hueValue =
-    (Number(hueSlider.value()) + fieldTime * 5 + energy * 60) % 360;
+  reach =
+    map(constrain(sensor.cm < 0 ? 100 : sensor.cm, 2, 400), 2, 400, 22, 110) *
+    spacingScale;
+  hueValue =
+    (hue + fieldTime * 5 * colorSpeed + energy * 60) %
+    360;
   requestedRGB = hsv(hueValue, 0.72, 1);
   if (live) fieldTime += min(deltaTime, 50) / 1000;
   drawField(count, reach, strength, live);
@@ -189,7 +220,7 @@ function stepSprings(dt, tension, rest, w, h, time) {
       const dy = y - h * (0.5 + 0.28 * Math.cos(phase * 0.83));
       const direction = sensor.hold ? -1 : 1;
       const swirl =
-        (direction * (v ? -1 : 1) * (25 + tension * 160)) /
+        (direction * (v ? -1 : 1) * (25 + tension * 160) * motionGain) /
         (1 + (dx * dx + dy * dy) / 18000);
       const distance = Math.max(10, Math.hypot(dx, dy));
       fx += (-dy / distance) * swirl;

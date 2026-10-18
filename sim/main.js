@@ -1,3 +1,6 @@
+import { parameterValue } from "../shared/p5/parameters.js";
+import { P5SignalsPanel } from "./P5SignalsPanel.js";
+let p5SignalsPanel=null, p5Parameters={rows:[],links:[]};
 import { icon } from "./uiIcons.js";
 import { outputPreview, outputReading, paintOutputPreview } from "./outputPreview.js";
 const outputTests = new Map();
@@ -192,7 +195,10 @@ const bridge = new P5Bridge($("p5Frame"), {
   onSend: (n, v) => writeBytes(new TextEncoder().encode(`${n}:${v}\n`)),
   onSendLine: (text) => writeBytes(new TextEncoder().encode(text + "\n")),
 });
+bridge.addEventListener('parameters',e=>{p5Parameters=e.detail;p5SignalsPanel?.update(e.detail);});
+bridge.addEventListener('parameterError',e=>notice(e.detail.message));
 bridge.addEventListener("status", (event) => {
+  if(/Loading|stopped|error|failed/.test(event.detail)){p5Parameters={rows:[],links:[]};p5SignalsPanel?.clear();}
   const status = $("p5Status");
   if (status) status.textContent = event.detail;
 });
@@ -257,7 +263,7 @@ function runP5() {
   updateConnection();
   return bridge.run(
     workbench?.p5Source() || sourceValue(p5Editor),
-    workbench?.p5Project() || {},
+    {...(workbench?.p5Project() || {}),parameters:workbench?.settings?.p5Parameters || {}},
   );
 }
 
@@ -1063,11 +1069,12 @@ function setControl(id, value) {
 }
 function renderControls() {
   outputTests.clear();
+  p5SignalsPanel?.dispose();
   $("controls").replaceChildren();
   const inputs = document.createElement('section'), outputs = document.createElement('section');
   for (const [section,title] of [[inputs,'Inputs'],[outputs,'Outputs']]) {
     section.className='simulation-group';
-    const heading=document.createElement('h3');heading.textContent=title;section.append(heading);
+    const heading=document.createElement('h3');heading.append(icon('chip'),document.createTextNode(title==='Inputs'?'Arduino In':'Arduino Out'));section.append(heading);
     $("controls").append(section);
   }
   for (const p of diagram.parts.filter(
@@ -1209,7 +1216,7 @@ function renderControls() {
     let marker;
     if (simulator) {
       simulator.className = 'simulator-dot';
-      simulator.replaceChildren();
+      simulator.replaceChildren(icon('signalInput'));
       simulator.title = 'Toggle simulator · '+(p.label || p.id);
       label.title = (p.label || p.id)+' · double-click to toggle simulator';
       label.ondblclick = () => simulator.click();
@@ -1220,14 +1227,20 @@ function renderControls() {
     const widgets = document.createElement('div');widgets.className='simulation-widgets';
     for(const child of [...div.children]) if(child!==label && child!==simulator) widgets.append(child);
     div.replaceChildren(marker,label,output,widgets);
+    const noEcho=widgets.querySelector('input[aria-label$=" no echo"]');
+    if(noEcho) {
+      const reading=document.createElement('div');reading.className='simulation-reading';
+      div.insertBefore(reading,output);reading.append(noEcho,output);
+    }
+    div.dataset.signal=p.id;
     inputs.append(div);
   }
   for (const p of diagram.parts.filter(p=>outputPreview(p))) {
-    const row=document.createElement('div');row.className='control output-control';
+    const row=document.createElement('div');row.className='control output-control';row.dataset.signal=p.id;
     const name=document.createElement('label');name.textContent=p.label || p.id;name.title=p.label || p.id;
     const reading=document.createElement('output');reading.dataset.outputValue=p.id;
     reading.textContent=outputReading(agentLatestState?.parts?.[p.id]);
-    const test=document.createElement('button');test.className='ui-icon-button';test.append(icon('play'));
+    const test=document.createElement('button');test.className='ui-icon-button endpoint-test';test.append(icon('signalOutput'));
     test.title='Hold to preview output · does not change wiring or sketch';
     test.setAttribute('aria-label','Test output '+p.id);
     const apply=()=>{
@@ -1247,11 +1260,22 @@ function renderControls() {
     test.onkeydown=e=>{if([' ','Enter'].includes(e.key)){e.preventDefault();apply();}};
     test.onkeyup=e=>{if([' ','Enter'].includes(e.key))release();};
     const marker=document.createElement('span');marker.className='simulator-dot-space';
-    const widgets=document.createElement('div');widgets.className='simulation-widgets';widgets.append(test);
-    row.append(marker,name,reading,widgets);outputs.append(row);
+    const widgets=document.createElement('div');widgets.className='simulation-widgets';
+    row.append(test,name,reading,widgets);outputs.append(row);
   }
+  p5SignalsPanel=new P5SignalsPanel($("controls"),outputs,setP5Parameter);
+  p5SignalsPanel.update(p5Parameters);
   if(inputs.children.length===1) inputs.append(Object.assign(document.createElement('small'),{textContent:'No inputs'}));
   if(outputs.children.length===1) outputs.append(Object.assign(document.createElement('small'),{textContent:'No outputs'}));
+}
+function setP5Parameter(name,value) {
+  const row=p5Parameters.rows.find(r=>r.name===name);
+  if(!row)throw Error('Run the sketch before changing a p5 parameter');
+  value=parameterValue(row,value);
+  bridge.setParameter(name,value);
+  if(workbench){workbench.settings.p5Parameters={...workbench.settings.p5Parameters,[name]:value};persist();}
+  if(!agentMuteActions)agentSurface?.action('p5_parameters',{name,value});
+  return {name,value};
 }
 function toggleSimulator(p) {
   if(inputSimulator.id===p.id && !inputSimulator.panel.hidden) inputSimulator.close();
@@ -1359,6 +1383,11 @@ $("removeWire").onclick = () => {
 };
 $("removePart").onclick = () => canvas.deleteSelection();
 function addElement(type, attrs = {}, point = null) {
+  if(type.startsWith('p5comp-media-')) {
+    const id={'p5comp-media-image':'addReference','p5comp-media-video':'addVideo','p5comp-media-webcam':'addWebcam'}[type];
+    if(id) $(id).click();
+    return;
+  }
   if (type === "p5comp-note") return workbench?.addNote(point);
   if (!elementByType.has(type)) return;
   if (diagram.parts.length >= 40) {
@@ -1862,6 +1891,7 @@ agentSurface = installAgentSurface(
       controls: structuredClone(controls),
       topology,
       simulation: agentLatestState,
+      p5Parameters,
       console: lines.slice(-200),
       api,
     }),
@@ -2005,6 +2035,7 @@ agentSurface = installAgentSurface(
       }
       return { view: canvas.getState(), selection: [...canvas.selectedParts] };
     },
+    p5Parameters: a => a.name ? setP5Parameter(a.name,a.value) : p5Parameters,
     view: (a) => {
       if (a.inspector) workbench.tab(a.inspector);
       if (a.bottom) workbench.bottomTab(a.bottom);

@@ -25,6 +25,8 @@ const tool = (
   },
 });
 export const TOOLS = [
+  tool('p5_parameters','Read live @param/@watch p5 variables and declared connections; set an editable variable by name without restarting the sketch.',
+    {name:str,value:{type:['number','boolean']}},[]),
   tool(
     "drawing",
     "Read/load the Poliplan document, discover its native tools, call a discovered tool, toggle the circuit drawing layer, or export PNG/SVG to project assets. Drawing changes persist and are captured by process recording. Requires the vendored editor.",

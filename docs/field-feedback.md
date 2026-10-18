@@ -90,3 +90,19 @@ The paused feed can be scrolled and selected. Incoming messages remain buffered
 All controls have hover labels.
 
 Both switch states keep the form moving: SW1 selects circulation direction. POT0 controls eddy energy as well as spring tension and LED brightness; DIST0 controls spring spacing.
+
+## Live code parameters and signal flow
+
+Simulation displays circuit In, p5 In, p5 Out, and circuit Out side by side.
+Dotted lines follow the sketch's `@link` declarations. Readouts use the actual
+variables: `sensor.pot`, `sensor.cm`, `sensor.hold`, `strength`, `reach`, `energy`,
+`hueValue`, and `requestedRGB`.
+
+`motionGain` controls eddy force, `spacingScale` multiplies sonar-controlled
+spacing, and `colorSpeed` changes the time-driven hue rate. Their `@param`
+sliders edit the running variables and retain values with this project. Sensor
+readouts remain read-only; change those on the circuit side.
+
+The base hue is exposed as `hue` (0–360) in Simulation. Its bottom-panel slider
+and the Hue slider in the p5 preview share the same variable and stay synchronized;
+`colorSpeed` controls the additional animated hue drift.

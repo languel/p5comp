@@ -3,9 +3,9 @@ import {listCameras,cameraConstraints} from "./cameraSources.js";
 import { icon } from "./uiIcons.js";
 export function installSceneMedia(wb) {
   wb.cameraStreams = new Map();
-  const menu = document.getElementById("addReference");
+  const menu = document.getElementById("addVideo");
   const add = document.createElement("button");
-  add.textContent = "Add webcam…";
+  add.textContent = "Webcam…";
   add.id = "addWebcam";
   menu.after(add);
   add.onclick = () => {

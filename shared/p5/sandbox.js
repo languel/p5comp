@@ -1,3 +1,4 @@
+import {parameterBindings,parameterValue,readParameters} from "./parameters.js";
 import { basePath } from "../basePath.js";
 const legacyP5 = document.querySelector('meta[name="p5comp-p5-major"]')?.content === "1" || new URLSearchParams(location.search).get("p5") === "1";
 const {default: p5} = await (legacyP5 ? import("p5-v1") : import("p5"));
@@ -56,10 +57,18 @@ function mirrorRender() {
     );
   }
 }
+let parametersAt=0;
+function publishParameters() {
+  const now=performance.now();
+  if(now-parametersAt<100)return;
+  parametersAt=now;
+  host.postMessage({type:'parameters',rows:readParameters(window.__p5compBindings),links:window.__p5compLinks||[]},'*');
+}
 let lastDraw = 0,
   lastSize = "";
 lifecycleHook("postdraw", "post", () => {
   lastDraw = performance.now();
+  publishParameters();
   if (p5Instance?.canvas) {
     const size = `${p5Instance.width},${p5Instance.height}`;
     if (size !== lastSize) {
@@ -77,13 +86,13 @@ lifecycleHook("postdraw", "post", () => {
   mirrorRender();
 });
 setInterval(() => {
-  // Keep a looping sketch responsive on the projector when its editor tab is hidden.
+  // Keep serial polling and code parameters alive when a tabbed preview is hidden.
   if (
-    mirrorEnabled &&
     p5Instance?.isLooping() &&
     performance.now() - lastDraw > 150
   )
     p5Instance.redraw();
+  publishParameters();
   mirrorRender();
 }, 80);
 const serialProxy = installSerialProxy((bytes) =>
@@ -183,6 +192,12 @@ window.addEventListener("message", async (event) => {
   if (message.theme) {
     window.theme = message.theme;
     document.documentElement.dataset.theme = message.theme;
+  }
+  if(message.type==='setParameter') {
+    const binding=window.__p5compBindings?.find(r=>r.name===message.name);
+    try {if(!binding)throw Error('Unknown variable');binding.set(parameterValue(binding,message.value));}
+    catch(error){host.postMessage({type:'parameterError',message:error.message},'*');}
+    return;
   }
   if (message.type === "mirrorControl") {
     const el = mirroredControls.get(message.id);
@@ -378,7 +393,11 @@ window.addEventListener("message", async (event) => {
     }
     for (const script of scripts.filter((s) => !s.getAttribute("src")))
       window.eval(script.textContent);
-    window.eval(`${message.source}\n//# sourceURL=student-sketch.js`);
+    window.eval(`${message.source}${parameterBindings(message.source)}\n//# sourceURL=student-sketch.js`);
+    for(const [name,value] of Object.entries(project.parameters||{})) {
+      const binding=window.__p5compBindings?.find(r=>r.name===name);
+      if(binding?.editable) {try{binding.set(parameterValue(binding,value));}catch{}}
+    }
     lifecycleHook("postsetup", "afterSetup", () =>
       host.postMessage({ type: "ready" }, "*"),
     );
