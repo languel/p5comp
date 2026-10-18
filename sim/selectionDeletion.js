@@ -19,7 +19,6 @@ export function deleteCircuitSelection(diagram, selectedParts, selectedWires) {
 }
 export function isObjectDeleteShortcut(event) {
   return (
-    (event.metaKey || event.ctrlKey) &&
     ["Delete", "Backspace"].includes(event.key) &&
     !event.repeat &&
     !event.defaultPrevented &&

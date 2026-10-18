@@ -445,7 +445,7 @@ project with small standalone sources and no communications framework.
 
 ## Poliplan drawing
 
-Use the circuit toolbar's pencil or Alt+Z to draw over the circuit with shared
+Use the circuit toolbar's pencil, D, or Alt+Z to draw over the circuit with shared
 pan and zoom. The Draw tab opens the full editor. Right-click a drawing to save
 a PNG or SVG into project assets. See [drawing setup and limitations](docs/drawing.md).
 Poliplan is packaged with the app, including GitHub Pages; no local studio checkout
@@ -453,3 +453,7 @@ is needed to use it. Maintainers refresh it with `npm run vendor:poliplan` and
 commit the generated bundle.
 Agents can use `p5comp_drawing` through MCP, WebMCP, or the browser/HTTP API;
 see [drawing automation](docs/agents.md#poliplan-drawing).
+
+In drawing Select mode, empty-space gestures pass through to circuit parts and
+controls. Delete/Backspace removes selected circuit objects outside text fields;
+Cmd/Ctrl+Z undoes deletion. Drawing marks retain their own selection and history.

@@ -31,7 +31,7 @@ It builds the editor there (`npm run build:embed`) and copies it to `public/vend
 - Undo in the editor and undo in the circuit are separate; the editor's follows its own history.
 - GitHub Pages includes the tracked editor bundle; CI verifies every bundled file after building.
 
-- **Alt+Z** on the circuit switches the drawing layer and its toolbar on and off (in the Draw tab it is the editor's own zen). **Theme:** the editor follows p5comp's theme (`data-theme` on `<html>`) automatically.
+- **D** (or **Alt+Z**) on the circuit switches the drawing layer and its toolbar on and off (in the Draw tab it is the editor's own zen). **Theme:** the editor follows p5comp's theme (`data-theme` on `<html>`) automatically.
 
 ## Agent access
 
@@ -40,3 +40,17 @@ discovery and calls, layer activation, and PNG/SVG export into project assets.
 Use `p5comp_view` with `main: "draw"` to open the full editor. See the
 [API examples](agents.md#poliplan-drawing). Editor changes still belong in the
 studio repository and are re-vendored here.
+
+## Circuit input through the layer
+
+With the drawing layer active, choose **Select (V)** to click, drag, wire, or
+operate circuit components where there is no drawing mark. Marks and their
+resize handles retain drawing interaction. Drawing tools still start marks on
+empty space; the separate Draw tab always belongs to the editor. Space-drag
+pans the shared view.
+
+Delete/Backspace removes circuit selections outside text fields, with Cmd/Ctrl+Z
+to undo and Cmd/Ctrl+Shift+Z to redo, even after focus moves to a toolbar.
+Selected drawing marks keep their own Delete and history shortcuts. After a
+circuit gesture, undo targets the circuit; after drawing, undo stays with
+Poliplan. Other unused editor keys pass through to the host application.

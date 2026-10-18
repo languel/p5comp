@@ -86,7 +86,7 @@ class SimpleToggle extends SimplePart {
           <stop stop-color="#e3e4df" /><stop offset="1" stop-color="#b0b4b3" />
         </linearGradient>
         <linearGradient id="lever" x2="0" y2="1">
-          <stop stop-color="#f3f4f2" /><stop offset=".45" stop-color="#c7cccd" /><stop offset="1" stop-color="#858c8f" />
+          <stop stop-color="#737e83" /><stop offset=".45" stop-color="#4e5b62" /><stop offset="1" stop-color="#29353c" />
         </linearGradient>
       </defs>
       <path class="lead" d="M19 22v7m9.5-7v7" />
@@ -117,7 +117,7 @@ class SimpleToggle extends SimplePart {
         <title>${on ? "On (I)" : "Off (O)"} · click lever</title>
         <path
           d=${on ? "M24 12L31 12" : "M24 12L17 12"}
-          stroke="#737b7e"
+          stroke="#293238"
           stroke-width="6.5"
           stroke-linecap="round"
         />
@@ -127,7 +127,7 @@ class SimpleToggle extends SimplePart {
           stroke-width="5"
           stroke-linecap="round"
         />
-        <circle cx=${on ? 31 : 17} cy="11.3" r="2.5" fill="#dde0de" />
+        <circle cx=${on ? 31 : 17} cy="11.3" r="2.5" fill="#48565e" stroke="#879196" stroke-width=".45" />
       </g>
     </svg>`;
   }
@@ -142,13 +142,13 @@ class SimpleSlideSwitch extends SimplePart {
       <path class="lead" d="M9.5 17v11.5M19 17v11.5M28.5 17v11.5" />
       <rect x="1" y="1" width="36" height="18" rx="3" fill="#55595a" stroke="#777c7d" stroke-width=".7" />
       <rect x="6" y="4" width="26" height="12" rx=".5" fill="#202425" />
-      <text x=${on ? 12.5 : 25.5} y="11.7" text-anchor="middle" style="font:600 4.5px system-ui;fill:#e5e7e4">${on ? "ON" : "OFF"}</text>
+      <text x=${on ? 12.5 : 25.5} y="11.7" text-anchor="middle" style="font:600 4.5px system-ui;fill:#e5e7e4">${on ? "2–3" : "2–1"}</text>
       <g data-active-control role="switch" tabindex="0" aria-label="Slide switch" aria-checked=${on}
         style="cursor:ew-resize"
         @pointerdown=${e => { e.stopPropagation(); this._startX = e.clientX; e.currentTarget.setPointerCapture(e.pointerId); }}
         @pointerup=${e => { e.stopPropagation(); const dx = e.clientX - this._startX; this.emit(Math.abs(dx) > 3 ? (dx > 0 ? 1 : 0) : (on ? 0 : 1)); }}
         @keydown=${e => { if ([" ", "Enter", "ArrowLeft", "ArrowRight"].includes(e.key)) { e.preventDefault(); e.stopPropagation(); this.emit(e.key === "ArrowLeft" ? 0 : e.key === "ArrowRight" ? 1 : on ? 0 : 1); } }}>
-        <title>${on ? "ON · 2–3" : "OFF · 2–1"} · slide or click thumb · drag body to move</title>
+        <title>${on ? "2–3 connected" : "2–1 connected"} · slide or click thumb · drag body to move</title>
         <rect x=${on ? 20 : 6} y="4" width="12" height="12" fill="#343839" />
         ${[2, 4.5, 7, 9.5].map(x => svg`<path d=${`M${(on ? 20 : 6) + x} 5.5v9`} stroke="#b4b8b8" stroke-width="1.2" />`)}
       </g>

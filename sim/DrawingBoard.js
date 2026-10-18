@@ -35,7 +35,7 @@ export class DrawingBoard {
     this.toggle = document.createElement("button");
     this.toggle.id = "drawLayer";
     this.toggle.setAttribute("aria-pressed", "false");
-    this.toggle.title = "Draw on the circuit: pen, brushes, shapes and colors in a layer over it";
+    this.toggle.title = "Draw on the circuit (D): pen, brushes, shapes and colors in a layer over it";
     this.toggle.setAttribute("aria-label", "Draw on the circuit");
     this.toggle.textContent = "✎";
     this.toggle.onclick = () => this.setActive(!this.active);
@@ -51,10 +51,12 @@ export class DrawingBoard {
 
   key(e) {
     const alt = e.altKey ?? e.alt;
-    if (!alt || e.code !== "KeyZ" || e.ctrlKey || e.metaKey || this.tab) return;
-    if (e.target?.closest?.("input, textarea, select, [contenteditable], .cm-editor")) return;
+    const toggle = (e.code === "KeyD" && !alt) || (e.code === "KeyZ" && alt);
+    if (!toggle || e.repeat || e.defaultPrevented || (e.ctrlKey ?? e.ctrl) || (e.metaKey ?? e.meta) || this.tab) return false;
+    if (e.target?.closest?.("input, textarea, select, [contenteditable], .cm-editor")) return false;
     e.preventDefault?.();
     this.setActive(!this.active);
+    return true;
   }
 
   /** The drawing for the project file (null until something was drawn or loaded). */
@@ -137,6 +139,7 @@ export class DrawingBoard {
           boards: [BOARD],
           document: this.doc || undefined,
           overlay: true,
+          passthrough: true,
           ui: { tools: this.active || this.tab },
           actions: ACTIONS,
           camera: this.camera(),
@@ -145,7 +148,8 @@ export class DrawingBoard {
         this.applyUI();
         editor.on("change", () => this.changed());
         editor.on("action", (m) => this.save(m.id, m.ids));
-        editor.on("key", (m) => this.key(m));   // keys the editor does not use (Alt+Z in the layer)
+        editor.on("pointer", (m) => this.passPointer(m));
+        editor.on("key", (m) => this.passKey(m));   // keys the editor does not use (Alt+Z in the layer)
         // The editor's own pans and zooms go to the circuit.
         editor.on("camera", (m) => this.lead(m));
         this.say("");
@@ -157,6 +161,42 @@ export class DrawingBoard {
       }
     })();
     return this.starting;
+  }
+
+  passKey(m) {
+    const type = m.event === "keyup" ? "keyup" : "keydown";
+    if (type === "keydown" && this.key(m)) return;
+    if (this.tab || !this.active || (m.alt && m.code === "KeyZ")) return;
+    this.stage.dispatchEvent(new KeyboardEvent(type, {
+      key: m.key, code: m.code, altKey: !!m.alt, ctrlKey: !!m.ctrl,
+      metaKey: !!m.meta, shiftKey: !!m.shift, bubbles: true, cancelable: true,
+    }));
+  }
+
+  passPointer(m) {
+    if (this.tab || !this.active || !this.editor || !Number.isFinite(m.x) || !Number.isFinite(m.y)) return;
+    const types = ["pointerdown", "pointermove", "pointerup", "pointercancel", "click", "dblclick", "contextmenu"];
+    if (!types.includes(m.event)) return;
+    const r = this.editor.frame.getBoundingClientRect();
+    const x = r.left + m.x, y = r.top + m.y;
+    if (m.event === "pointerdown" || !this.passTarget?.isConnected) {
+      const hidden = this.layer.hidden;
+      this.layer.hidden = true;
+      let target = document.elementFromPoint(x, y);
+      // Preserve component controls inside open shadow roots as real canvas targets.
+      while (target?.shadowRoot) {
+        const child = target.shadowRoot.elementFromPoint(x, y);
+        if (!child || child === target) break;
+        target = child;
+      }
+      this.layer.hidden = hidden;
+      let host = target;
+      while (host?.getRootNode()?.host) host = host.getRootNode().host;
+      this.passTarget = this.stage.contains(host) ? target : this.stage;
+    }
+    const init = { ...m, clientX: x, clientY: y, bubbles: true, composed: true, cancelable: true };
+    const EventClass = m.event.startsWith("pointer") ? PointerEvent : MouseEvent;
+    this.passTarget.dispatchEvent(new EventClass(m.event, init));
   }
 
   camera() {

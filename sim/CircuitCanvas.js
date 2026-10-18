@@ -654,7 +654,7 @@ export class CircuitCanvas {
         rotation: part.rotate || 0,
         before: this.checkpoint(),
       };
-      this.stage.setPointerCapture(e.pointerId);
+      if (e.isTrusted) this.stage.setPointerCapture(e.pointerId);
       this.stage.focus({ preventScroll: true });
       return;
     }
@@ -667,7 +667,7 @@ export class CircuitCanvas {
         y: e.clientY,
         camera: { ...this.camera },
       };
-      this.stage.setPointerCapture(e.pointerId);
+      if (e.isTrusted) this.stage.setPointerCapture(e.pointerId);
       return;
     }
     const endpoint = target.closest("[data-end]");
@@ -682,7 +682,7 @@ export class CircuitCanvas {
         before: this.checkpoint(),
         original: this.diagram.connections[i][end],
       };
-      this.stage.setPointerCapture(e.pointerId);
+      if (e.isTrusted) this.stage.setPointerCapture(e.pointerId);
       this.stage.focus({ preventScroll: true });
       return;
     }
@@ -697,7 +697,7 @@ export class CircuitCanvas {
         start: this.toWorld(e),
         current: this.toWorld(e),
       };
-      this.stage.setPointerCapture(e.pointerId);
+      if (e.isTrusted) this.stage.setPointerCapture(e.pointerId);
       this.stage.focus({ preventScroll: true });
       return;
     }
@@ -710,7 +710,7 @@ export class CircuitCanvas {
         const pair = (this.diagram.attachments || []).find(pair => pair.includes(id));
         if (pair) {
           this.drag = {kind:"unplug",pair,before:this.checkpoint(),x:e.clientX,y:e.clientY};
-          this.stage.setPointerCapture(e.pointerId);
+          if (e.isTrusted) this.stage.setPointerCapture(e.pointerId);
           this.stage.focus({preventScroll:true});
           return;
         }
@@ -727,7 +727,7 @@ export class CircuitCanvas {
             before: this.checkpoint(),
             original: id,
           };
-          this.stage.setPointerCapture(e.pointerId);
+          if (e.isTrusted) this.stage.setPointerCapture(e.pointerId);
           this.stage.focus({ preventScroll: true });
           return;
         }
@@ -744,7 +744,7 @@ export class CircuitCanvas {
         y: e.clientY,
         moved: false,
       };
-      this.stage.setPointerCapture(e.pointerId);
+      if (e.isTrusted) this.stage.setPointerCapture(e.pointerId);
       this.stage.focus({ preventScroll: true });
       this.render();
       return;
@@ -762,7 +762,7 @@ export class CircuitCanvas {
         base: wirePoints(this.diagram.connections[i], this.pins),
         before: this.checkpoint(),
       };
-      this.stage.setPointerCapture(e.pointerId);
+      if (e.isTrusted) this.stage.setPointerCapture(e.pointerId);
       this.stage.focus({ preventScroll: true });
       return;
     }
@@ -778,7 +778,7 @@ export class CircuitCanvas {
       this.diagram.connections[i][3] = points.slice(1, -1);
       this.selectWire(i, segment + 1);
       this.drag = { kind: "bend", i, index: segment + 1, base: points, before };
-      this.stage.setPointerCapture(e.pointerId);
+      if (e.isTrusted) this.stage.setPointerCapture(e.pointerId);
       this.stage.focus({ preventScroll: true });
       return;
     }
@@ -808,7 +808,7 @@ export class CircuitCanvas {
         base: points,
         before: this.checkpoint(),
       };
-      this.stage.setPointerCapture(e.pointerId);
+      if (e.isTrusted) this.stage.setPointerCapture(e.pointerId);
       this.stage.focus({ preventScroll: true });
       return;
     }
@@ -852,7 +852,7 @@ export class CircuitCanvas {
         start: this.toWorld(e),
         current: this.toWorld(e),
       };
-      this.stage.setPointerCapture(e.pointerId);
+      if (e.isTrusted) this.stage.setPointerCapture(e.pointerId);
       return;
     }
     this.drag = {
@@ -861,7 +861,7 @@ export class CircuitCanvas {
       y: e.clientY,
       camera: { ...this.camera },
     };
-    this.stage.setPointerCapture(e.pointerId);
+    if (e.isTrusted) this.stage.setPointerCapture(e.pointerId);
   }
   activeBody(e, wrapper) {
     const p = this.diagram.parts.find((p) => p.id === wrapper.dataset.id),
@@ -947,7 +947,7 @@ export class CircuitCanvas {
         points: simplify(wirePoints(c, this.pins)),
       })),
     };
-    this.stage.setPointerCapture(e.pointerId);
+    if (e.isTrusted) this.stage.setPointerCapture(e.pointerId);
     this.stage.focus({ preventScroll: true });
   }
   move(e) {

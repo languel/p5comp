@@ -45,13 +45,15 @@ test("mixed part and wire deletion removes exactly the selection", () => {
   const next = deleteCircuitSelection(d, ["a"], [2]);
   assert.deepEqual(next.connections, [["b:2", "c:2"]]);
 });
-test("command delete works outside editable fields, including overlay buttons, while editor text deletion stays native", () => {
+test("plain and command delete work outside editable fields while text deletion stays native", () => {
   const event = {
     key: "Backspace",
     metaKey: true,
     composedPath: () => [{ matches: () => false }],
   };
   assert.equal(isObjectDeleteShortcut(event), true);
+  assert.equal(isObjectDeleteShortcut({ ...event, metaKey: false }), true);
+  assert.equal(isObjectDeleteShortcut({ ...event, metaKey: false, key: "Delete" }), true);
   assert.equal(
     isObjectDeleteShortcut({
       ...event,

@@ -44,7 +44,7 @@ changes in the studio repo and re-run `npm run vendor:poliplan` here.
 
 ## Also
 
-- Alt+Z on the circuit switches the drawing layer and its toolbar on and off. The editor follows p5comp's theme (`data-theme`) through the client's `theme: 'host'` default.
+- D (or Alt+Z) on the circuit switches the drawing layer and its toolbar on and off. The editor follows p5comp's theme (`data-theme`) through the client's `theme: 'host'` default.
 - The editor's menu (≡, first in its toolbar) holds the view items and, in the Draw tab, a toggle for the zoom controls.
 
 ## Checklist (all verified with synthetic events in the browser)
@@ -74,3 +74,20 @@ Poliplan is the product name; the code keeps its older names (`public/vendor/ams
 ## Where the other half lives
 
 `~/dev/artistmodelstudio`, branch `main` (Poliplan is a build target there): `docs/EMBEDDING.md` (plan, protocol, what was built, lean and chunky builds), `src/embed/` (the bridge and the client `ams-editor.js`), `embed.html`, `vite.embed.config.js`, `scripts/sync-embed.sh`, `embed-demo.html` (a bare host page to try every call). If the editor needs a change, change it there and run `npm run vendor:poliplan` again; tell the agent working there what the protocol lacked.
+
+## Overlay input routing
+
+The host initializes Poliplan with `passthrough: true`. In Select mode, gestures
+that start outside drawing marks/handles reach the circuit, including component
+controls. The editor bridge captures the pointer sequence and sends coordinates;
+DrawingBoard translates them into the host viewport and resolves shadow-DOM
+control targets. Native circuit gestures retain pointer capture; forwarded
+gestures use the editor's capture. Drawing tools and the Draw tab retain input.
+
+D toggles drawing from either document (Alt+Z remains supported). Editable fields,
+held-key repeats, and browser modifier shortcuts are excluded. Delete/Backspace
+and circuit undo work outside text editors, including after toolbar focus.
+
+Verified in the browser: circuit dragging and lever clicks through the overlay;
+Delete, undo and redo; selecting/deleting/undoing drawing marks; new strokes and
+drawing undo; D toggling from both the circuit and focused iframe.

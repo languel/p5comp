@@ -1522,8 +1522,20 @@ document.addEventListener("keydown", (e) => {
   if (!isObjectDeleteShortcut(e)) return;
   e.preventDefault();
   e.stopPropagation();
-  if (!workbench?.deleteSelectedReference()) canvas.deleteSelection();
+  if (!workbench?.deleteSelectedReference()) {
+    canvas.selectedBend > 0 ? canvas.removeBend() : canvas.deleteSelection();
+  }
 }, {capture:true});
+document.addEventListener("keydown", (e) => {
+  if (e.defaultPrevented || e.repeat || canvasEditing(e)) return;
+  if (!(e.metaKey || e.ctrlKey) || !["z", "y"].includes(e.key.toLowerCase())) return;
+  if (workbench.activeView === "draw" || workbench.activeView === "p5") return;
+  const redo = e.key.toLowerCase() === "y" || e.shiftKey;
+  if (!(redo ? canvas.redoStack : canvas.undoStack).length) return;
+  e.preventDefault();
+  e.stopPropagation();
+  redo ? canvas.redo() : canvas.undo();
+}, { capture: true });
 document.addEventListener("keydown", (e) => {
   const modifier = e.metaKey || e.ctrlKey;
   if (modifier && e.key === ".") {
