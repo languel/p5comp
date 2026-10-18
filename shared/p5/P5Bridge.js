@@ -210,6 +210,9 @@ export class P5Bridge extends EventTarget {
     this.frame.src = "about:blank";
     this.#status("p5 stopped");
   }
+  mirrorControl(id, value) {
+    this.#post({ type: "mirrorControl", id, value });
+  }
   mirror(enabled) {
     this.mirroring = enabled;
     this.#post({ type: "mirror", enabled });

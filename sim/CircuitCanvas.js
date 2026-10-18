@@ -636,6 +636,19 @@ export class CircuitCanvas {
     this.menu.hidden = true;
     const target = e.target;
     if (target.closest(".part-doc-help")) return;
+    if (this.selectMode && !this.space && e.button === 0) {
+      e.preventDefault();
+      if (!e.shiftKey) this.clearSelection();
+      this.drag = {
+        kind: "box",
+        additive: !!e.shiftKey,
+        start: this.toWorld(e),
+        current: this.toWorld(e),
+      };
+      if (e.isTrusted) this.stage.setPointerCapture(e.pointerId);
+      this.stage.focus({ preventScroll: true });
+      return;
+    }
     const rotationHandle = target.closest(".part-rotate");
     if (rotationHandle && e.button === 0) {
       e.preventDefault();
@@ -681,21 +694,6 @@ export class CircuitCanvas {
         end,
         before: this.checkpoint(),
         original: this.diagram.connections[i][end],
-      };
-      if (e.isTrusted) this.stage.setPointerCapture(e.pointerId);
-      this.stage.focus({ preventScroll: true });
-      return;
-    }
-    if (
-      this.selectMode &&
-      !target.closest(".part,[data-bend],[data-midpoint]")
-    ) {
-      e.preventDefault();
-      if (!e.shiftKey) this.clearSelection();
-      this.drag = {
-        kind: "box",
-        start: this.toWorld(e),
-        current: this.toWorld(e),
       };
       if (e.isTrusted) this.stage.setPointerCapture(e.pointerId);
       this.stage.focus({ preventScroll: true });
@@ -845,24 +843,19 @@ export class CircuitCanvas {
       this.render();
       return;
     }
-    if (e.shiftKey || this.selectMode) {
-      if (!e.shiftKey) this.clearSelection();
-      this.drag = {
-        kind: "box",
-        start: this.toWorld(e),
-        current: this.toWorld(e),
-      };
-      if (e.isTrusted) this.stage.setPointerCapture(e.pointerId);
-      return;
-    }
+    // Match the drawing editor: primary drag on empty space selects a box.
+    // Space-drag and middle-button drag are handled above as explicit panning.
+    e.preventDefault();
+    if (!e.shiftKey) this.clearSelection();
     this.drag = {
-      kind: "pan",
-      x: e.clientX,
-      y: e.clientY,
-      camera: { ...this.camera },
+      kind: "box",
+      additive: !!e.shiftKey,
+      start: this.toWorld(e),
+      current: this.toWorld(e),
     };
     if (e.isTrusted) this.stage.setPointerCapture(e.pointerId);
   }
+
   activeBody(e, wrapper) {
     const p = this.diagram.parts.find((p) => p.id === wrapper.dataset.id),
       path = e.composedPath();
@@ -1131,6 +1124,7 @@ export class CircuitCanvas {
         w: Math.abs(d.start.x - d.current.x),
         h: Math.abs(d.start.y - d.current.y),
       };
+      this.stage.dispatchEvent(new CustomEvent("p5comp:selection-box", {detail:{...box,additive:!!d.additive}}));
       for (const r of this.rectangles(true))
         if (intersects(r, box)) this.selectedParts.add(r.id);
       this.diagram.connections.forEach((c, i) => {
@@ -1401,6 +1395,7 @@ export class CircuitCanvas {
     }
     if (e.key === "?" && this.selectedPart) this.onDocs?.(this.selectedPart);
     if (e.key === "Escape") {
+      this.selectMode = false;
       this.draft = null;
       this.wireMode = false;
       this.menu.hidden = true;
@@ -1426,6 +1421,9 @@ export class CircuitCanvas {
     }
   }
   render() {
+    this.stage.classList.toggle('box-select-mode',this.selectMode);
+    const selectionTool=document.getElementById('selectTool');
+    selectionTool?.setAttribute('aria-pressed',String(this.selectMode));
     if (!this.diagram) return;
     this.refreshPins();
     this.gridView();

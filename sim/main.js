@@ -1,3 +1,7 @@
+import { icon } from "./uiIcons.js";
+import { outputPreview, outputReading, paintOutputPreview } from "./outputPreview.js";
+const outputTests = new Map();
+import { SerialMonitor } from "./SerialMonitor.js";
 import { dipCount } from "./switchTypes.js";
 import { drawingCommand } from "./automation/drawing.js";
 import {formatCode} from "../shared/editor/formatCode.js";
@@ -74,7 +78,7 @@ function upgradeManagedComms(source, api) {
     ? embedComms(themed, api, {parser: firmataParserSource, client: firmataClientSource})
     : themed;
 }
-const initialProject=startupProject(cachedProjectText);
+const initialProject=await startupProject(cachedProjectText);
 let savedCanvas = initialProject.canvas || {},
   workbench = null,
   savedWorkbench = initialProject.workbench || {};
@@ -103,13 +107,13 @@ let running = false,
 const serial = new SerialConnection();
 const serialActivity = createSerialActivity();
 const serialBoard = () => document.querySelector("wokwi-arduino-uno,wokwi-arduino-nano,wokwi-arduino-mega");
+const serialMonitor = new SerialMonitor($("log"), { pause: $("pauseSerial"), latest: $("serialLatestMode"), feed: $("serialFeedMode") });
 const log = (line) => {
   agentSurface?.emit("console", { line: String(line) });
   lines.push(line);
   if (!/^[←→]/.test(line)) workbench?.buildLog(line);
   if (lines.length > 150) lines.shift();
-  $("log").textContent = lines.join("\n");
-  $("log").scrollTop = $("log").scrollHeight;
+  serialMonitor.append(line);
 };
 const notice = (message) => {
   $("notice").hidden = !message;
@@ -371,7 +375,10 @@ function startWorker(hex) {
       )?.setAttribute("data-led13", String(d.led));
       const activeBoard=document.querySelector("wokwi-arduino-uno,wokwi-arduino-nano,wokwi-arduino-mega");
       if(activeBoard)activeBoard.led13=d.led;
-      for (const [id, state] of Object.entries(d.parts || {})) {
+      for (const [id, measuredState] of Object.entries(d.parts || {})) {
+        const state = outputTests.get(id) || measuredState;
+        const reading = document.querySelector(`[data-output-value="${id}"]`);
+        if (reading) reading.textContent = outputReading(measuredState);
         const element = partElements.get(id);
         if (!element) continue;
         element.dataset.simulation = JSON.stringify(state);
@@ -726,7 +733,9 @@ $("labels").checked = canvas.labels;
 $("labels").onchange = () => canvas.setLabels($("labels").checked);
 $("selectTool").onclick = () => {
   canvas.selectMode = !canvas.selectMode;
-  $("selectTool").setAttribute("aria-pressed", String(canvas.selectMode));
+  if(canvas.selectMode){canvas.wireMode=false;canvas.draft=null;}
+  canvas.render();
+  canvas.stage.focus({preventScroll:true});
 };
 const partDocs = new PartDocs();
 const elementPicker = new ElementPicker(addElement);
@@ -1031,8 +1040,11 @@ function setControl(id, value) {
   if (dipCount(el?.localName) > 0) el.values = [...value];
   if (el && isMomentarySwitch(el.tagName.toLowerCase()))
     el.pressed = Boolean(value);
+  const toggle=document.querySelector(`[data-digital-control="${id}"]`);
+  if(toggle){toggle.textContent=Number(value)?'On':'Off';toggle.setAttribute('aria-pressed',String(!!Number(value)));}
+  for(const button of document.querySelectorAll(`[data-dip-control="${id}"]`)){const on=!!value?.[Number(button.dataset.channel)];button.textContent=`${Number(button.dataset.channel)+1}: ${on?'On':'Off'}`;button.setAttribute('aria-pressed',String(on));}
   const hold = document.querySelector(`[aria-label="Hold ${id}"]`);
-  if (hold) hold.setAttribute("aria-pressed", String(Boolean(value)));
+  if (hold) {hold.setAttribute("aria-pressed", String(!!Number(value)));hold.textContent=Number(value)?"On":"Off";}
   const out = document.querySelector(`[data-value="${id}"]`);
   if (out)
     out.textContent =
@@ -1050,7 +1062,14 @@ function setControl(id, value) {
   if (input && input.type === "range" && value >= 0) input.value = value;
 }
 function renderControls() {
+  outputTests.clear();
   $("controls").replaceChildren();
+  const inputs = document.createElement('section'), outputs = document.createElement('section');
+  for (const [section,title] of [[inputs,'Inputs'],[outputs,'Outputs']]) {
+    section.className='simulation-group';
+    const heading=document.createElement('h3');heading.textContent=title;section.append(heading);
+    $("controls").append(section);
+  }
   for (const p of diagram.parts.filter(
     (p) =>
       isPot(p.type) ||
@@ -1068,11 +1087,34 @@ function renderControls() {
     const div = document.createElement("div");
     div.className = "control";
     const label = document.createElement("label");
-    label.textContent = p.id;
+    label.textContent = p.label || p.id;
+    label.title = p.label || p.id;
     div.append(label);
     const output = document.createElement("output");
     output.dataset.value = p.id;
-    if (
+    if (dipCount(p.type)>0) {
+      for(let channel=0;channel<dipCount(p.type);channel++) {
+        const button=document.createElement('button');button.dataset.dipControl=p.id;button.dataset.channel=channel;
+        const on=!!controls[p.id]?.[channel];button.textContent=`${channel+1}: ${on?'On':'Off'}`;
+        button.setAttribute('aria-label',p.id+' switch '+(channel+1));button.setAttribute('aria-pressed',String(on));
+        button.onclick=()=>{const values=Array.from({length:dipCount(p.type)},(_,i)=>Number(controls[p.id]?.[i]||0));values[channel]=values[channel]?0:1;setControl(p.id,values);};div.append(button);
+      }
+      div.append(simulatorButton(p));
+    } else if (p.type==='wokwi-pir-motion-sensor') {
+      const toggle=document.createElement('button');toggle.dataset.digitalControl=p.id;toggle.textContent=Number(controls[p.id])?'On':'Off';
+      toggle.setAttribute('aria-label','Toggle '+p.id);toggle.setAttribute('aria-pressed',String(!!Number(controls[p.id])));
+      toggle.onclick=()=>setControl(p.id,Number(controls[p.id])?0:1023);div.append(toggle,simulatorButton(p));
+    } else if (['p5comp-toggle-switch' ,'wokwi-slide-switch','p5comp-slide-switch'].includes(p.type)) {
+      const toggle=document.createElement('button');
+      toggle.dataset.digitalControl=p.id;
+      toggle.textContent=Number(controls[p.id]) ? 'On' : 'Off';
+      toggle.setAttribute('aria-label','Toggle '+p.id);
+      toggle.setAttribute('aria-pressed',String(!!Number(controls[p.id])));
+      toggle.onclick=()=>setControl(p.id,Number(controls[p.id]) ? 0 : 1);
+      div.append(toggle);
+      output.textContent=String(controls[p.id] ?? 0);
+      div.append(simulatorButton(p));
+    } else if (
       isSensorInput(p.type) ||
       [
         "wokwi-dip-switch-8", "p5comp-dip-switch-1", "p5comp-dip-switch-4", "p5comp-dip-switch-6",
@@ -1083,16 +1125,19 @@ function renderControls() {
       ].includes(p.type)
     ) {
       const button = document.createElement("button");
-      button.textContent = "Simulate";
+      button.replaceChildren(icon("simulation"));
+      button.className="ui-icon-button";
+      button.title="Toggle simulator · "+p.id;
       button.setAttribute("aria-label", "Simulate " + p.id);
-      button.onclick = () => inputSimulator.open(p);
+      button.onclick = () => toggleSimulator(p);
       div.append(button);
       output.textContent = Array.isArray(controls[p.id])
         ? controls[p.id].join(" ")
         : String(controls[p.id]);
     } else if (isMomentarySwitch(p.type)) {
       const btn = document.createElement("button");
-      btn.textContent = "Hold";
+      btn.textContent = Number(controls[p.id]) ? "On" : "Off";
+      btn.title="Hold to activate · "+p.id;
       btn.setAttribute("aria-label", "Hold " + p.id);
       btn.setAttribute("aria-pressed", String(Boolean(controls[p.id])));
       btn.addEventListener("pointerdown", (e) => {
@@ -1106,6 +1151,8 @@ function renderControls() {
       };
       btn.addEventListener("pointerup", release);
       btn.addEventListener("pointercancel", release);
+      btn.addEventListener("lostpointercapture", release);
+      btn.addEventListener("blur", release);
       btn.addEventListener("keydown", (e) => {
         if ([" ", "Enter"].includes(e.key)) {
           e.preventDefault();
@@ -1147,15 +1194,73 @@ function renderControls() {
         });
         div.append(check);
         const simulate = document.createElement("button");
-        simulate.textContent = "Simulate";
+        simulate.replaceChildren(icon("simulation"));
+        simulate.className="ui-icon-button";
+        simulate.title="Toggle distance simulator · "+p.id;
         simulate.setAttribute("aria-label", "Simulate " + p.id + " distance");
-        simulate.onclick = () => sonarSimulator.open(p.id);
+        simulate.onclick = () => {
+          if (sonarSimulator.id===p.id && !sonarSimulator.panel.hidden) sonarSimulator.panel.hidden=true;
+          else sonarSimulator.open(p.id);
+        };
         div.append(simulate);
       }
     }
-    div.append(output);
-    $("controls").append(div);
+    const simulator = div.querySelector('button.ui-icon-button');
+    let marker;
+    if (simulator) {
+      simulator.className = 'simulator-dot';
+      simulator.replaceChildren();
+      simulator.title = 'Toggle simulator · '+(p.label || p.id);
+      label.title = (p.label || p.id)+' · double-click to toggle simulator';
+      label.ondblclick = () => simulator.click();
+      marker = simulator;
+    } else {
+      marker = document.createElement('span');marker.className='simulator-dot-space';
+    }
+    const widgets = document.createElement('div');widgets.className='simulation-widgets';
+    for(const child of [...div.children]) if(child!==label && child!==simulator) widgets.append(child);
+    div.replaceChildren(marker,label,output,widgets);
+    inputs.append(div);
   }
+  for (const p of diagram.parts.filter(p=>outputPreview(p))) {
+    const row=document.createElement('div');row.className='control output-control';
+    const name=document.createElement('label');name.textContent=p.label || p.id;name.title=p.label || p.id;
+    const reading=document.createElement('output');reading.dataset.outputValue=p.id;
+    reading.textContent=outputReading(agentLatestState?.parts?.[p.id]);
+    const test=document.createElement('button');test.className='ui-icon-button';test.append(icon('play'));
+    test.title='Hold to preview output · does not change wiring or sketch';
+    test.setAttribute('aria-label','Test output '+p.id);
+    const apply=()=>{
+      const state=outputPreview(p);outputTests.set(p.id,state);
+      test.setAttribute('aria-pressed','true');
+      const el=partElements.get(p.id);paintOutputPreview(el,state);
+      if(p.type==='wokwi-rgb-led') paintRGBGlow(el,state);
+    };
+    const release=()=>{
+      outputTests.delete(p.id);test.setAttribute('aria-pressed','false');
+      const state=agentLatestState?.parts?.[p.id] || Object.fromEntries(Object.keys(outputPreview(p)).map(k=>[k,0]));
+      const el=partElements.get(p.id);paintOutputPreview(el,state);
+      if(p.type==='wokwi-rgb-led') paintRGBGlow(el,state);
+    };
+    test.onpointerdown=e=>{test.setPointerCapture(e.pointerId);apply();};
+    test.onpointerup=release;test.onpointercancel=release;test.onblur=release;
+    test.onkeydown=e=>{if([' ','Enter'].includes(e.key)){e.preventDefault();apply();}};
+    test.onkeyup=e=>{if([' ','Enter'].includes(e.key))release();};
+    const marker=document.createElement('span');marker.className='simulator-dot-space';
+    const widgets=document.createElement('div');widgets.className='simulation-widgets';widgets.append(test);
+    row.append(marker,name,reading,widgets);outputs.append(row);
+  }
+  if(inputs.children.length===1) inputs.append(Object.assign(document.createElement('small'),{textContent:'No inputs'}));
+  if(outputs.children.length===1) outputs.append(Object.assign(document.createElement('small'),{textContent:'No outputs'}));
+}
+function toggleSimulator(p) {
+  if(inputSimulator.id===p.id && !inputSimulator.panel.hidden) inputSimulator.close();
+  else inputSimulator.open(p);
+}
+function simulatorButton(p) {
+  const button=document.createElement('button');button.className='ui-icon-button';button.append(icon('simulation'));
+  button.title='Toggle simulator · '+p.id;button.setAttribute('aria-label','Simulate '+p.id);
+  button.onclick=()=>toggleSimulator(p);return button;
 }
 let renderWidth = 500,
   renderHeight = 360;
@@ -1411,7 +1516,7 @@ $("monitorBaud").onchange = async () => {
 };
 $("clearLog").onclick = () => {
   lines = [];
-  $("log").textContent = "";
+  serialMonitor.clear();
 };
 serial.addEventListener("bytes", (e) => receive(e.detail));
 serial.addEventListener("connect", () => {

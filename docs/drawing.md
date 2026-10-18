@@ -47,10 +47,23 @@ With the drawing layer active, choose **Select (V)** to click, drag, wire, or
 operate circuit components where there is no drawing mark. Marks and their
 resize handles retain drawing interaction. Drawing tools still start marks on
 empty space; the separate Draw tab always belongs to the editor. Space-drag
-pans the shared view.
+pans the shared view (middle-button dragging also pans the circuit). In circuit mode, ordinary empty-space dragging box-selects; Shift-drag adds to the selection.
 
 Delete/Backspace removes circuit selections outside text fields, with Cmd/Ctrl+Z
 to undo and Cmd/Ctrl+Shift+Z to redo, even after focus moves to a toolbar.
 Selected drawing marks keep their own Delete and history shortcuts. After a
 circuit gesture, undo targets the circuit; after drawing, undo stays with
 Poliplan. Other unused editor keys pass through to the host application.
+
+The circuit Box selection toolbar button enables crosshair mode: drag a marquee even when starting over a component or wire. Toggle it off or press Escape to return to component interaction. Space-drag still pans while selection mode is active.
+
+When drawing is active, a circuit marquee also selects drawing marks enclosed by
+the same world-space box. This includes gestures forwarded through empty parts
+of the overlay. Shift preserves the existing drawing selection. Drawing marks
+retain their own edit/history behavior after selection.
+
+Drawing tool shortcuts also work after focus moves to a host toolbar or the
+circuit: while drawing is active, tool/navigation keys are forwarded to
+Poliplan. Selected drawings retain Delete, grouping and undo/redo shortcuts.
+Text inputs and CodeMirror keep their own keys; D remains the host drawing
+layer toggle. Forwarded events are not echoed back to the host.

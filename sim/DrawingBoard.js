@@ -20,6 +20,13 @@ const hasMarks = (doc) => Boolean(doc?.elements?.length);
 export class DrawingBoard {
   constructor({ workspace, stage, canvas, tools, persist, addAsset, assetNames }) {
     Object.assign(this, { workspace, stage, canvas, persist, addAsset, assetNames });
+    stage.addEventListener('p5comp:selection-box', event => {
+      if (!this.active || this.tab || !this.editor) return;
+      this.editor.selectBox?.(event.detail).catch(error=>console.warn('Drawing selection:',error));
+    });
+    this.drawingSelection = [];
+    this.forwardedKeys = new Set();
+    for(const type of ['keydown','keyup']) window.addEventListener(type,e=>this.routeKey(e),true);
     this.tab = false;
     this.circuitShown = true;
     this.doc = null;
@@ -47,6 +54,28 @@ export class DrawingBoard {
     // The circuit's camera goes to the editor.
     const view = canvas.onViewChange;
     canvas.onViewChange = (...a) => { view?.(...a); this.follow(); };
+  }
+
+  routeKey(e) {
+    if(!this.editor?.key || (!this.active && !this.tab) || e.defaultPrevented) return;
+    if(e.target?.closest?.('input,textarea,select,[contenteditable],.cm-editor')) return;
+    const id=e.code || e.key;
+    if(e.type==='keyup') {
+      if(!this.forwardedKeys.delete(id))return;
+    } else {
+      const mod=e.ctrlKey || e.metaKey;
+      const drawingEdit=this.drawingSelection.length &&
+        (['Delete','Backspace'].includes(e.key) || (mod && ['z','y','g','a'].includes(e.key.toLowerCase())));
+      const drawingTool=!mod && !e.altKey &&
+        (['v','h','k','t','b','s','i','f','r','0','1','2','3','Escape','Home',' '].includes(e.key) ||
+         ['KeyV','KeyB','KeyS','Digit1','Digit2'].includes(e.code) || (e.key==='Tab' && e.shiftKey));
+      if(!drawingTool && !drawingEdit)return;
+      this.forwardedKeys.add(id);
+    }
+    e.preventDefault();e.stopImmediatePropagation();
+    this.editor.key({event:e.type,key:e.key,code:e.code,repeat:e.repeat,
+      altKey:e.altKey,ctrlKey:e.ctrlKey,metaKey:e.metaKey,shiftKey:e.shiftKey})
+      .catch(error=>console.warn('Drawing shortcut:',error));
   }
 
   key(e) {
@@ -147,6 +176,7 @@ export class DrawingBoard {
         this.editor = editor;
         this.applyUI();
         editor.on("change", () => this.changed());
+        editor.on("selection", m => {this.drawingSelection=m.ids || [];});
         editor.on("action", (m) => this.save(m.id, m.ids));
         editor.on("pointer", (m) => this.passPointer(m));
         editor.on("key", (m) => this.passKey(m));   // keys the editor does not use (Alt+Z in the layer)

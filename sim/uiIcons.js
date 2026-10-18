@@ -3,6 +3,8 @@
 const paths = {
   record:
     "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20ZM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z",
+  serialLatest: "M2 8h19M16 3l5 5-5 5M22 16H3M8 11l-5 5 5 5",
+  serialFollow: "M6 2v15M12 2v15M18 2v15M2 15l10 7 10-7",
   simulation: "M2 12h4l3-8 6 16 3-8h4",
   windowShare: "M2 2h20v20H2ZM2 7h20M9 17l8-8M11 9h6v6",
   mirror: "M12 2v20M8 6l-6 6 6 6ZM16 6l6 6-6 6Z",

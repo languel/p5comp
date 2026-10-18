@@ -1,0 +1,438 @@
+{
+  "version": 2,
+  "workbench": {
+    "name": "Field / feedback · two-way generative signals",
+    "files": {
+      "index.html": "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"utf-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <title>Field / feedback</title>\n    <script src=\"p5.js\"></script>\n    <style>\n      html, body { margin: 0; overflow: hidden; background: #181818; }\n      canvas { display: block; }\n      input { accent-color: #a6a6a6; }\n    </style>\n  </head>\n  <body>\n    <script src=\"sketch.js\"></script>\n  </body>\n</html>\n"
+    },
+    "assets": {},
+    "arduinoName": "sketch.ino",
+    "p5Name": "sketch.js",
+    "references": [],
+    "components": [],
+    "settings": {
+      "p5Version": 2
+    },
+    "dock": "split",
+    "layout": "horizontal",
+    "activeView": "circuit",
+    "splitRatio": 0.38
+  },
+  "canvas": {
+    "camera": {
+      "x": 40,
+      "y": 70,
+      "zoom": 0.72
+    },
+    "snap": true,
+    "orthogonal": true,
+    "color": "#121415",
+    "labels": false,
+    "gridMultiplier": 0.5,
+    "gridReference": "breadboard",
+    "gridBetween": false
+  },
+  "diagram": {
+    "version": 1,
+    "parts": [
+      {
+        "id": "uno",
+        "type": "wokwi-arduino-uno",
+        "left": 40,
+        "top": 170,
+        "label": "Uno",
+        "attrs": {}
+      },
+      {
+        "id": "led",
+        "type": "wokwi-led",
+        "left": 140,
+        "top": 137,
+        "label": "LED · D13 / GND",
+        "attrs": {
+          "color": "green"
+        }
+      },
+      {
+        "id": "sonar",
+        "type": "wokwi-hc-sr04",
+        "left": 195.2211279638392,
+        "top": -38.281568391231474,
+        "attrs": {},
+        "label": "D3 / D4 · reach"
+      },
+      {
+        "id": "part2",
+        "type": "wokwi-breadboard-mini",
+        "left": 96.5211279638392,
+        "top": 405.2184316087685,
+        "attrs": {}
+      },
+      {
+        "id": "rgbled",
+        "type": "wokwi-rgb-led",
+        "left": 182.0211279638392,
+        "top": 69.21843160876853,
+        "attrs": {},
+        "label": "D10 / D9 / D11 · p5 color"
+      },
+      {
+        "id": "part4",
+        "type": "p5comp-potentiometer",
+        "left": 228.0211279638392,
+        "top": 467.7184316087685,
+        "attrs": {
+          "value": 512,
+          "maxResistance": 10000
+        },
+        "label": "A0 · tension / brightness"
+      },
+      {
+        "id": "part6",
+        "type": "p5comp-toggle-switch",
+        "left": 181.0211279638392,
+        "top": 416.7184316087685,
+        "attrs": {
+          "value": 0
+        },
+        "label": "D7 · hold / flow"
+      }
+    ],
+    "connections": [
+      [
+        "rgbled:B",
+        "uno:11",
+        "#658eac",
+        [
+          {
+            "x": 217.7211,
+            "y": 141.7184
+          },
+          {
+            "x": 184,
+            "y": 141.7184
+          }
+        ]
+      ],
+      [
+        "rgbled:G",
+        "uno:9",
+        "#789e83",
+        [
+          {
+            "x": 208.4211279638392,
+            "y": 156.21843160876853
+          },
+          {
+            "x": 203,
+            "y": 156.21843160876853
+          }
+        ]
+      ],
+      [
+        "rgbled:R",
+        "uno:10",
+        "#cf6868",
+        [
+          {
+            "x": 190.5211279638392,
+            "y": 156.21843160876853
+          },
+          {
+            "x": 193.5,
+            "y": 156.21843160876853
+          }
+        ]
+      ],
+      [
+        "uno:A0",
+        "part2:15b.j",
+        "#d8c85a",
+        [
+          {
+            "x": 248,
+            "y": 386
+          },
+          {
+            "x": 304.5211279638392,
+            "y": 386
+          },
+          {
+            "x": 304.5211279638392,
+            "y": 541.7184316087685
+          },
+          {
+            "x": 242.771,
+            "y": 541.7184316087685
+          },
+          {
+            "x": 242.771,
+            "y": 521.7184316087685
+          }
+        ]
+      ],
+      [
+        "uno:GND.3",
+        "part2:17b.j",
+        "#121415",
+        [
+          {
+            "x": 219,
+            "y": 394
+          },
+          {
+            "x": 295.0211279638392,
+            "y": 394
+          },
+          {
+            "x": 295.0211279638392,
+            "y": 521.7184316087685
+          }
+        ]
+      ],
+      [
+        "uno:5V",
+        "part2:17t.c",
+        "#cf6868",
+        [
+          {
+            "x": 200,
+            "y": 402
+          },
+          {
+            "x": 276.0211279638392,
+            "y": 402
+          },
+          {
+            "x": 276.0211279638392,
+            "y": 436.2184316087685
+          }
+        ]
+      ],
+      [
+        "part2:14b.i",
+        "part2:17b.i",
+        "#121415",
+        []
+      ],
+      [
+        "part2:17t.b",
+        "part2:16b.i",
+        "#cf6868",
+        [
+          {
+            "x": 266.5211279638392,
+            "y": 431.4684316087685
+          },
+          {
+            "x": 242.7711279638392,
+            "y": 431.4684316087685
+          },
+          {
+            "x": 242.7711279638392,
+            "y": 464.7184316087685
+          },
+          {
+            "x": 223.7711279638392,
+            "y": 464.7184316087685
+          },
+          {
+            "x": 242.7711279638392,
+            "y": 507.4684316087685
+          },
+          {
+            "x": 257.0211279638392,
+            "y": 507.4684316087685
+          }
+        ]
+      ],
+      [
+        "rgbled:COM",
+        "part2:17b.h",
+        "#121415",
+        [
+          {
+            "x": 200.0211279638392,
+            "y": 132.21843160876853
+          },
+          {
+            "x": 318.7711279638392,
+            "y": 132.21843160876853
+          },
+          {
+            "x": 318.7711279638392,
+            "y": 502.7184316087685
+          }
+        ]
+      ],
+      [
+        "uno:3",
+        "sonar:ECHO",
+        "#a583b9",
+        [
+          {
+            "x": 267,
+            "y": 141.71843160876853
+          },
+          {
+            "x": 286.5211279638392,
+            "y": 141.71843160876853
+          }
+        ]
+      ],
+      [
+        "sonar:TRIG",
+        "uno:4",
+        "#c4a34d",
+        [
+          {
+            "x": 276.5211279638392,
+            "y": 113.21843160876853
+          },
+          {
+            "x": 257.5,
+            "y": 113.21843160876853
+          }
+        ]
+      ],
+      [
+        "sonar:GND",
+        "part2:17b.g",
+        "#121415",
+        [
+          {
+            "x": 296.5211279638392,
+            "y": 70.46843160876853
+          },
+          {
+            "x": 333.0211279638392,
+            "y": 70.46843160876853
+          },
+          {
+            "x": 333.0211279638392,
+            "y": 488.4684316087685
+          },
+          {
+            "x": 266.5211279638392,
+            "y": 488.4684316087685
+          }
+        ]
+      ],
+      [
+        "sonar:VCC",
+        "part2:17t.d",
+        "#cf6868",
+        [
+          {
+            "x": 266.5211279638392,
+            "y": 84.71843160876853
+          },
+          {
+            "x": 304.5211279638392,
+            "y": 84.71843160876853
+          },
+          {
+            "x": 304.5211279638392,
+            "y": 103.71843160876853
+          },
+          {
+            "x": 347.2711279638392,
+            "y": 103.71843160876853
+          },
+          {
+            "x": 347.2711279638392,
+            "y": 445.7184316087685
+          }
+        ]
+      ],
+      [
+        "part2:11t.e",
+        "part2:17b.f",
+        "#121415",
+        [
+          {
+            "x": 209.5211279638392,
+            "y": 459.9684316087685
+          },
+          {
+            "x": 271.2711279638392,
+            "y": 459.9684316087685
+          },
+          {
+            "x": 271.2711279638392,
+            "y": 483.7184316087685
+          }
+        ]
+      ],
+      [
+        "part2:10t.e",
+        "uno:7",
+        "#789e83",
+        [
+          {
+            "x": 200.0211279638392,
+            "y": 464.7184316087685
+          },
+          {
+            "x": 29.021127963839206,
+            "y": 464.7184316087685
+          },
+          {
+            "x": 29.021127963839206,
+            "y": 65.71843160876853
+          },
+          {
+            "x": 229,
+            "y": 65.71843160876853
+          }
+        ]
+      ]
+    ],
+    "attachments": [
+      [
+        "led:A",
+        "uno:13"
+      ],
+      [
+        "led:C",
+        "uno:GND.1"
+      ],
+      [
+        "part4:GND",
+        "part2:14b.h"
+      ],
+      [
+        "part4:SIG",
+        "part2:15b.h"
+      ],
+      [
+        "part4:VCC",
+        "part2:16b.h"
+      ],
+      [
+        "part6:1",
+        "part2:10t.d"
+      ],
+      [
+        "part6:2",
+        "part2:11t.d"
+      ]
+    ],
+    "canvasEditor": 2
+  },
+  "controls": {
+    "part4": 650,
+    "part6": 0,
+    "sonar": 190
+  },
+  "api": "webserial",
+  "p5": {
+    "webserial": "// FIELD / FEEDBACK\n// Original rule-based study, inspired by Casey Reas's Software Structures.\n// Agents tug on breathing springs while moving eddies keep energy circulating.\n// Pot -> spring tension + physical LED brightness. Sonar -> preferred spacing.\n// Switch -> reverse circulation. p5 -> RGB commands. Arduino -> sensor + applied RGB data.\n// P: plots on/off. O: side/overlay. R: restart the field.\n\nconst WINDOW_SECONDS = 8;\nconst MAX_AGENTS = 64;\nlet sensor = { tick: 0, pot: 0, cm: -1, hold: 0, rgb: [0, 0, 0], ack: -1 };\nlet history = [],\n  agents = [],\n  ink;\nlet lastPacket = -Infinity,\n  lastSend = 0,\n  sequence = 0,\n  roundTrip = null;\nlet pending = new Map(),\n  writing = false,\n  errorText = \"\";\nlet requestedRGB = [0, 0, 0],\n  dataVisible = true,\n  dataLayout = \"side\";\nlet plotButton, layoutButton, hueSlider, art, controls;\nlet fieldTime = 0,\n  energy = 0;\n\nfunction setup() {\n  // A stable teaching canvas avoids a resize feedback loop in the host preview.\n  createCanvas(\n    window.p5compHostSerial ? 960 : windowWidth,\n    window.p5compHostSerial ? 600 : windowHeight,\n  );\n  pixelDensity(1);\n  textFont(\"monospace\");\n  controls = createDiv();\n  controls\n    .style(\"position\", \"fixed\")\n    .style(\"right\", \"18px\")\n    .style(\"top\", \"16px\");\n  controls\n    .style(\"display\", \"flex\")\n    .style(\"gap\", \"8px\")\n    .style(\"align-items\", \"center\");\n  controls.style(\"font\", \"12px monospace\").style(\"color\", \"#bfbfbf\");\n  createSpan(\"Hue\").parent(controls);\n  hueSlider = createSlider(0, 360, 190, 1).parent(controls);\n  hueSlider.style(\"width\", \"76px\").attribute(\"aria-label\", \"p5 color hue\");\n  plotButton = createButton(\"Plots · P\").parent(controls);\n  plotButton.mousePressed(() => (dataVisible = !dataVisible));\n  layoutButton = createButton(\"Side / overlay · O\").parent(controls);\n  layoutButton.mousePressed(toggleLayout);\n  for (const button of [plotButton, layoutButton]) {\n    button.style(\"background\", \"#292929\").style(\"color\", \"#dedede\");\n    button.style(\"border\", \"1px solid #494949\").style(\"border-radius\", \"5px\");\n    button.style(\"padding\", \"7px 9px\").style(\"font\", \"11px monospace\");\n  }\n  resetField();\n}\n\nfunction resetField() {\n  randomSeed(42);\n  noiseSeed(42);\n  agents = Array.from({ length: MAX_AGENTS }, () => ({\n    x: random(),\n    y: random(),\n    phase: random(TWO_PI),\n    vx: random(-30, 30),\n    vy: random(-30, 30),\n  }));\n  fieldTime = 0;\n  if (ink) ink.clear();\n}\n\n// A complete line may have arrived in several USB chunks. The adapter below\n// assembles lines; reject malformed packets before changing any visual state.\nfunction acceptLine(serialLine) {\n  // Named fields can arrive in any order; unknown IDs can be added later.\n  const fields = Object.create(null);\n  for (const token of serialLine.trim().split(/\\s+/)) {\n    const match = /^([A-Z][A-Z0-9]*):(-?\\d+(?:\\.\\d+)?)$/.exec(token);\n    if (!match || Object.hasOwn(fields, match[1])) return;\n    fields[match[1]] = Number(match[2]);\n  }\n  const required = [\"MS\", \"POT0\", \"DIST0\", \"SW1\", \"R\", \"G\", \"B\", \"ACK\"];\n  if (!required.every((id) => Number.isFinite(fields[id]))) return;\n  const {\n    MS: tick,\n    POT0: pot,\n    DIST0: cm,\n    SW1: hold,\n    R: redValue,\n    G: greenValue,\n    B: blueValue,\n    ACK: ack,\n  } = fields;\n  if (\n    pot < 0 ||\n    pot > 1023 ||\n    ![0, 1].includes(hold) ||\n    [redValue, greenValue, blueValue].some((value) => value < 0 || value > 255)\n  )\n    return;\n  sensor = { tick, pot, cm, hold, rgb: [redValue, greenValue, blueValue], ack };\n  lastPacket = millis();\n  if (pending.has(ack)) {\n    roundTrip = millis() - pending.get(ack);\n    pending.delete(ack);\n  }\n  history.push({ time: millis() / 1000, ...sensor, rgb: [...sensor.rgb] });\n  if (history.length > 256) history.shift();\n}\n\nfunction draw() {\n  background(\"#181818\");\n  const live = millis() - lastPacket < 1500;\n  const wide = width >= 780;\n  const side = dataVisible && dataLayout === \"side\" && wide;\n  const panelWidth = side ? min(340, width * 0.36) : 0;\n  controls\n    .style(\"top\", wide ? \"16px\" : \"44px\")\n    .style(\"left\", wide ? \"auto\" : \"18px\");\n  const top = wide ? 82 : 112;\n  const nextArt = {\n    x: 16,\n    y: top,\n    w: max(80, width - 32 - panelWidth),\n    h: max(90, height - top - 46),\n  };\n  if (!ink || art.w !== nextArt.w || art.h !== nextArt.h) {\n    if (ink) ink.remove();\n    ink = createGraphics(floor(nextArt.w), floor(nextArt.h));\n    ink.pixelDensity(1);\n  }\n  art = nextArt;\n  const strength = live ? sensor.pot / 1023 : 0;\n  const count = MAX_AGENTS;\n  const reach = map(\n    constrain(sensor.cm < 0 ? 100 : sensor.cm, 2, 400),\n    2,\n    400,\n    22,\n    110,\n  );\n  const hueValue =\n    (Number(hueSlider.value()) + fieldTime * 5 + energy * 60) % 360;\n  requestedRGB = hsv(hueValue, 0.72, 1);\n  if (live) fieldTime += min(deltaTime, 50) / 1000;\n  drawField(count, reach, strength, live);\n  image(ink, art.x, art.y);\n  noFill();\n  stroke(\"#363636\");\n  rect(art.x, art.y, art.w, art.h, 8);\n  drawHeading(live, count, reach);\n  if (dataVisible) {\n    const panel = side\n      ? { x: art.x + art.w + 14, y: art.y, w: panelWidth - 14, h: art.h }\n      : {\n          x: art.x + 10,\n          y: art.y + 10,\n          w: min(320, art.w - 20),\n          h: min(370, art.h - 20),\n        };\n    drawPlots(panel, live);\n  }\n  sendColor(live);\n  plotButton.attribute(\"aria-pressed\", String(dataVisible));\n  fill(\"#a0a0a0\");\n  noStroke();\n  textSize(10);\n  text(\n    \"POT: energy + tension + light   SONAR: spacing   SWITCH: direction\",\n    18,\n    height - 23,\n  );\n}\n\n// Three forces: elastic neighbours, short-range repulsion, and two moving eddies.\n// The eddies continually inject energy; damping and a speed limit keep it bounded.\nfunction stepSprings(dt, tension, rest, w, h, time) {\n  const forces = agents.map((a) => {\n    const x = a.x * w,\n      y = a.y * h;\n    let fx = (w / 2 - x) * 0.08,\n      fy = (h / 2 - y) * 0.08;\n    for (let v = 0; v < 2; v++) {\n      const phase = time * 0.35 + v * Math.PI;\n      const dx = x - w * (0.5 + 0.28 * Math.sin(phase));\n      const dy = y - h * (0.5 + 0.28 * Math.cos(phase * 0.83));\n      const direction = sensor.hold ? -1 : 1;\n      const swirl =\n        (direction * (v ? -1 : 1) * (25 + tension * 160)) /\n        (1 + (dx * dx + dy * dy) / 18000);\n      const distance = Math.max(10, Math.hypot(dx, dy));\n      fx += (-dy / distance) * swirl;\n      fy += (dx / distance) * swirl;\n    }\n    return { x: fx, y: fy };\n  });\n  for (let i = 0; i < agents.length; i++) {\n    for (let j = 0; j < i; j++) {\n      const a = agents[i],\n        b = agents[j];\n      const dx = (b.x - a.x) * w,\n        dy = (b.y - a.y) * h;\n      const distance = Math.max(0.1, Math.hypot(dx, dy));\n      if (distance > rest * 2.4) continue;\n      const breathing = 1 + 0.2 * Math.sin(time * 1.3 + a.phase + b.phase);\n      let pull = (distance - rest * breathing) * (0.8 + tension * 8);\n      if (distance < rest * 0.55) pull += (distance - rest * 0.55) * 18;\n      pull *= 1 - distance / (rest * 2.4);\n      const fx = (dx / distance) * pull,\n        fy = (dy / distance) * pull;\n      forces[i].x += fx;\n      forces[i].y += fy;\n      forces[j].x -= fx;\n      forces[j].y -= fy;\n    }\n  }\n  let speedSum = 0;\n  agents.forEach((a, i) => {\n    const damping = Math.exp(-0.65 * dt);\n    a.vx = (a.vx + forces[i].x * dt) * damping;\n    a.vy = (a.vy + forces[i].y * dt) * damping;\n    const speed = Math.hypot(a.vx, a.vy),\n      limit = 150;\n    if (speed > limit) {\n      a.vx *= limit / speed;\n      a.vy *= limit / speed;\n    }\n    a.x += (a.vx * dt) / w;\n    a.y += (a.vy * dt) / h;\n    // Reflect at the edges rather than wrapping springs across the whole screen.\n    if (a.x < 0.02 || a.x > 0.98) {\n      a.x = Math.max(0.02, Math.min(0.98, a.x));\n      a.vx *= -0.8;\n    }\n    if (a.y < 0.02 || a.y > 0.98) {\n      a.y = Math.max(0.02, Math.min(0.98, a.y));\n      a.vy *= -0.8;\n    }\n    speedSum += Math.hypot(a.vx, a.vy);\n  });\n  energy = speedSum / agents.length / 150;\n}\n\nfunction drawField(count, rest, tension, live) {\n  const dt = min(deltaTime, 50) / 1000;\n  if (live) {\n    // Two small steps keep stiff springs stable, even with a slow display frame.\n    stepSprings(dt / 2, tension, rest, art.w, art.h, fieldTime);\n    stepSprings(dt / 2, tension, rest, art.w, art.h, fieldTime);\n  }\n  ink.noStroke();\n  ink.fill(24, 24, 24, 32);\n  ink.rect(0, 0, ink.width, ink.height);\n  for (let i = 0; i < count; i++) {\n    const a = agents[i],\n      ax = a.x * art.w,\n      ay = a.y * art.h;\n    for (let j = 0; j < i; j++) {\n      const b = agents[j],\n        bx = b.x * art.w,\n        by = b.y * art.h;\n      const distance = dist(ax, ay, bx, by);\n      if (distance > rest * 2.4) continue;\n      const strain = (distance - rest) / rest;\n      const tint = strain > 0.25 ? [255, 158, 108] : requestedRGB;\n      ink.stroke(...tint, 30 + min(1, abs(strain)) * 65);\n      ink.strokeWeight(0.55 + min(1, abs(strain)) * 0.8);\n      ink.line(ax, ay, bx, by);\n    }\n    ink.noStroke();\n    ink.fill(222, 241, 244, 220);\n    ink.circle(ax, ay, 2.6 + min(2, Math.hypot(a.vx, a.vy) / 60));\n  }\n}\n\nfunction drawHeading(live, count, reach) {\n  noStroke();\n  fill(\"#e9e9e9\");\n  textSize(width < 600 ? 15 : 20);\n  text(\"FIELD / FEEDBACK\", 18, 31);\n  fill(live ? \"#d4d4d4\" : \"#999999\");\n  textSize(10);\n  text(\n    live\n      ? sensor.hold\n        ? \"LIVE · reverse circulation\"\n        : \"LIVE · Arduino → p5 → Arduino\"\n      : \"WAITING FOR ARDUINO · run / connect\",\n    18,\n    width >= 780 ? 57 : 94,\n  );\n  fill(\"#969696\");\n  text(\n    `${count} agents · ${round(reach)}px spacing · energy ${energy.toFixed(2)}`,\n    art.x + 12,\n    art.y + art.h - 12,\n  );\n}\n\nfunction sendColor(live) {\n  if (!live || !arduinoComms.connected || writing || millis() - lastSend < 100)\n    return;\n  lastSend = millis();\n  const id = sequence++ % 32768;\n  pending.set(id, millis());\n  if (pending.size > 64) pending.delete(pending.keys().next().value);\n  writing = true;\n  // Values are unscaled: Arduino independently applies its physical pot.\n  Promise.resolve(\n    arduinoComms.sendLine(\n      `SEQ:${id} R:${requestedRGB[0]} G:${requestedRGB[1]} B:${requestedRGB[2]}`,\n    ),\n  )\n    .then(() => (errorText = \"\"))\n    .catch((error) => (errorText = error.message))\n    .finally(() => (writing = false));\n}\n\nfunction drawPlots(panel, live) {\n  push();\n  fill(30, 30, 30, 235);\n  stroke(\"#484848\");\n  rect(panel.x, panel.y, panel.w, panel.h, 8);\n  noStroke();\n  fill(\"#dedede\");\n  textSize(11);\n  text(\"RAW SIGNALS / LAST 8s\", panel.x + 12, panel.y + 21);\n  textSize(9);\n  fill(\"#a5a5a5\");\n  text(\"Arduino → p5 · actual received samples\", panel.x + 12, panel.y + 38);\n  const rows = [\n    {\n      title: `POT A0 · ${live ? sensor.pot : \"—\"} / 1023`,\n      max: 1023,\n      colors: [[111, 213, 193]],\n      get: (s) => [s.pot],\n    },\n    {\n      title: `SONAR · ${live && sensor.cm >= 0 ? sensor.cm.toFixed(1) + \" cm\" : \"no echo / no data\"}`,\n      max: 400,\n      colors: [[234, 188, 110]],\n      get: (s) => [s.cm],\n    },\n    {\n      title: `SWITCH D7 · ${sensor.hold ? \"reverse\" : \"forward\"}`,\n      max: 1,\n      colors: [[184, 156, 235]],\n      get: (s) => [s.hold],\n    },\n    {\n      title: \"RGB · applied by Arduino after pot\",\n      max: 255,\n      colors: [\n        [245, 117, 120],\n        [130, 213, 158],\n        [124, 180, 247],\n      ],\n      get: (s) => s.rgb,\n    },\n  ];\n  const rowHeight = max(25, (panel.h - 128) / 4);\n  const now = millis() / 1000,\n    left = panel.x + 12,\n    chartWidth = panel.w - 24;\n  rows.forEach((row, index) => {\n    const top = panel.y + 56 + index * rowHeight;\n    fill(\"#cccccc\");\n    noStroke();\n    text(row.title, left, top);\n    stroke(\"#3b3b3b\");\n    line(left, top + 8, left + chartWidth, top + 8);\n    line(left, top + rowHeight - 7, left + chartWidth, top + rowHeight - 7);\n    row.colors.forEach((tint, channel) => {\n      stroke(...tint);\n      strokeWeight(1.2);\n      let previous = null;\n      for (const sample of history) {\n        const value = row.get(sample)[channel];\n        if (sample.time < now - WINDOW_SECONDS || value < 0) {\n          previous = null;\n          continue;\n        }\n        const x =\n          left +\n          ((sample.time - now + WINDOW_SECONDS) / WINDOW_SECONDS) * chartWidth;\n        const y = map(\n          constrain(value, 0, row.max),\n          0,\n          row.max,\n          top + rowHeight - 7,\n          top + 8,\n        );\n        if (previous && sample.time - previous.time < 0.5)\n          line(previous.x, previous.y, x, y);\n        previous = { x, y, time: sample.time };\n      }\n    });\n  });\n  noStroke();\n  textSize(9);\n  fill(\"#d0d0d0\");\n  const footer = panel.y + panel.h - 55;\n  text(`p5 target:  ${requestedRGB.join(\" / \")}`, left, footer);\n  text(`Arduino:    ${sensor.rgb.join(\" / \")}`, left, footer + 14);\n  fill(live ? \"#d4d4d4\" : \"#999999\");\n  text(\n    errorText\n      ? \"Serial: \" + errorText.slice(0, 32)\n      : `ACK ${sensor.ack} · round trip ${roundTrip === null ? \"—\" : round(roundTrip) + \" ms\"}`,\n    left,\n    footer + 29,\n  );\n  pop();\n}\n\nfunction hsv(h, s, v) {\n  const sector = h / 60,\n    part = sector % 1,\n    lo = v * (1 - s);\n  const falling = v * (1 - part * s),\n    rising = v * (1 - (1 - part) * s);\n  const channels = [\n    [v, rising, lo],\n    [falling, v, lo],\n    [lo, v, rising],\n    [lo, falling, v],\n    [rising, lo, v],\n    [v, lo, falling],\n  ];\n  return channels[floor(sector) % 6].map((value) => round(value * 255));\n}\n\nfunction toggleLayout() {\n  dataLayout = dataLayout === \"side\" ? \"overlay\" : \"side\";\n  dataVisible = true;\n}\nfunction keyPressed(event) {\n  if (event.target?.closest?.(\"input,textarea,select,[contenteditable]\"))\n    return;\n  if (key.toLowerCase() === \"p\") dataVisible = !dataVisible;\n  if (key.toLowerCase() === \"o\") toggleLayout();\n  if (key.toLowerCase() === \"r\") resetField();\n}\nfunction windowResized() {\n  if (!window.p5compHostSerial) resizeCanvas(windowWidth, windowHeight);\n}\n\n// p5comp communications: begin\n// p5comp communications: version 2\n////////////////////////////////////////////////////////////////////////\n// Arduino ↔ p5: webserial. This code is part of your sketch.\n// Match Serial.begin() in your Arduino sketch.\nconst SERIAL_BAUD_RATE = 9600;\nconst SERIAL_AUTO_CONNECT = false; // Only a previously permitted, unambiguous device.\nconst SERIAL_CONTROLS = \"always\"; // 'always', 'hover', or 'hidden' once connected.\nconst SERIAL_SHORTCUT = \"s\"; // Alt+Shift+S reveals/hides controls.\n\n// Load a local p5.webserial.js first, then jsDelivr. No index.html edit needed.\nconst P5_WEBSERIAL_LOCAL = \"./p5.webserial.js\";\nconst P5_WEBSERIAL_CDN =\n  \"https://cdn.jsdelivr.net/npm/@gohai/p5.webserial@1.1.2/libraries/p5.webserial.js\";\nfunction loadArduinoSerialLibrary(url) {\n  return new Promise((resolve, reject) => {\n    const script = document.createElement(\"script\");\n    const timeout = setTimeout(() => {\n      script.remove();\n      reject(new Error(\"Timed out loading \" + url));\n    }, 8000);\n    script.src = url;\n    script.onload = () => {\n      clearTimeout(timeout);\n      if (typeof p5.prototype.WebSerial === \"function\") resolve();\n      else {\n        script.remove();\n        reject(new Error(\"Invalid p5.webserial library: \" + url));\n      }\n    };\n    script.onerror = () => {\n      clearTimeout(timeout);\n      script.remove();\n      reject(new Error(\"Could not load \" + url));\n    };\n    document.head.append(script);\n  });\n}\nconst ArduinoSerialPort = p5.prototype.WebSerial;\nconst arduinoComms = (window.arduinoComms = {\n  lastLine: \"\",\n  connected: false,\n  requireSerial() {\n    if (!navigator.serial)\n      throw new Error(\n        \"USB serial is unavailable in this browser. Use Chrome or Edge; Safari is not supported.\",\n      );\n  },\n  onLine(serialLine) {\n    this.lastLine = serialLine;\n    if (typeof acceptLine === \"function\") acceptLine(serialLine);\n  },\n  async connect(onLine, options = {}) {\n    if (this.connected) return;\n    if (onLine) this.onLine = onLine;\n    this.requireSerial();\n    const host =\n      window.p5compHostSerial || typeof window.serialConnected === \"boolean\";\n    // Ask while the click still has browser permission to open the chooser.\n    const selectedPort =\n      options.port || (host ? null : await navigator.serial.requestPort());\n    if (!ArduinoSerialPort && typeof p5.prototype.WebSerial !== \"function\") {\n      await loadArduinoSerialLibrary(P5_WEBSERIAL_LOCAL).catch(() =>\n        loadArduinoSerialLibrary(P5_WEBSERIAL_CDN),\n      );\n    }\n    this.port = new (ArduinoSerialPort || p5.prototype.WebSerial)(\n      this.sketch || window,\n    );\n    await this.port.selectPort(\n      ...(selectedPort ? [selectedPort, SERIAL_BAUD_RATE] : [SERIAL_BAUD_RATE]),\n    );\n    await new Promise((resolve, reject) => {\n      let finished = false;\n      this.readTask = this.port.start().finally(() => {\n        finished = true;\n      });\n      const check = () => {\n        if (this.port.opened()) return resolve();\n        if (finished)\n          return reject(\n            new Error(\n              \"Could not open Arduino serial port. Close other serial monitors and retry.\",\n            ),\n          );\n        setTimeout(check, 20);\n      };\n      check();\n    });\n    this.connected = true;\n  },\n  poll() {\n    if (!this.port?.opened()) return;\n    for (let i = 0; i < 50; i++) {\n      const serialLine = this.port.readUntil(\"\\n\");\n      if (!serialLine) break;\n      this.onLine(serialLine);\n    }\n  },\n  sendLine(serialLine) {\n    if (this.port?.opened()) return this.port.println(serialLine);\n  },\n  async disconnect() {\n    await this.port?.close();\n    this.connected = false;\n  },\n});\n\n(function () {\n  let removeControls = () => {};\n  function afterSetup() {\n    arduinoComms.sketch = this;\n    if (\n      window.p5compHostSerial ||\n      typeof window.serialConnected === \"boolean\"\n    ) {\n      if (window.serialConnected) arduinoComms.connect().catch(console.error);\n      return;\n    }\n    const controls = document.createElement(\"div\");\n    controls.style.cssText =\n      \"position:fixed;right:0;bottom:0;z-index:1000;display:flex;align-items:center;gap:8px;padding:12px;min-width:180px;min-height:40px;max-width:90vw;font:13px sans-serif\";\n    const button = document.createElement(\"button\");\n    button.style.cssText = \"padding:8px 12px;cursor:pointer\";\n    const status = document.createElement(\"span\");\n    status.setAttribute(\"role\", \"status\");\n    arduinoComms.connectButton = button;\n    arduinoComms.connectControls = controls;\n    const supported = Boolean(navigator.serial);\n    let hovered = false,\n      focused = false,\n      revealed = null;\n    function update() {\n      const visible =\n        !arduinoComms.connected ||\n        focused ||\n        status.textContent ||\n        (revealed ??\n          (SERIAL_CONTROLS === \"always\" ||\n            (SERIAL_CONTROLS === \"hover\" && hovered)));\n      controls.hidden = !visible && SERIAL_CONTROLS === \"hidden\";\n      controls.style.opacity = visible ? \"1\" : \"0\";\n      // In hover mode the transparent bottom-right area stays reachable.\n      controls.style.pointerEvents = controls.hidden ? \"none\" : \"auto\";\n      if (!button.disabled)\n        button.textContent = arduinoComms.connected\n          ? \"Disconnect Arduino\"\n          : \"Connect Arduino\";\n    }\n    arduinoComms.updateControls = update;\n    controls.onmouseenter = () => {\n      hovered = true;\n      update();\n    };\n    controls.onmouseleave = () => {\n      hovered = false;\n      update();\n    };\n    controls.onfocusin = () => {\n      focused = true;\n      update();\n    };\n    controls.onfocusout = (event) => {\n      focused = controls.contains(event.relatedTarget);\n      update();\n    };\n    const shortcut = (event) => {\n      if (\n        !event.altKey ||\n        !event.shiftKey ||\n        event.ctrlKey ||\n        event.metaKey ||\n        event.code !== \"Key\" + SERIAL_SHORTCUT.toUpperCase() ||\n        event.repeat\n      )\n        return;\n      if (event.target.closest?.(\"input,textarea,[contenteditable=true]\"))\n        return;\n      event.preventDefault();\n      revealed = controls.hidden || controls.style.opacity === \"0\";\n      update();\n    };\n    document.addEventListener(\"keydown\", shortcut);\n    removeControls = () => {\n      document.removeEventListener(\"keydown\", shortcut);\n      controls.remove();\n    };\n    if (!supported) {\n      button.disabled = true;\n      button.textContent = \"USB serial unavailable\";\n      status.textContent =\n        \"Use a browser with Web Serial, such as Chrome or Edge. Safari is not supported.\";\n    }\n    async function connectOrDisconnect(options) {\n      button.disabled = true;\n      status.textContent = \"\";\n      try {\n        if (arduinoComms.connected) await arduinoComms.disconnect();\n        else await arduinoComms.connect(undefined, options);\n      } catch (error) {\n        if (error.name === \"NotFoundError\")\n          status.textContent = \"No port selected. Click Connect to try again.\";\n        else {\n          console.error(error);\n          status.textContent =\n            error.name === \"NetworkError\"\n              ? \"Port unavailable. Disconnect p5comp and other serial monitors, then retry.\"\n              : error.message;\n        }\n      } finally {\n        button.disabled = !supported;\n        // Clicking does not force the control to stay visible once connected.\n        focused = button.matches?.(\":focus-visible\") || false;\n        revealed = null;\n        update();\n      }\n    }\n    button.onclick = () => connectOrDisconnect();\n    controls.append(button, status);\n    document.body.append(controls);\n    update();\n    if (supported && SERIAL_AUTO_CONNECT) {\n      button.disabled = true;\n      navigator.serial\n        .getPorts()\n        .then((ports) => {\n          if (ports.length === 1)\n            return connectOrDisconnect({ port: ports[0] });\n          status.textContent = ports.length\n            ? \"Choose which Arduino to connect.\"\n            : \"Click Connect to permit an Arduino first.\";\n        })\n        .catch((error) => {\n          status.textContent = error.message;\n        })\n        .finally(() => {\n          button.disabled = false;\n          update();\n        });\n    }\n  }\n  function beforeDraw() {\n    arduinoComms.poll();\n    arduinoComms.updateControls?.();\n  }\n  function removed() {\n    removeControls();\n    arduinoComms.disconnect().catch(console.error);\n  }\n  if (typeof p5.registerAddon === \"function\") {\n    p5.registerAddon(function (_p5, _prototype, lifecycles) {\n      lifecycles.postsetup = afterSetup;\n      lifecycles.predraw = beforeDraw;\n      lifecycles.remove = removed;\n    });\n  } else {\n    p5.prototype.registerMethod(\"afterSetup\", afterSetup);\n    p5.prototype.registerMethod(\"pre\", beforeDraw);\n    p5.prototype.registerMethod(\"remove\", removed);\n  }\n})();\n\n////////////////////////////////////////////////////////////////////////\n// p5comp communications: end\n"
+  },
+  "arduino": "// Field / feedback: two-way Arduino + p5, 9600 baud.\n// Arduino -> p5: MS:123 POT0:512 DIST0:42.3 SW1:0 R:128 G:64 B:32 ACK:7\n// p5 -> Arduino: SEQ:8 R:255 G:80 B:20 (newline terminated)\n// p5 chooses RGB; the physical pot scales its brightness on Arduino.\nconst long BAUD_RATE = 9600;\nconst byte POT = A0, SWITCH = 7, TRIG = 4, ECHO = 3;\nconst byte RED_PIN = 10, GREEN_PIN = 9, BLUE_PIN = 11;\nconst unsigned long SAMPLE_MS = 100;  // approximately 10 named sensor packets/second at 9600 baud\n\nchar command[48];\nbyte commandLength = 0;\nbool overflow = false;\nunsigned int desired[3] = {0, 0, 0};\nunsigned int applied[3] = {0, 0, 0};\nint acknowledged = -1;\nunsigned long lastCommand = 0, lastSample = 0;\nint potValue = 0;\nbool holdState = false, previousSwitch = false;\nunsigned long switchChanged = 0;\n\n// Token order is free. All four command fields must be present exactly once.\nvoid applyCommand() {\n  unsigned int values[4] = {0, 0, 0, 0};\n  byte seen = 0;\n  char *context;\n  for (char *token = strtok_r(command, \" \\t\", &context); token;\n       token = strtok_r(NULL, \" \\t\", &context)) {\n    char *colon = strchr(token, ':');\n    if (!colon || colon == token || !colon[1]) return;\n    *colon = '\\0';\n    char *end;\n    long value = strtol(colon + 1, &end, 10);\n    if (*end || value < 0) return;\n    int field = -1;\n    if (strcmp(token, \"SEQ\") == 0) field = 0;\n    else if (strcmp(token, \"R\") == 0) field = 1;\n    else if (strcmp(token, \"G\") == 0) field = 2;\n    else if (strcmp(token, \"B\") == 0) field = 3;\n    else return;\n    if (seen & (1 << field)) return;\n    if (value > (field == 0 ? 32767 : 255)) return;\n    values[field] = value;\n    seen |= 1 << field;\n  }\n  if (seen != 15) return;\n  acknowledged = values[0];\n  for (byte channel = 0; channel < 3; channel++) desired[channel] = values[channel + 1];\n  lastCommand = millis();\n}\n\nvoid receiveCommands() {\n  while (Serial.available()) {\n    char next = Serial.read();\n    if (next == '\\r') continue;\n    if (next == '\\n') {\n      command[commandLength] = '\\0';\n      if (!overflow) applyCommand();\n      commandLength = 0;\n      overflow = false;\n    } else if (commandLength < sizeof(command) - 1 && !overflow) {\n      command[commandLength++] = next;\n    } else {\n      overflow = true;  // discard the whole oversized message, not a partial command\n    }\n  }\n}\n\nvoid setup() {\n  pinMode(SWITCH, INPUT_PULLUP);  // closed to GND means hold\n  pinMode(TRIG, OUTPUT);\n  pinMode(ECHO, INPUT);\n  pinMode(RED_PIN, OUTPUT);\n  pinMode(GREEN_PIN, OUTPUT);\n  pinMode(BLUE_PIN, OUTPUT);\n  pinMode(LED_BUILTIN, OUTPUT);\n  Serial.begin(BAUD_RATE);\n}\n\nvoid loop() {\n  receiveCommands();\n  potValue = analogRead(POT);\n  bool closed = digitalRead(SWITCH) == LOW;\n  if (closed != previousSwitch) switchChanged = millis();\n  previousSwitch = closed;\n  if (millis() - switchChanged >= 25) holdState = closed;\n\n  // This multiplication happens on Arduino, not in the p5 drawing.\n  for (byte channel = 0; channel < 3; channel++) {\n    applied[channel] = (desired[channel] * (unsigned long)potValue + 511) / 1023;\n  }\n  analogWrite(RED_PIN, applied[0]);\n  analogWrite(GREEN_PIN, applied[1]);\n  analogWrite(BLUE_PIN, applied[2]);\n  digitalWrite(LED_BUILTIN, acknowledged >= 0 && millis() - lastCommand < 1200);\n\n  if (millis() - lastSample < SAMPLE_MS) return;\n  lastSample = millis();\n  digitalWrite(TRIG, LOW);\n  delayMicroseconds(2);\n  digitalWrite(TRIG, HIGH);\n  delayMicroseconds(10);\n  digitalWrite(TRIG, LOW);\n  unsigned long duration = pulseIn(ECHO, HIGH, 25000);\n  float distanceCm = duration ? duration * 0.0343 / 2.0 : -1;\n\n  char packet[112];\n  char distanceText[12];\n  dtostrf(distanceCm, 0, 1, distanceText);  // AVR snprintf does not format floats\n  snprintf(packet, sizeof(packet), \"MS:%lu POT0:%d DIST0:%s SW1:%d R:%u G:%u B:%u ACK:%d\",\n    millis(), potValue, distanceText, holdState ? 1 : 0,\n    applied[0], applied[1], applied[2], acknowledged);\n  Serial.println(packet);  // one complete, readable sensor snapshot per line\n}\n",
+  "artifact": {
+    "source": "// Field / feedback: two-way Arduino + p5, 9600 baud.\n// Arduino -> p5: MS:123 POT0:512 DIST0:42.3 SW1:0 R:128 G:64 B:32 ACK:7\n// p5 -> Arduino: SEQ:8 R:255 G:80 B:20 (newline terminated)\n// p5 chooses RGB; the physical pot scales its brightness on Arduino.\nconst long BAUD_RATE = 9600;\nconst byte POT = A0, SWITCH = 7, TRIG = 4, ECHO = 3;\nconst byte RED_PIN = 10, GREEN_PIN = 9, BLUE_PIN = 11;\nconst unsigned long SAMPLE_MS = 100;  // approximately 10 named sensor packets/second at 9600 baud\n\nchar command[48];\nbyte commandLength = 0;\nbool overflow = false;\nunsigned int desired[3] = {0, 0, 0};\nunsigned int applied[3] = {0, 0, 0};\nint acknowledged = -1;\nunsigned long lastCommand = 0, lastSample = 0;\nint potValue = 0;\nbool holdState = false, previousSwitch = false;\nunsigned long switchChanged = 0;\n\n// Token order is free. All four command fields must be present exactly once.\nvoid applyCommand() {\n  unsigned int values[4] = {0, 0, 0, 0};\n  byte seen = 0;\n  char *context;\n  for (char *token = strtok_r(command, \" \\t\", &context); token;\n       token = strtok_r(NULL, \" \\t\", &context)) {\n    char *colon = strchr(token, ':');\n    if (!colon || colon == token || !colon[1]) return;\n    *colon = '\\0';\n    char *end;\n    long value = strtol(colon + 1, &end, 10);\n    if (*end || value < 0) return;\n    int field = -1;\n    if (strcmp(token, \"SEQ\") == 0) field = 0;\n    else if (strcmp(token, \"R\") == 0) field = 1;\n    else if (strcmp(token, \"G\") == 0) field = 2;\n    else if (strcmp(token, \"B\") == 0) field = 3;\n    else return;\n    if (seen & (1 << field)) return;\n    if (value > (field == 0 ? 32767 : 255)) return;\n    values[field] = value;\n    seen |= 1 << field;\n  }\n  if (seen != 15) return;\n  acknowledged = values[0];\n  for (byte channel = 0; channel < 3; channel++) desired[channel] = values[channel + 1];\n  lastCommand = millis();\n}\n\nvoid receiveCommands() {\n  while (Serial.available()) {\n    char next = Serial.read();\n    if (next == '\\r') continue;\n    if (next == '\\n') {\n      command[commandLength] = '\\0';\n      if (!overflow) applyCommand();\n      commandLength = 0;\n      overflow = false;\n    } else if (commandLength < sizeof(command) - 1 && !overflow) {\n      command[commandLength++] = next;\n    } else {\n      overflow = true;  // discard the whole oversized message, not a partial command\n    }\n  }\n}\n\nvoid setup() {\n  pinMode(SWITCH, INPUT_PULLUP);  // closed to GND means hold\n  pinMode(TRIG, OUTPUT);\n  pinMode(ECHO, INPUT);\n  pinMode(RED_PIN, OUTPUT);\n  pinMode(GREEN_PIN, OUTPUT);\n  pinMode(BLUE_PIN, OUTPUT);\n  pinMode(LED_BUILTIN, OUTPUT);\n  Serial.begin(BAUD_RATE);\n}\n\nvoid loop() {\n  receiveCommands();\n  potValue = analogRead(POT);\n  bool closed = digitalRead(SWITCH) == LOW;\n  if (closed != previousSwitch) switchChanged = millis();\n  previousSwitch = closed;\n  if (millis() - switchChanged >= 25) holdState = closed;\n\n  // This multiplication happens on Arduino, not in the p5 drawing.\n  for (byte channel = 0; channel < 3; channel++) {\n    applied[channel] = (desired[channel] * (unsigned long)potValue + 511) / 1023;\n  }\n  analogWrite(RED_PIN, applied[0]);\n  analogWrite(GREEN_PIN, applied[1]);\n  analogWrite(BLUE_PIN, applied[2]);\n  digitalWrite(LED_BUILTIN, acknowledged >= 0 && millis() - lastCommand < 1200);\n\n  if (millis() - lastSample < SAMPLE_MS) return;\n  lastSample = millis();\n  digitalWrite(TRIG, LOW);\n  delayMicroseconds(2);\n  digitalWrite(TRIG, HIGH);\n  delayMicroseconds(10);\n  digitalWrite(TRIG, LOW);\n  unsigned long duration = pulseIn(ECHO, HIGH, 25000);\n  float distanceCm = duration ? duration * 0.0343 / 2.0 : -1;\n\n  char packet[112];\n  char distanceText[12];\n  dtostrf(distanceCm, 0, 1, distanceText);  // AVR snprintf does not format floats\n  snprintf(packet, sizeof(packet), \"MS:%lu POT0:%d DIST0:%s SW1:%d R:%u G:%u B:%u ACK:%d\",\n    millis(), potValue, distanceText, holdState ? 1 : 0,\n    applied[0], applied[1], applied[2], acknowledged);\n  Serial.println(packet);  // one complete, readable sensor snapshot per line\n}\n",
+    "buildKey": "// Field / feedback: two-way Arduino + p5, 9600 baud.\n// Arduino -> p5: MS:123 POT0:512 DIST0:42.3 SW1:0 R:128 G:64 B:32 ACK:7\n// p5 -> Arduino: SEQ:8 R:255 G:80 B:20 (newline terminated)\n// p5 chooses RGB; the physical pot scales its brightness on Arduino.\nconst long BAUD_RATE = 9600;\nconst byte POT = A0, SWITCH = 7, TRIG = 4, ECHO = 3;\nconst byte RED_PIN = 10, GREEN_PIN = 9, BLUE_PIN = 11;\nconst unsigned long SAMPLE_MS = 100;  // approximately 10 named sensor packets/second at 9600 baud\n\nchar command[48];\nbyte commandLength = 0;\nbool overflow = false;\nunsigned int desired[3] = {0, 0, 0};\nunsigned int applied[3] = {0, 0, 0};\nint acknowledged = -1;\nunsigned long lastCommand = 0, lastSample = 0;\nint potValue = 0;\nbool holdState = false, previousSwitch = false;\nunsigned long switchChanged = 0;\n\n// Token order is free. All four command fields must be present exactly once.\nvoid applyCommand() {\n  unsigned int values[4] = {0, 0, 0, 0};\n  byte seen = 0;\n  char *context;\n  for (char *token = strtok_r(command, \" \\t\", &context); token;\n       token = strtok_r(NULL, \" \\t\", &context)) {\n    char *colon = strchr(token, ':');\n    if (!colon || colon == token || !colon[1]) return;\n    *colon = '\\0';\n    char *end;\n    long value = strtol(colon + 1, &end, 10);\n    if (*end || value < 0) return;\n    int field = -1;\n    if (strcmp(token, \"SEQ\") == 0) field = 0;\n    else if (strcmp(token, \"R\") == 0) field = 1;\n    else if (strcmp(token, \"G\") == 0) field = 2;\n    else if (strcmp(token, \"B\") == 0) field = 3;\n    else return;\n    if (seen & (1 << field)) return;\n    if (value > (field == 0 ? 32767 : 255)) return;\n    values[field] = value;\n    seen |= 1 << field;\n  }\n  if (seen != 15) return;\n  acknowledged = values[0];\n  for (byte channel = 0; channel < 3; channel++) desired[channel] = values[channel + 1];\n  lastCommand = millis();\n}\n\nvoid receiveCommands() {\n  while (Serial.available()) {\n    char next = Serial.read();\n    if (next == '\\r') continue;\n    if (next == '\\n') {\n      command[commandLength] = '\\0';\n      if (!overflow) applyCommand();\n      commandLength = 0;\n      overflow = false;\n    } else if (commandLength < sizeof(command) - 1 && !overflow) {\n      command[commandLength++] = next;\n    } else {\n      overflow = true;  // discard the whole oversized message, not a partial command\n    }\n  }\n}\n\nvoid setup() {\n  pinMode(SWITCH, INPUT_PULLUP);  // closed to GND means hold\n  pinMode(TRIG, OUTPUT);\n  pinMode(ECHO, INPUT);\n  pinMode(RED_PIN, OUTPUT);\n  pinMode(GREEN_PIN, OUTPUT);\n  pinMode(BLUE_PIN, OUTPUT);\n  pinMode(LED_BUILTIN, OUTPUT);\n  Serial.begin(BAUD_RATE);\n}\n\nvoid loop() {\n  receiveCommands();\n  potValue = analogRead(POT);\n  bool closed = digitalRead(SWITCH) == LOW;\n  if (closed != previousSwitch) switchChanged = millis();\n  previousSwitch = closed;\n  if (millis() - switchChanged >= 25) holdState = closed;\n\n  // This multiplication happens on Arduino, not in the p5 drawing.\n  for (byte channel = 0; channel < 3; channel++) {\n    applied[channel] = (desired[channel] * (unsigned long)potValue + 511) / 1023;\n  }\n  analogWrite(RED_PIN, applied[0]);\n  analogWrite(GREEN_PIN, applied[1]);\n  analogWrite(BLUE_PIN, applied[2]);\n  digitalWrite(LED_BUILTIN, acknowledged >= 0 && millis() - lastCommand < 1200);\n\n  if (millis() - lastSample < SAMPLE_MS) return;\n  lastSample = millis();\n  digitalWrite(TRIG, LOW);\n  delayMicroseconds(2);\n  digitalWrite(TRIG, HIGH);\n  delayMicroseconds(10);\n  digitalWrite(TRIG, LOW);\n  unsigned long duration = pulseIn(ECHO, HIGH, 25000);\n  float distanceCm = duration ? duration * 0.0343 / 2.0 : -1;\n\n  char packet[112];\n  char distanceText[12];\n  dtostrf(distanceCm, 0, 1, distanceText);  // AVR snprintf does not format floats\n  snprintf(packet, sizeof(packet), \"MS:%lu POT0:%d DIST0:%s SW1:%d R:%u G:%u B:%u ACK:%d\",\n    millis(), potValue, distanceText, holdState ? 1 : 0,\n    applied[0], applied[1], applied[2], acknowledged);\n  Serial.println(packet);  // one complete, readable sensor snapshot per line\n}\n{}",
+    "hex": ":100000000C94DF000C9407010C9407010C94070179\r\n:100010000C9407010C9407010C9407010C94070140\r\n:100020000C9407010C9407010C9407010C94070130\r\n:100030000C9407010C9407010C9407010C94070120\r\n:100040000C9412030C9407010C9482030C945C032F\r\n:100050000C9407010C9407010C9407010C94070100\r\n:100060000C9407010C94070100407A10F35A00A089\r\n:10007000724E18090010A5D4E80000E87648170071\r\n:1000800000E40B54020000CA9A3B000000E1F505B1\r\n:10009000000080969800000040420F000000A086FB\r\n:1000A00001000000102700000000E803000000002D\r\n:1000B0006400000000000A000000000001000000D1\r\n:1000C00000002C76D888DC674F0823DFC1DFAE59EB\r\n:1000D000E1B1B796E5E3E453C63AE651997696E87E\r\n:1000E000E6C28426EB898C9B62ED407C6FFCEFBC02\r\n:1000F0009C9F40F2BAA56FA5F490055A2AF75C932D\r\n:100100006B6CF9676DC11BFCE0E40D47FEF520E662\r\n:10011000B500D0ED902E0300943577050080841E45\r\n:10012000080000204E0A000000C80C333333330FA0\r\n:10013000986E12831141EF8D2114893BE65516CF3D\r\n:10014000FEE6DB18D1844B381BF77C1D901DA4BB49\r\n:10015000E424203284725E228100C9F124ECA1E5FE\r\n:100160003D270000000023002600290000000000B9\r\n:10017000240027002A0000000000250028002B0092\r\n:10018000040404040404040402020202020203033D\r\n:100190000303030301020408102040800102040845\r\n:1001A00010200102040810200000000800020100D5\r\n:1001B0000003040700000000000000000A071124EB\r\n:1001C0001FBECFEFD8E0DEBFCDBF22E0AAE5B1E091\r\n:1001D00001C01D92A035B207E1F711E0A0E0B1E047\r\n:1001E000EAE4FEE102C005900D92AA35B107D9F705\r\n:1001F00010E0CFEDD0E004C02197FE010E945B0C1F\r\n:10020000CE3DD107C9F70E94F9030C94230F0C943B\r\n:100210000000833081F028F4813099F08230A9F019\r\n:1002200008958730A9F08830C9F08430B1F4809106\r\n:1002300080008F7D03C0809180008F778093800045\r\n:10024000089584B58F7784BD089584B58F7DFBCFE5\r\n:100250008091B0008F778093B00008958091B000B6\r\n:100260008F7DF9CF1F93CF93DF93282F30E0F901D3\r\n:10027000E855FE4F8491F901EC56FE4FD491F901F7\r\n:10028000E058FE4FC491CC23A9F0162F81110E9493\r\n:100290000901EC2FF0E0EE0FFF1FEA58FE4FA59189\r\n:1002A000B4918FB7F894EC91111108C0D095DE236A\r\n:1002B000DC938FBFDF91CF911F910895DE2BF8CF94\r\n:1002C000CF93DF9390E0FC01EC56FE4F24918058D1\r\n:1002D0009E4FFC0184918823C9F090E0880F991FFC\r\n:1002E000FC01E459FE4FA591B491FC01EA58FE4F80\r\n:1002F000C591D49161110DC09FB7F8948C91209550\r\n:1003000082238C938881282328839FBFDF91CF91FC\r\n:100310000895623051F49FB7F8943C91822F8095F4\r\n:1003200083238C93E8812E2BEFCF8FB7F894EC9139\r\n:100330002E2B2C938FBFEACF1F93CF93DF93182FD1\r\n:10034000EB0161E00E946001209739F460E0812FA9\r\n:10035000DF91CF911F910C943201CF3FD10511F461\r\n:1003600061E0F5CFE12FF0E0E855FE4FE491E33096\r\n:1003700031F140F4E130B1F0E230E1F0C038D105C4\r\n:100380007CF7E4CFE73029F1E83059F1E430B1F7F8\r\n:1003900080918000806280938000D0938B00C09316\r\n:1003A0008A0004C084B5806884BDC7BDDF91CF9149\r\n:1003B0001F91089584B5806284BDC8BDF7CF809138\r\n:1003C0008000806880938000D0938900C09388006B\r\n:1003D000EDCF8091B00080688093B000C093B300EF\r\n:1003E000E5CF8091B00080628093B000C093B400EC\r\n:1003F000DDCF2FB7F89460914A0270914B02809143\r\n:100400004C0290914D022FBF0895AF92BF92CF92B0\r\n:10041000DF92EF92FF920F931F93CF93DF936C01C4\r\n:100420007B018B01040F151FEB015E01AE18BF08A5\r\n:10043000C017D10759F06991D601ED91FC91019057\r\n:10044000F081E02DC6010995892B79F7C501DF916F\r\n:10045000CF911F910F91FF90EF90DF90CF90BF90C1\r\n:10046000AF900895FC01538D448D252F30E0842FEB\r\n:1004700090E0821B930B541710F0CF9608950197CC\r\n:100480000895FC01918D828D981761F0A28DAE0FB9\r\n:10049000BF2FB11D5D968C91928D9F5F9F73928F40\r\n:1004A00090E008958FEF9FEF0895FC01918D828D6C\r\n:1004B000981731F0828DE80FF11D858D90E0089539\r\n:1004C0008FEF9FEF0895FC01918D228D892F90E091\r\n:1004D000805C9F4F821B91098F73992708958CE848\r\n:1004E00091E00E94630221E0892B09F420E0822F31\r\n:1004F000089580E090E0892B29F00E946F0281111D\r\n:100500000C9400000895FC01A48DA80FB92FB11D13\r\n:10051000A35ABF4F2C91848D90E001968F73992739\r\n:10052000848FA689B7892C93A089B1898C91837017\r\n:1005300080648C93938D848D981306C00288F38910\r\n:10054000E02D80818F7D80830895EF92FF920F933D\r\n:100550001F93CF93DF93EC0181E0888F9B8D8C8D6F\r\n:1005600098131AC0E889F989808185FF15C09FB763\r\n:10057000F894EE89FF896083E889F9898081837026\r\n:10058000806480839FBF81E090E0DF91CF911F91D5\r\n:100590000F91FF90EF900895F62E0B8D10E00F5FF6\r\n:1005A0001F4F0F731127E02E8C8D8E110CC00FB6CC\r\n:1005B00007FCFACFE889F989808185FFF5CFCE0164\r\n:1005C0000E948302F1CFEB8DEC0FFD2FF11DE35A5A\r\n:1005D000FF4FF0829FB7F8940B8FEA89FB898081E7\r\n:1005E0008062CFCFCF93DF93EC01888D8823B9F061\r\n:1005F000AA89BB89E889F9898C9185FD03C080812E\r\n:1006000086FD0DC00FB607FCF7CF8C9185FFF2CFAA\r\n:10061000808185FFEDCFCE010E948302E9CFDF917B\r\n:10062000CF9108951F920F920FB60F9211242F931E\r\n:100630003F938F939F93AF93BF9380914A02909182\r\n:100640004B02A0914C02B0914D023091490223E03F\r\n:10065000230F2D3758F50196A11DB11D2093490296\r\n:1006600080934A0290934B02A0934C02B0934D02A8\r\n:100670008091450290914602A0914702B0914802B4\r\n:100680000196A11DB11D8093450290934602A0934F\r\n:100690004702B0934802BF91AF919F918F913F91D4\r\n:1006A0002F910F900FBE0F901F90189526E8230FE3\r\n:1006B0000296A11DB11DD2CF1F920F920FB60F92BD\r\n:1006C00011242F933F934F935F936F937F938F9357\r\n:1006D0009F93AF93BF93EF93FF938CE891E00E94B9\r\n:1006E0008302FF91EF91BF91AF919F918F917F9185\r\n:1006F0006F915F914F913F912F910F900FBE0F908F\r\n:100700001F9018951F920F920FB60F9211242F93DE\r\n:100710008F939F93EF93FF93E0919C01F0919D0144\r\n:100720008081E091A201F091A30182FD1BC0908124\r\n:100730008091A5018F5F8F732091A601821741F0F0\r\n:10074000E091A501F0E0E457FE4F958F8093A5015D\r\n:10075000FF91EF919F918F912F910F900FBE0F906E\r\n:100760001F9018958081F4CFCF92DF92EF92FF9285\r\n:100770000F931F93E82FF92F05C00150110921098C\r\n:10078000310961F1908196239417B9F305C00150A6\r\n:1007900011092109310911F1908196239413F7CFA2\r\n:1007A000C12CD12CE12CF12C0AC08FEFC81AD80A29\r\n:1007B000E80AF80A0C151D052E053F0579F0808121\r\n:1007C0008623841791F36C2D7D2D8E2D9F2D1F91E7\r\n:1007D0000F91FF90EF90DF90CF90089560E070E070\r\n:1007E00080E090E01F910F91FF90EF90DF90CF900D\r\n:1007F0000895CF93DF93CDB7DEB7CE57D1090FB6AB\r\n:10080000F894DEBF0FBECDBF789484B5826084BDFE\r\n:1008100084B5816084BD85B5826085BD85B5816004\r\n:1008200085BD80916E00816080936E001092810082\r\n:10083000809181008260809381008091810081603D\r\n:1008400080938100809180008160809380008091FE\r\n:10085000B10084608093B1008091B000816080938A\r\n:10086000B00080917A00846080937A0080917A0051\r\n:10087000826080937A0080917A00816080937A0010\r\n:1008800080917A00806880937A001092C10062E0C3\r\n:1008900087E00E94600161E084E00E94600160E006\r\n:1008A00083E00E94600161E08AE00E94600161E0F3\r\n:1008B00089E00E94600161E08BE00E94600161E0DC\r\n:1008C0008DE00E946001E0919C01F0919D0182E029\r\n:1008D0008083E0919801F09199011082E0919A0152\r\n:1008E000F0919B018FEC80831092A401E091A00114\r\n:1008F000F091A10186E08083E0919E01F0919F013B\r\n:10090000808180618083E0919E01F0919F018081D0\r\n:1009100088608083E0919E01F0919F0180818068D2\r\n:100920008083E0919E01F0919F0180818F7D808383\r\n:100930009E012F5F3F4F79016E0131E7C30ED11C3D\r\n:1009400044244394512C8CE891E00E9463029C0162\r\n:10095000892B09F4E1C08CE891E00E9441028D30BE\r\n:1009600091F3E0918B018A3009F0C3C0F0E0E55AC1\r\n:10097000FE4F108280915A018111B6C088E0D701E4\r\n:100980001D928A95E9F7AE0143585F4F64E171E02B\r\n:100990008BE591E00E9475088C01712C0115110501\r\n:1009A00009F47DC06AE370E0C8010E94610C009701\r\n:1009B00009F49AC00817190709F496C0FC012181AF\r\n:1009C000222309F491C0DC011D92CD014AE050E0E0\r\n:1009D000B6010E9455074B015C01D601ED91FC91D7\r\n:1009E0008081811181C0B7FC7FC067E171E0C801DF\r\n:1009F0000E946C0C0097D1F06BE171E0C8010E947D\r\n:100A00006C0C892B09F445C06DE171E0C8010E94AE\r\n:100A10006C0C892B09F440C06FE171E0C8010E94A1\r\n:100A20006C0C892B09F060C083E090E0272D30E04A\r\n:100A3000082E02C0359527950A94E2F720FD54C090\r\n:100A40004FEF5FE760E070E0009721F04FEF50E07C\r\n:100A500060E070E0481559056A057B050CF444C058\r\n:100A6000FC01EE0FFF1FEE0DFF1D91828082F2014F\r\n:100A700002C0EE0FFF1F8A95E2F77E2AAE014358AF\r\n:100A80005F4F64E171E090E080E00E9475088C01A6\r\n:100A900085CF81E090E0CACF82E090E0C7CFFFE051\r\n:100AA0007F1222C089819A81909301018093000175\r\n:100AB0008B819C8190933802809337028D819E8137\r\n:100AC00090933A02809339028F81988590933C02EB\r\n:100AD00080933B020E94F90160932D0270932E02D5\r\n:100AE00080932F029093300210928B0110925A0142\r\n:100AF0002ACFEF3268F490915A01911109C091E028\r\n:100B00009E0F90938B01F0E0E55AFE4F80831BCF40\r\n:100B100081E080935A0117CF80E480937C0080911C\r\n:100B20007A00806480937A0080917A0086FDFCCF01\r\n:100B3000A0907800B0907900B0924402A092430255\r\n:100B4000EFEAF1E08491EBE9F1E01491E7E8F1E0FC\r\n:100B50000491002399F081110E940901E02FF0E037\r\n:100B6000EE0FFF1FEE59FE4FA591B491EC911E239D\r\n:100B700091E080E009F490E0292F382F81E02827C8\r\n:100B8000122F117080914202181751F00E94F90142\r\n:100B900060933E0270933F02809340029093410223\r\n:100BA000109342020E94F90140903E0250903F0291\r\n:100BB0006090400270904102641975098609970996\r\n:100BC000693171058105910510F010933D0207E32D\r\n:100BD00012E091E3892E92E0992E2DE3622E22E01D\r\n:100BE000722ED8012D913D918D01D5010E94540C9A\r\n:100BF00061507E4F8F4F9F4F2FEF33E040E050E02A\r\n:100C00000E94E60AF401219331934F0160167106A8\r\n:100C100041F760913102709132028AE00E949C019A\r\n:100C2000609133027091340289E00E949C016091CE\r\n:100C30003502709136028BE00E949C018091000188\r\n:100C40009091010197FD16C00E94F90100912D02BB\r\n:100C500010912E0220912F0230913002AB01BC0185\r\n:100C6000401B510B620B730B81E0403B544061050C\r\n:100C7000710508F080E0682F8DE00E9432010E942B\r\n:100C8000F9010091290210912A0220912B02309142\r\n:100C90002C02601B710B820B930B6436710581056E\r\n:100CA000910508F4A5C00E94F90160932902709390\r\n:100CB0002A0280932B0290932C0260E084E00E9431\r\n:100CC000320183E090E00197F1F761E084E00E9457\r\n:100CD000320183E290E00197F1F760E084E00E9446\r\n:100CE0003201E7E9F1E06491E3E8F1E0E491F0E05A\r\n:100CF000EE0FFF1FEE59FE4F8591949108EA11E621\r\n:100D000020E030E0462F0E94B40361157105810593\r\n:100D1000910509F47AC06F5F7F4F8F4F9F4F9F708F\r\n:100D2000611571058105910509F46FC00E94590B89\r\n:100D300028E23EE74CE05DE30E94960B20E030E0C5\r\n:100D400040E05FE30E94960B860121E040E00E94B4\r\n:100D500037074090000130900101609035025090BB\r\n:100D600036028090330270903402A090310290904D\r\n:100D70003202B0903D0210914302009144020E9461\r\n:100D8000F9013F924F925F926F927F928F929F9262\r\n:100D9000AF921F92BF92DF92CF920F931F939F93B8\r\n:100DA0008F937F936F9381E291E09F938F931F9234\r\n:100DB00080E78F93FF92EF920E94750CF7010190EC\r\n:100DC0000020E9F73197AF014E195F09B7018CE8B0\r\n:100DD00091E00E94050242E050E066E571E08CE897\r\n:100DE00091E00E9405020FB6F894DEBF0FBECDBFA2\r\n:100DF00080E090E0892B09F4A3CD0E946F02882344\r\n:100E000009F49ECD0E9400009BCD60E070E080E878\r\n:100E10009FEB9ACFECE8F1E01382128288EE93E028\r\n:100E2000A0E0B0E084839583A683B78386E091E059\r\n:100E30009183808385EC90E09587848784EC90E0B3\r\n:100E40009787868780EC90E0918B808B81EC90E097\r\n:100E5000938B828B82EC90E0958B848B86EC90E078\r\n:100E6000978B868B118E128E138E148E0895EF92AF\r\n:100E70000F931F93CF93DF93E80134E047FD34E1F4\r\n:100E8000042E000C550B57FF03C051954195510995\r\n:100E9000E32E022F242FAE010E949C08CE01DF9189\r\n:100EA000CF911F910F91EF900895B0E0A0E0EBE596\r\n:100EB000F7E00C94140B5C016B017A01611571056C\r\n:100EC00019F0FB0191838083E114F10451F0C70113\r\n:100ED0000297839730F040E030E020E090E072C06D\r\n:100EE0005E01E5012196F5011081812F90E00E94BD\r\n:100EF0006C08892BA9F71D3201F52196F5011181A6\r\n:100F000001E0E114F10409F4DAC0F0E1EF16F104B4\r\n:100F100009F082C0103359F488818F7D883509F03B\r\n:100F200076C0198122960260F0E1EF2EF12C812C1F\r\n:100F3000912CA12C88E0B82E8CC01B3221F4E50145\r\n:100F40002296F501118100E0DCCFEAE0EE16F10413\r\n:100F500009F4BBC0F0E1EF16F10409F06DC0E7CF72\r\n:100F600078E0E72EF12C812C912CA12C60E1B62E9B\r\n:100F700070C03FE9310F3A3128F439EA332E80C08E\r\n:100F800021E09AC0302F3170C114D10431F02223F6\r\n:100F900009F12197F601D183C08327FF21C060E0CA\r\n:100FA00070E080E090E8311104C06FEF7FEF8FEFC9\r\n:100FB0009FE722E230E030934F0220934E02462F0B\r\n:100FC000372F282F642F732F822FCDB7DEB7E1E1A3\r\n:100FD0000C94300B01FF04C02297F601D183C0832B\r\n:100FE000332341F090958095709561957F4F8F4F99\r\n:100FF0009F4FE5CF97FFE3CF82E290E090934F02BF\r\n:1010000080934E026FEF7FEF8FEF9FE7D8CF10E313\r\n:10101000E114F10409F4A4CF28E0E216F10409F484\r\n:10102000A2CF0CF092CF812C912CA12CE0E4BE2E0B\r\n:1010300082E0E816F10469F060E070E080E090E89A\r\n:1010400097010F2C000C440B550B0E94E60A490136\r\n:101050005A0120E060E070E0CB0127010F2C000C6A\r\n:1010600066087708FE0150ED352E310E39E0331554\r\n:1010700040F43FEB310F3A3108F07BCF49EC342E8E\r\n:10108000310E3E141F040CF07DCF27FD15C08616CF\r\n:101090009706A806B90678F0A30192010E94D60A25\r\n:1010A000630D711D811D911D61307105810520E861\r\n:1010B000920708F465CF2FEF21961081D3CF10331C\r\n:1010C00009F42ACF2AE0E22EF12C9CEC892E982CF0\r\n:1010D000A82C9CE0B92EBDCF91110C94D30A80327C\r\n:1010E00019F089508550C8F70895FA01A191B0818F\r\n:1010F000009719F41097E1F0CD01DC01CD010D90BE\r\n:10110000002011F4C00113C0FB012191222319F02A\r\n:101110002015D9F7F3CFFB012191201519F41E9268\r\n:10112000119606C02223C1F70D900020A1F7D0012F\r\n:10113000FA01A193B0830895A9E0B0E0E2EAF8E0F3\r\n:101140000C94190B6A01F22EB02E102FFBE3AF2E78\r\n:10115000A01608F41BE31F5F012F27E0AE014F5FCD\r\n:101160005F4F0E94FB09BC018981982F99709130D3\r\n:1011700009F43FC09BE2E1FC04C09E2D9170E0FCAD\r\n:101180003AC05E2D5071E82FE87083FF46C084E0BE\r\n:10119000911101C083E0EF2DE81B8F1508F0E0E00E\r\n:1011A000D6018E2F20E2552351F1992329F0D60143\r\n:1011B0009C93C60101966C0196012D5F3F4FE2FEA4\r\n:1011C00024C08EE4D6018C9391E411969C931197E0\r\n:1011D00012968C93D9018E2F90E281111BC0E20FE1\r\n:1011E000F32FF11D10828EEF9FEF2996ECE00C9407\r\n:1011F000350B9DE2C6CF90E2C4CF2D938150811173\r\n:10120000FCCFCE0ED11CE0E0D0CF8EE6D6018C9381\r\n:1012100091E6DBCF9D938150E0CF482F447082FF51\r\n:101220003DC084E0911101C083E08F1510F4EF2DD3\r\n:10123000E81BD6018E2F20E2552309F1992329F0CE\r\n:10124000D6019C93C60101966C0196012D5F3F4F1C\r\n:10125000E2FE1BC089E4D6018C938EE411968C9338\r\n:10126000119786E412968C93D9018E2F90E28823F1\r\n:1012700009F4B5CF9D938150FACF2D938150811100\r\n:10128000FCCFCE0ED11CE0E0D9CF89E6D6018C93FD\r\n:101290008EE611968C93119786E6E4CF9B0177FF3B\r\n:1012A00002C030E020E0A1E0B0E0911102C0B0E067\r\n:1012B000A0E0F9013196AE0FBF1F8B2C912CBB2003\r\n:1012C00009F461C05401EFEFAE1ABE0AAA0DBB1DAE\r\n:1012D000FA161B0619F014F04F2D4A1B511188C045\r\n:1012E000E3FC59C07601A42FB0E2A1114FC0C40E97\r\n:1012F000D11C992309F45BC040E0D6011196F60198\r\n:1013000090836D01552309F448C0012F060F9A817F\r\n:10131000582F507184FF03C0913309F40150101607\r\n:101320000CF047C0093008F008E0EEE2FE2E5B0149\r\n:10133000A01AB10885019194819491082F3F32073A\r\n:1013400029F4D601FC92F60131966F0162177307FA\r\n:1013500094F1021713077CF5DB01A21BB30BAA243F\r\n:10136000A394B12CAC0EBD1EAA0DBB1D11968C9181\r\n:1013700021503109D601119628153905F4F0F601EE\r\n:1013800080836D01DBCFB12CA12CA0CFF701B193ED\r\n:101390007F01A150AACF9111B0CFD601942F50E375\r\n:1013A00002C05D9391509111FCCFC40ED11C40E05E\r\n:1013B000ACCF01E0BACF80E3DBCF6217730731F423\r\n:1013C000963388F4953311F4552369F0F601808340\r\n:1013D000FD01842F90E2811108C0A40FB11D1C9261\r\n:1013E00090E080E002CF81E3F1CF91938150F3CF81\r\n:1013F000911183CF8ACF283008F027E03327DA0114\r\n:10140000990F311D87FD916000966105710539F4D2\r\n:1014100032602E5F3D9330E32A95E1F708959F3FB8\r\n:1014200030F080387105610509F03C5F3C5F3D9309\r\n:10143000913008F08068911DDF93CF931F930F9335\r\n:10144000FF92EF92192F987F9695E92F9695969592\r\n:10145000E90FFF27EE53FF4F99273327EE24FF2490\r\n:10146000A701E70105900894079428F4360FE71EBA\r\n:10147000F81E491F511D660F771F881F991F06947C\r\n:10148000A1F70590079428F4E70EF81E491F561F90\r\n:10149000C11D770F881F991F661F0694A1F705903D\r\n:1014A000079428F4F80E491F561FC71FD11D880F37\r\n:1014B000991F661F771F0694A1F70590079420F4E3\r\n:1014C000490F561FC71FD81F990F661F771F881F08\r\n:1014D0000694A9F784911095177041F0D695C79599\r\n:1014E00057954795F794E7941A95C1F7E8E6F0E029\r\n:1014F00068941590159135916591959105907FE2CD\r\n:101500007395E118F10A430B560BC90BD009C0F7CC\r\n:10151000E10CF11E431F561FC91FD01D7EF470330E\r\n:1015200011F48A95E6CFE894015030F0080F0AF4E0\r\n:101530000027021708F4202F2395022F7A3328F072\r\n:1015400079E37D932A95E9F710C07D932A9589F672\r\n:10155000069497956795379517951794E118F10AB2\r\n:10156000430B560BC90BD00998F023957E917395C8\r\n:101570007A3308F070E37C932013B8F77E917061A2\r\n:101580007D9330F0839571E37D9370E32A95E1F7C5\r\n:101590001124EF90FF900F911F91CF91DF91992728\r\n:1015A00087FD90950895992788270895DB018F93EB\r\n:1015B0009F930E94080BBF91AF91A29F800D911D38\r\n:1015C000A39F900DB29F900D11240895A1E21A2EB1\r\n:1015D000AA1BBB1BFD010DC0AA1FBB1FEE1FFF1FD7\r\n:1015E000A217B307E407F50720F0A21BB30BE40B27\r\n:1015F000F50B661F771F881F991F1A9469F760956E\r\n:101600007095809590959B01AC01BD01CF01089527\r\n:101610000E944A0BA59F900DB49F900DA49F800D32\r\n:10162000911D112408952F923F924F925F926F92D5\r\n:101630007F928F929F92AF92BF92CF92DF92EF9262\r\n:10164000FF920F931F93CF93DF93CDB7DEB7CA1BE3\r\n:10165000DB0B0FB6F894DEBF0FBECDBF09942A880E\r\n:10166000398848885F846E847D848C849B84AA84B6\r\n:10167000B984C884DF80EE80FD800C811B81AA8143\r\n:10168000B981CE0FD11D0FB6F894DEBF0FBECDBF0E\r\n:10169000ED010895A29FB001B39FC001A39F700DFB\r\n:1016A000811D1124911DB29F700D811D1124911D6A\r\n:1016B0000895E89409C097FB3EF490958095709545\r\n:1016C00061957F4F8F4F9F4F9923A9F0F92F96E98E\r\n:1016D000BB279395F695879577956795B795F11103\r\n:1016E000F8CFFAF4BB0F11F460FF1BC06F5F7F4FA0\r\n:1016F0008F4F9F4F16C0882311F096E911C07723B2\r\n:1017000021F09EE8872F762F05C0662371F096E8BA\r\n:10171000862F70E060E02AF09A95660F771F881F89\r\n:10172000DAF7880F9695879597F908950E94A90B87\r\n:101730000C941A0C0E940C0C38F00E94130C20F030\r\n:10174000952311F00C94030C0C94090C11240C94A7\r\n:101750004E0C0E942B0C70F3959FC1F3950F50E037\r\n:10176000551F629FF001729FBB27F00DB11D639F53\r\n:10177000AA27F00DB11DAA1F649F6627B00DA11DF9\r\n:10178000661F829F2227B00DA11D621F739FB00D9F\r\n:10179000A11D621F839FA00D611D221F749F33270F\r\n:1017A000A00D611D231F849F600D211D822F762FA8\r\n:1017B0006A2F11249F5750409AF0F1F088234AF085\r\n:1017C000EE0FFF1FBB1F661F771F881F91505040F1\r\n:1017D000A9F79E3F510580F00C94030C0C944E0C1D\r\n:1017E0005F3FE4F3983ED4F3869577956795B79578\r\n:1017F000F795E7959F5FC1F7FE2B880F911D969592\r\n:10180000879597F9089597F99F6780E870E060E001\r\n:1018100008959FEF80EC089500240A941616170689\r\n:1018200018060906089500240A94121613061406D1\r\n:1018300005060895092E0394000C11F4882352F034\r\n:10184000BB0F40F4BF2B11F460FF04C06F5F7F4FEC\r\n:101850008F4F9F4F089557FD9058440F551F59F0D3\r\n:101860005F3F71F04795880F97FB991F61F09F3F8D\r\n:1018700079F087950895121613061406551FF2CFB6\r\n:101880004695F1DF08C0161617061806991FF1CF06\r\n:1018900086957105610508940895E894BB2766272D\r\n:1018A0007727CB0197F908950E944A0BB7FF089557\r\n:1018B000821B930B0895EE0FFF1F0590F491E02D0E\r\n:1018C0000994FC018191861721F08823D9F7992783\r\n:1018D00008953197CF010895FB01DC018D910190AE\r\n:1018E00080190110D9F3990B0895AEE0B0E0EBE751\r\n:1018F000FCE00C94210B0D891E898F89988D26E0C0\r\n:101900002C831A83098397FF02C080E090E8019737\r\n:101910009E838D83AE01455E5F4F698D7A8DCE01CA\r\n:1019200001960E94A50C4D815E8157FD0AC02F8152\r\n:101930003885421753070CF49A01020F131FF80160\r\n:1019400010822E96E4E00C943D0BABE0B0E0EBEAA5\r\n:10195000FCE00C94130B7C013B018A01FC01178213\r\n:101960001682838181FFC8C1CE0101965C01F70117\r\n:101970009381F30193FD859193FF81913F0188232A\r\n:1019800009F453C1853239F493FD859193FF819118\r\n:101990003F01853229F4B70190E00E94950EE7CF10\r\n:1019A000912C212C312CFFE1F31538F08B3211F101\r\n:1019B00090F4803209F1833229F137FC3CC020EDEC\r\n:1019C000280F2A3050F536FE20C08AE0989E200D60\r\n:1019D0001124922E06C08D3291F0803371F76894F5\r\n:1019E00030F8F30193FD859193FF81913F018111BF\r\n:1019F000DACF21C0689431F8689432F8F2CF689455\r\n:101A000033F8EFCF689434F8ECCFEAE02E9E200D47\r\n:101A10001124222E689435F8E4CF8E3229F436FC56\r\n:101A200004C1689436F8DDCF8C3619F4689437F821\r\n:101A3000D8CF8836B1F2982F9F7D95549330E0F03F\r\n:101A40008336A1F18337C1F1833509F063C02801E2\r\n:101A5000F2E04F0E511CF801C080D180692D70E07A\r\n:101A600036FC02C06FEF7FEFC6010E947F0E4C0173\r\n:101A7000689437F882010AC00C5F1F4FFFE3F983B7\r\n:101A800088248394912C6501E89437F833FE2DC0A7\r\n:101A9000522C8114910471F5552009F468CFB701D7\r\n:101AA00080E290E00E94950E5A94F6CFF801808172\r\n:101AB00089830E5F1F4FE4CF2801F2E04F0E511CC7\r\n:101AC000F801C080D180692D70E036FC02C06FEF54\r\n:101AD0007FEFC6010E948A0E4C018201D5CFB7016B\r\n:101AE00080E290E00E94950E2A942814190409F0CF\r\n:101AF000B0F7CECFF60137FC859137FE81916F01AB\r\n:101B0000B70190E00E94950E51105A94F1E08F1A9F\r\n:101B10009108BFCF843619F0893609F077C0F801F3\r\n:101B200037FE6BC060817181828193810C5F1F4F92\r\n:101B3000F32DFF763F2E97FF09C090958095709505\r\n:101B400061957F4F8F4F9F4F689437F82AE030E0C0\r\n:101B5000A5010E94C50EC82ECA188C2C432C36FE37\r\n:101B60000CC0E89440F8C91440F434FE05C032FCBF\r\n:101B700003C0F32DFE7E4F2E892C44FE95C0FE013E\r\n:101B8000EC0DF11D8081803309F087C0242D297E62\r\n:101B9000422E842D8870582E43FC95C040FE8FC085\r\n:101BA0009C2C821418F42C0C922C981844FE91C092\r\n:101BB000B70180E390E00E94950E42FE09C088E7DD\r\n:101BC00090E041FE02C088E590E0B7010E94950ECA\r\n:101BD000C91408F48AC0CA94D12C9FEFC91AD90A33\r\n:101BE000CA0CDB1CF60182916F01B70190E00E94E4\r\n:101BF000950EAC14BD04B1F74FCF60817181072EF3\r\n:101C0000000C880B990B0E5F1F4F92CFD32CE894DA\r\n:101C1000D4F82AE030E0853739F1232D297FD22E00\r\n:101C20008F3601F148F48835A9F0F7018681978154\r\n:101C30002B96E2E10C942F0B803749F08837A9F7F7\r\n:101C4000D4FE02C06894D2F820E130E00DC0689460\r\n:101C5000D4F8F6CF34FE03C0822F8660D82E20E160\r\n:101C600032E002C028E030E0F801D7FE0FC060810A\r\n:101C70007181828193810C5F1F4FA5010E94C50E67\r\n:101C8000C82ECA183D2CE89437F867CF608171815F\r\n:101C900090E080E00E5F1F4FF0CF42FC02C08394C3\r\n:101CA00078CF8394839475CF842D867809F471CF8F\r\n:101CB000F6CFB70180E290E00E94950E83948214E3\r\n:101CC000C0F3512C73CF522C5818821408F46ECFE5\r\n:101CD000F8CF842D867809F47BCF8BE241FE80E239\r\n:101CE00047FC8DE2B70190E071CFB70180E390E04F\r\n:101CF0000E94950E9A946CCF8FEF9FEF99CFFC01C5\r\n:101D00000590615070400110D8F7809590958E0F26\r\n:101D10009F1F0895FC016150704001900110D8F799\r\n:101D2000809590958E0F9F1F08950F931F93CF93CB\r\n:101D3000DF93182F092FEB018B8181FD09C01FEF65\r\n:101D40000FEF812F902FDF91CF911F910F91089569\r\n:101D500082FF14C02E813F818C819D812817390715\r\n:101D60003CF4E881F981CF0101969983888310833F\r\n:101D70008E819F8101969F838E83E3CFE885F985CD\r\n:101D8000812F0995892BA1F3DACFFA01AA272830F0\r\n:101D900051F1203181F1E8946F936E7F6E5F7F4F38\r\n:101DA0008F4F9F4FAF4FB1E03ED0B4E03CD0670FB4\r\n:101DB000781F891F9A1FA11D680F791F8A1F911D07\r\n:101DC000A11D6A0F711D811D911DA11D20D009F457\r\n:101DD00068943F912AE0269F11243019305D319399\r\n:101DE000DEF6CF010895462F4770405D4193B3E082\r\n:101DF0000FD0C9F7F6CF462F4F70405D4A3318F029\r\n:101E0000495D31FD4052419302D0A9F7EACFB4E0D9\r\n:101E1000A6959795879577956795BA95C9F7009791\r\n:101E20006105710508959B01AC010A2E0694579532\r\n:101E3000479537952795BA95C9F7620F731F841F89\r\n:0A1E4000951FA01D0895F894FFCF30\r\n:101E4A00FFFF00000000A50205023202F20263024F\r\n:101E5A0041025502200900534551005200470042F1\r\n:101E6A00004D533A256C7520504F54303A25642062\r\n:101E7A0044495354303A2573205357313A25642044\r\n:101E8A00523A257520473A257520423A2575204150\r\n:0A1E9A00434B3A2564000D0A0000D6\r\n:00000001FF\r\n"
+  }
+}

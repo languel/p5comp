@@ -5,7 +5,7 @@ export class ProjectionWindows {
     this.getReferences = getReferences;
     this.windows = new Map();
     ctx.bridge.addEventListener("mirrorFrame", (e) =>
-      this.update("p5", e.detail.image),
+      this.update("p5", e.detail.image, e.detail.controls),
     );
     ctx.bridge.addEventListener("mirrorError", (e) =>
       ctx.notice(e.detail.message),
@@ -74,6 +74,18 @@ export class ProjectionWindows {
       button.setAttribute("aria-pressed", "true");
       button.title = `Mirror ${kind} · live`;
     };
+    if (kind === 'p5') {
+      win.document.body.style.display = 'flex';
+      win.document.body.style.flexDirection = 'column';
+      main.style.height = '0';
+      main.style.minHeight = '0';
+      main.style.flex = '1';
+      const toolbar = win.document.createElement('nav');
+      toolbar.setAttribute('aria-label', 'Sketch controls');
+      toolbar.style.cssText = 'order:-1;flex:0 0 auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 52px 10px 10px;background:#242424;color:#ddd;font:12px monospace';
+      toolbar.hidden = true;
+      win.document.body.append(toolbar);
+    }
     this.windows.set(kind, win);
     win.addEventListener("beforeunload", () => {
       if (this.windows.get(kind) === win) this.windows.delete(kind);
@@ -88,9 +100,46 @@ export class ProjectionWindows {
       this.tick();
     }
   }
-  update(kind, data) {
+  update(kind, data, controls = []) {
     const win = this.windows.get(kind);
     if (!win || win.closed) return;
+    const toolbar = win.document.querySelector('nav');
+    if (toolbar) {
+      const signature = JSON.stringify(controls.map(c => [c.id,c.tag,c.text,c.options]));
+      if (toolbar.dataset.signature !== signature) {
+        toolbar.replaceChildren();
+        toolbar.dataset.signature = signature;
+        for (const c of controls) {
+          const el = win.document.createElement(c.tag);
+          el.dataset.controlId = c.id;
+          if (c.tag === 'input') el.type = 'range';
+          if (c.tag === 'button') el.textContent = c.text;
+          if (c.options) for (const o of c.options) {
+            const option = win.document.createElement('option');
+            option.value = o.value; option.textContent = o.text; el.append(option);
+          }
+          el.title = c.label;
+          el.setAttribute('aria-label', c.label || c.text);
+          el.style.cssText = 'background:#303030;color:#ddd;border:1px solid #555;border-radius:4px;padding:6px;accent-color:#aaa;font:12px monospace';
+          if (c.tag === 'button') el.onclick = () => this.ctx.bridge.mirrorControl(c.id);
+          else {
+            const label = win.document.createElement('span'); label.textContent = c.label;
+            toolbar.append(label);
+            el.oninput = () => this.ctx.bridge.mirrorControl(c.id, el.value);
+          }
+          toolbar.append(el);
+        }
+      }
+      toolbar.hidden = !controls.length;
+      for (const c of controls) {
+        const el = toolbar.querySelector(`[data-control-id="${c.id}"]`);
+        el.disabled = c.disabled;
+        if (c.tag !== 'button' && win.document.activeElement !== el) {
+          for (const prop of ['min','max','step','value']) if (c[prop] != null) el[prop] = c[prop];
+        }
+        if (c.pressed != null) el.setAttribute('aria-pressed',c.pressed);
+      }
+    }
     const image = win.document.querySelector("img");
     image.src = data;
     image.style.display = "block";

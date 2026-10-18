@@ -34,7 +34,7 @@ export function contactClosed(contact, controls) {
   if (contact.kind === "slide") return Number(value || 0) === contact.position;
   if (contact.kind === "relay")
     return !!controls[contact.id + ":coil"] === contact.energized;
-  return !!value;
+  return typeof value === "string" ? Number(value) !== 0 : !!value;
 }
 // Propagate real bidirectional switch contacts, including scanned key matrices.
 export function digitalLevels(topology, states, controls, sensorSources = []) {

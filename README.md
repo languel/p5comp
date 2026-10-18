@@ -101,7 +101,7 @@ endpoints keep a larger invisible hit target. At a terminal
 shared by different colors, the selected wire wins; otherwise the most recently
 attached wire supplies the dot's color.
 
-The circuit lives on an infinite canvas. Drag empty space or Space-drag to pan;
+The circuit lives on an infinite canvas. Drag empty space to box-select, matching drawing mode. Space-drag or middle-drag pans;
 scroll pans, Ctrl/Command-scroll zooms around the pointer. Zoom buttons and
 **Fit** (F) are also available. **Expand** gives the circuit the full workspace
 width. Parts can move to negative coordinates and beyond the current viewport;
@@ -109,8 +109,8 @@ new parts appear in the current view. Drag any inactive part of a component;
 pot dials, button faces and the Uno reset button remain interactive. **Labels**
 toggles component labels. Shift-click toggles parts; Ctrl/Command-click toggles wires. Shift-click on
 a wire inserts a bend at the clicked position;
-Shift-drag empty space or use **Select** to draw a selection box. Drag a selected
-part or wire to move the group; Delete removes selected objects (the Uno is kept).
+Shift-drag empty space adds to the selection; **Select** also allows a box to begin over a wire. Drag a selected
+part or wire to move the group; Delete removes selected objects, including boards.
 
 **Grid** uses the actual header/hole spacing, with **½ pin**, **1 pin**, or
 **2 pins**. Choose a breadboard or Arduino reference and **On holes** or
@@ -317,8 +317,9 @@ Vertical split selector. This layout is saved with the project. The ↗ buttons
 open independent **mirror windows** for the p5 render or circuit; the original
 editor remains in place and continues to use the same Arduino/serial session.
 Move these windows to a second screen and use their fullscreen button for a
-lecture or installation. p5 mirrors canvas pixels (not separate sketch execution
-or interactive HTML controls). The circuit mirror follows the current viewport,
+lecture or installation. p5 mirrors canvas pixels and includes a compact toolbar for the sketch’s HTML
+buttons, range sliders, and selectors. Those controls act on the original sketch;
+the mirror does not run a second copy. The circuit mirror follows the current viewport,
 pan/zoom, parts, wire colors and reference images. Closing a mirror leaves the
 editor running. Mirror windows are local browser windows and require popup support.
 
@@ -432,7 +433,7 @@ replay limitations. MCP configuration example: [mcp.example.json](mcp.example.js
 - [Electronics foundation models and audio](docs/electronics-foundations.md)
 - [Make your own element](docs/diy-elements.md)
 
-Fresh workspaces start with **HelloLED**, including the minimal Uno + inserted LED circuit, editable Arduino/p5 code and cached firmware. Valid saved workspaces are restored. All 25 catalog demos and their source/firmware data ship with the static Pages build; analog-only lessons require no compiler service.
+Fresh workspaces start with **HelloLED**, including the minimal Uno + inserted LED circuit, editable Arduino/p5 code and cached firmware. Valid saved workspaces are restored. All 26 catalog demos and their source/firmware data ship with the static Pages build; analog-only lessons require no compiler service.
 
 p5 previews and ZIP exports default to **p5 2.3.4**. A project can select
 **p5 1.x compatibility** in Settings. Generated communications code supports both
@@ -457,3 +458,12 @@ see [drawing automation](docs/agents.md#poliplan-drawing).
 In drawing Select mode, empty-space gestures pass through to circuit parts and
 controls. Delete/Backspace removes selected circuit objects outside text fields;
 Cmd/Ctrl+Z undoes deletion. Drawing marks retain their own selection and history.
+
+[Field / feedback](docs/field-feedback.md) is a two-way generative art lesson:
+Arduino streams pot, sonar, switch, and applied RGB values as named-field lines; p5 sends color commands
+back. The pot scales physical brightness, and raw plots toggle between overlay
+and side views. Find it under Examples → Communications.
+
+The serial monitor offers Latest (⥨) with fixed RX/TX rows and Stream follow (⟱)
+with chronological messages. Pause freezes either view for reading and scrolling. Pausing the display leaves the
+serial connection and sketches running.

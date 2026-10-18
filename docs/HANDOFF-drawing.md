@@ -91,3 +91,22 @@ and circuit undo work outside text editors, including after toolbar focus.
 Verified in the browser: circuit dragging and lever clicks through the overlay;
 Delete, undo and redo; selecting/deleting/undoing drawing marks; new strokes and
 drawing undo; D toggling from both the circuit and focused iframe.
+
+## Interaction checkpoint (2026-10-18)
+
+Circuit and drawing now share empty-space box selection and Space-drag panning.
+Circuit Box selection mode can start over components and wires. A completed
+circuit marquee is sent to Poliplan's `selectBox` API when drawing is active;
+Shift preserves selection. Host-focused drawing shortcuts use the embed `key`
+API, without echoing them back to the host. Both APIs live in the studio repo.
+
+Remaining work for a later interaction pass: hover feedback, click-to-select and
+frame behavior still follow different conventions in the two editors. Mixed
+selection does not imply one shared move/group/history system. A future circuit
+editor built on Poliplan is a separate project, not part of this checkpoint.
+
+This checkpoint also includes the Field / feedback named-signal spring demo,
+Latest/Feed serial display modes, compact simulation inputs/output previews,
+a resizable bottom drawer, and live HTML controls in p5 projection windows.
+Hardware upload/serial and physical LED behavior were not re-tested during this
+UI pass; browser simulation and production packaging were verified.

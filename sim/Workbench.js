@@ -355,6 +355,40 @@ export class Workbench {
       '<nav class="wb-tabs" role="tablist" aria-label="Tools"><button role="tab" data-bottom="simulation">Simulation</button><button role="tab" data-bottom="serial">Serial</button><button role="tab" data-bottom="console">Console</button><button id="collapseBottom" title="Collapse tools">⌄</button></nav><div data-tool="simulation"></div><div data-tool="serial"></div><div data-tool="console"><pre id="buildConsole"></pre><pre id="p5Console"></pre></div>',
     );
     main.append(this.bottom);
+    const bottomResize = node('div','bottom-resize');
+    bottomResize.tabIndex=0;
+    bottomResize.setAttribute('role','separator');
+    bottomResize.setAttribute('aria-label','Resize bottom panel');
+    bottomResize.setAttribute('aria-orientation','horizontal');
+    bottomResize.title='Drag to resize tools · double-click to reset';
+    this.bottom.prepend(bottomResize);
+    this.setBottomHeight = height => {
+      this.bottomHeight=Number.isFinite(height) ? Math.max(100,Math.min(innerHeight*.75,height)) : null;
+      if(this.bottomHeight==null) this.bottom.style.removeProperty('--tools-height');
+      else this.bottom.style.setProperty('--tools-height',this.bottomHeight+'px');
+      bottomResize.setAttribute('aria-valuenow',Math.round(this.bottom.getBoundingClientRect().height));
+    };
+    bottomResize.onpointerdown = event => {
+      if(event.button!==0) return;
+      event.preventDefault();
+      const startY=event.clientY, startHeight=this.bottom.getBoundingClientRect().height;
+      bottomResize.setPointerCapture(event.pointerId);
+      document.body.classList.add('resizing-bottom');
+      bottomResize.onpointermove=e=>this.setBottomHeight(startHeight+startY-e.clientY);
+      const end=()=>{
+        bottomResize.onpointermove=null;
+        document.body.classList.remove('resizing-bottom');
+        ctx.persist();
+      };
+      bottomResize.onpointerup=bottomResize.onpointercancel=bottomResize.onlostpointercapture=end;
+    };
+    bottomResize.ondblclick=()=>{this.setBottomHeight(null);ctx.persist();};
+    bottomResize.onkeydown=e=>{
+      if(!['ArrowUp','ArrowDown','Home'].includes(e.key))return;
+      e.preventDefault();
+      this.setBottomHeight(e.key==='Home'?null:this.bottom.getBoundingClientRect().height+(e.key==='ArrowUp'?20:-20));
+      ctx.persist();
+    };
     this.bottom.querySelector('[data-tool="simulation"]').append($("controls"));
     const statusLine = document.querySelector(".section-foot");
     statusLine.prepend($("status"));
@@ -1266,10 +1300,12 @@ export class Workbench {
       layout: this.layout,
       activeView: this.activeView,
       splitRatio: this.splitRatio,
+      bottomHeight: this.bottomHeight,
       drawing: this.drawing?.snapshot() || undefined,
     };
   }
   restore(d) {
+    this.setBottomHeight?.(d.bottomHeight);
     this.selectedReferenceId = null;
     this.selectedNoteId = null;
     this.setSplit?.(Number.isFinite(d.splitRatio) ? d.splitRatio : 0.5);

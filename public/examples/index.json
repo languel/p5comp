@@ -15,6 +15,11 @@
     "folder": "Communications"
   },
   {
+    "name": "Field / feedback · two-way generative signals",
+    "project": "examples/field-feedback.json",
+    "folder": "Communications"
+  },
+  {
     "name": "DIP switches · eight digital inputs",
     "project": "examples/dip-inputs.json",
     "folder": "Inputs"

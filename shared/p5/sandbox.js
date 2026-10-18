@@ -15,6 +15,24 @@ const appOrigin = new URL(import.meta.url).origin;
 let mirrorEnabled = false,
   mirrorFailed = false,
   mirrorAt = 0;
+const mirroredControls = new Map();
+const mirrorIds = new WeakMap();
+let nextMirrorId = 0;
+function mirrorControls() {
+  mirroredControls.clear();
+  return [...document.querySelectorAll('button, input[type="range"], select')]
+    .filter(el => el.getClientRects().length && getComputedStyle(el).visibility !== 'hidden')
+    .map(el => {
+      if (!mirrorIds.has(el)) mirrorIds.set(el, String(++nextMirrorId));
+      const id = mirrorIds.get(el);
+      mirroredControls.set(id, el);
+      return { id, tag: el.localName, text: el.textContent, value: el.value,
+        label: el.getAttribute('aria-label') || el.title || (el.localName === 'button' ? el.textContent : el.previousElementSibling?.textContent) || '',
+        min: el.min, max: el.max, step: el.step, disabled: el.disabled,
+        pressed: el.getAttribute('aria-pressed'),
+        options: el.options ? [...el.options].map(o => ({value:o.value,text:o.text})) : undefined };
+    });
+}
 function mirrorRender() {
   if (!mirrorEnabled || mirrorFailed || performance.now() - mirrorAt < 80)
     return;
@@ -23,7 +41,7 @@ function mirrorRender() {
   mirrorAt = performance.now();
   try {
     host.postMessage(
-      { type: "mirrorFrame", image: canvas.toDataURL("image/png") },
+      { type: "mirrorFrame", image: canvas.toDataURL("image/png"), controls: mirrorControls() },
       "*",
     );
   } catch {
@@ -165,6 +183,23 @@ window.addEventListener("message", async (event) => {
   if (message.theme) {
     window.theme = message.theme;
     document.documentElement.dataset.theme = message.theme;
+  }
+  if (message.type === "mirrorControl") {
+    const el = mirroredControls.get(message.id);
+    if (!mirrorEnabled || !el?.isConnected || el.disabled) return;
+    if (el.localName === 'button') {
+      el.dispatchEvent(new PointerEvent('pointerdown', {bubbles:true,button:0,pointerType:'mouse'}));
+      el.dispatchEvent(new PointerEvent('pointerup', {bubbles:true,button:0,pointerType:'mouse'}));
+      el.dispatchEvent(new MouseEvent('mousedown', {bubbles:true,button:0}));
+      el.dispatchEvent(new MouseEvent('mouseup', {bubbles:true,button:0}));
+      el.click();
+    }
+    else {
+      el.value = String(message.value);
+      el.dispatchEvent(new Event('input', {bubbles:true}));
+      el.dispatchEvent(new Event('change', {bubbles:true}));
+    }
+    return;
   }
   if (message.type === "mirror") {
     mirrorEnabled = !!message.enabled;

@@ -19,6 +19,8 @@ test("simple two-terminal switch opens/closes a pullup input", () => {
   const states = Array(20).fill(3);
   assert.equal(digitalLevels(t, states, { s: 0 })[2], true);
   assert.equal(digitalLevels(t, states, { s: 1 })[2], false);
+  assert.equal(digitalLevels(t, states, { s: "0" })[2], true);
+  assert.equal(digitalLevels(t, states, { s: "1" })[2], false);
 });
 test("two-terminal photoresistor makes a light-dependent analog voltage divider", () => {
   const d = {

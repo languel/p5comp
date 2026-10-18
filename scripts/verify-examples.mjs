@@ -7,5 +7,5 @@ for(const item of index){const name=item.project.split('/').at(-1);const origina
 for(const name of readdirSync(source).filter(n=>n.endsWith('.json')&&n!=='index.json'))if(!named.has('examples/'+name))throw Error('Demo missing from catalog: '+name);
 if(!readFileSync(resolve(source,'index.json')).equals(readFileSync(resolve(built,'index.json'))))throw Error('Catalog not packaged');
 if(!readFileSync(resolve(source,'StandardFirmata.ino')).equals(readFileSync(resolve(built,'StandardFirmata.ino'))))throw Error('StandardFirmata source not packaged');
-for(const name of ['serial-basics/sketch.js','serial-basics/sketch.ino','serial-basics/index.html'])if(!readFileSync(resolve(source,name)).equals(readFileSync(resolve(built,name))))throw Error('Standalone demo source differs: '+name);
+for(const name of ['serial-basics/sketch.js','serial-basics/sketch.ino','serial-basics/index.html','field-feedback/sketch.js','field-feedback/sketch.ino','field-feedback/index.html'])if(!readFileSync(resolve(source,name)).equals(readFileSync(resolve(built,name))))throw Error('Standalone demo source differs: '+name);
 console.log(`Verified all ${index.length} catalog demos and StandardFirmata source in dist/examples.`);

@@ -710,14 +710,7 @@ input[type="checkbox"] {
 input[type="checkbox"]:checked {
   background: var(--ui-quiet);
 }
-input[type="checkbox"]:checked::after {
-  content: "✓";
-  color: var(--ui-panel);
-  display: block;
-  text-align: center;
-  font-size: 11px;
-  line-height: 11px;
-}
+input[type="checkbox"]:checked::after { content: none; }
 input[type="checkbox"]:focus-visible {
   outline: 1px dashed var(--ui-focus);
   outline-offset: 2px;
@@ -1360,7 +1353,7 @@ input[type="checkbox"]:focus-visible {
 .unified .wb-bottom {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  height: clamp(150px, 24dvh, 220px);
+  height: min(75dvh, var(--tools-height, clamp(150px, 24dvh, 220px)));
   min-height: 0;
   max-height: none;
 }
@@ -1889,3 +1882,36 @@ button[data-running="true"][aria-label="Stop p5"] {
 .unified .workspace.drawing > .view-divider {
   display: none;
 }
+
+/* Keep each serial packet on one physical line; preserve reading position. */
+.unified .wb-bottom #log { white-space: pre; overflow: auto; overflow-anchor: none; }
+
+/* Shared compact columns: simulator affordance, label, readback, controls. */
+.unified .wb-bottom #controls { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; align-items:start; }
+.simulation-group { min-width:0; display:grid; gap:1px; align-content:start; }
+.simulation-group h3 { margin:0 0 3px; padding-left:24px; font-size:11px; font-weight:500; color:var(--ui-muted); }
+.simulation-group .control { display:grid; grid-template-columns:18px minmax(90px,130px) 48px minmax(80px,1fr); align-items:center; gap:6px; min-height:28px; padding:0; margin:0; width:100%; max-width:620px; }
+.simulation-group .control > label { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.simulation-group .control output { min-width:0; text-align:right; font:11px ui-monospace,monospace; font-variant-numeric:tabular-nums; }
+.simulation-widgets { display:flex; align-items:center; gap:8px; min-width:0; }
+.simulation-widgets input[type="range"] { width:100%; min-width:40px; max-width:180px; }
+.simulation-group .control .simulator-dot,
+.simulation-group .control .simulator-dot-space { width:18px; min-width:18px; height:24px; padding:0; border:0; background:transparent; display:inline-flex; align-items:center; justify-content:center; }
+.simulation-group .control .simulator-dot::after { content:""; width:5px; height:5px; border-radius:50%; background:currentColor; opacity:.65; }
+.simulation-group .control .simulator-dot:hover::after { opacity:1; }
+.simulation-group .control button:not(.ui-icon-button):not(.simulator-dot) { min-width:42px; padding:3px 8px; }
+.simulation-group small { color:var(--ui-muted); padding-left:24px; }
+@media(max-width:800px) { .unified .wb-bottom #controls {grid-template-columns:1fr;} }
+@media(max-width:480px) { .simulation-group .control {grid-template-columns:18px minmax(65px,1fr) 70px minmax(65px,1fr);gap:5px;} }
+
+.unified .wb-bottom { position:relative; }
+.bottom-resize { position:absolute; z-index:5; top:0; left:0; right:0; height:5px; cursor:row-resize; touch-action:none; }
+.bottom-resize:hover, .bottom-resize:focus-visible { background:var(--ui-quiet); opacity:.65; }
+.wb-bottom.collapsed .bottom-resize { display:none; }
+body.resizing-bottom, body.resizing-bottom * { cursor:row-resize !important; user-select:none !important; }
+
+.simulation-group .output-control { grid-template-columns:18px minmax(90px,130px) 110px minmax(40px,1fr); }
+
+#stage.box-select-mode, #stage.box-select-mode * { cursor:crosshair !important; }
+#stage.box-select-mode.pan-ready, #stage.box-select-mode.pan-ready * { cursor:grab !important; }
+.unified #selectTool[aria-pressed="true"] { background:var(--ui-selected, var(--selected)); color:var(--ui-text); }
