@@ -179,3 +179,29 @@ Outside p5comp use a Web Serial browser (Chrome/Edge), upload the Arduino sketch
 close other serial clients, then click Connect Arduino in p5. Safari is unsupported.
 
 **Field / feedback** remains in Communications as the richer sensor/artwork demo.
+
+## Shipped examples and the Simulation diagram
+
+Circuit controls are discovered from components and wiring automatically. The p5
+side is built from declared variables: use `@receive name`, `@send name`, and an
+optional `@param` range. These are ordinary comments, ignored by p5js.org. They do
+not change serial messages or add a second transport. See the
+[signal annotation guide](p5-parameters.md) for explicit component mappings.
+
+| Example | Arduino → p5 | p5 → Arduino |
+| --- | --- | --- |
+| HelloLED | `led` | — |
+| Four signals | `button`, `pot`, `led`, `rgb` | — |
+| PWM · meter and signal probe | `button`, `pot`, `led`, `rgb` | — |
+| Plotter · multiple signals | `button`, `pot`, `led`, `rgb` | — |
+| Serial basics | `led` | `desiredLed` |
+| HelloLEDp5 | `led` | `interval` |
+| Field / feedback | `sensor.pot`, `sensor.cm`, `sensor.hold` | `requestedRGB` |
+
+Four signals and its instrument variants report their measured/output state over
+serial. Their PWM animation is generated on Arduino; p5 visualizes the received
+RGB values. They are intentionally one-way demonstrations. Serial basics,
+HelloLEDp5 and Field / feedback demonstrate commands traveling back to Arduino.
+Examples with transport set to **none** are circuit-only lessons and have no p5
+serial arrows. A catalog test checks that every serial-enabled example exposes
+its signals and that the exposed readings follow real received packets.
