@@ -70,7 +70,7 @@ export class Workbench {
       "details",
       "wb-menu",
       `<summary>File</summary><div>
-        <details class="example-folder"><summary>New</summary><section><button id="newProject">New project</button></section></details>
+        <button id="newProject">New project</button>
         <details class="example-folder"><summary>Save</summary><section><button id="saveProject">Save project…</button><button id="saveZIP">Download project ZIP</button><button id="saveFolder">Save to folder…</button><button id="saveExample">Save current as example</button></section></details>
         <details class="example-folder"><summary>Open</summary><section><button id="openProject">Open project…</button><button id="openFolder">Open folder…</button></section></details>
         <details class="example-folder" id="fileExamples"><summary>Examples</summary><section></section></details>
