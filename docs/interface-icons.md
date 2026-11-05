@@ -16,6 +16,13 @@ When adding controls, use `icon(name)` and the `ui-icon-button` class. `initiali
 
 Review top navigation, Arduino/p5 transport, canvas tools, inspector tabs, and dropdown states together in both themes after changing the reference.
 
+`GlyphSelect` marks text-only triggers with `glyph-select-text`. These inherit
+the surrounding text size instead of the global icon size; the compiler selector
+in Settings is one example. Keep glyph triggers at the shared icon scale.
+Settings dropdowns align their right edge with their trigger so long option
+labels remain inside the inspector. Check the open menu as well as its closed
+trigger when changing selector styles.
+
 The Arduino tab uses a custom thin infinity/plus/minus symbol on the same 24-unit grid and 1.75-unit stroke as other controls. It is an interface symbol rather than the full Arduino brand logo. The `p5` tab uses a compact text wordmark.
 
 ## Simulation transport

@@ -50,8 +50,9 @@ browser frontend is C++, while the core/library C objects are precompiled.
 
 ## Test with a real Uno or Mega
 
-No motors need to be attached for this check. Use the Code section (`/ide`),
-choose the board in its **BOARD** menu, keep **Compiler → Browser compiler**,
+No motors need to be attached for this check. Use the **code** section
+(`miniide.html`), choose the board in its **Board** menu, keep
+**Compiler → Browser compiler**,
 connect the board with a USB data cable, and grant the port when prompted.
 
 ```cpp
@@ -82,6 +83,27 @@ CLI service. The setup guide is embedded in circuit Settings and also available
 at [local compiler setup](local-compiler.md). A saved project with an explicitly
 configured compiler URL retains that local choice; new projects use the browser.
 No failed browser build silently sends student source to another compiler.
+
+## Troubleshooting
+
+- **First build takes longer:** leave the page open while the compiler downloads.
+  Later builds reuse verified cached files when the browser permits caching.
+- **Download or verification error:** check the connection and reload, then retry.
+  The console reports missing compiler assets or mismatched hashes. The optional
+  local helper is available when network policy blocks the tool CDN.
+- **Missing header/library:** only the libraries listed above are bundled. Use a
+  supported include or install the extra library through the local helper.
+- **C++ error:** read the Arduino filename and line number in the console, fix
+  the source, and compile again. A failed build does not replace the saved firmware.
+- **HTML instead of JSON:** a compiler URL or asset path points to a web page.
+  For local mode, use the helper's `/api/compile` endpoint; for browser mode,
+  reload the published app and check whether its compiler assets are accessible.
+- **USB unavailable:** use desktop Chrome or Edge over HTTPS or localhost, a USB
+  data cable, and the matching board selection. Close other serial monitors.
+
+Settings uses the normal interface text size for the compiler selector; the
+**Icon size** preference controls glyphs, not this text label. Editor **Font size**
+controls source text separately.
 
 ## Maintainer rebuild and validation
 

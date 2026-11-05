@@ -492,3 +492,6 @@ classroom libraries from other local libraries and documents simulation coverage
 
 [Browser compilation](docs/browser-compilation.md) is the default for students.
 [Local compiler setup](docs/local-compiler.md) is an optional advanced path.
+
+[Compiler and motor handoff](docs/HANDOFF-browser-compiler-and-motors.md) records
+the shipped changes, validation evidence, and remaining Uno/Mega hardware checks.
