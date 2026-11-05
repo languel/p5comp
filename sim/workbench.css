@@ -1263,6 +1263,14 @@ input[type="checkbox"]:focus-visible {
   overflow: auto;
   padding: 12px;
 }
+.unified .glyph-select-trigger.glyph-select-text {
+  font-size: inherit;
+  line-height: 1.4;
+}
+.settings-pane .glyph-select-options {
+  left: auto;
+  right: 0;
+}
 #globalSettings {
   display: flex;
   flex-direction: column;

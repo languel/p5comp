@@ -40,14 +40,14 @@ export function glyphSelect(select) {
   wrapper.append(list);
   const refresh = () => {
     const option = select.selectedOptions[0];
-    trigger.textContent =
+    const glyph =
       (select.dataset.glyph
         ? select.dataset.glyph +
           (select.dataset.showState ? " " + (glyphs[select.value] || "·") : "")
         : "") ||
-      glyphs[select.value] ||
-      option?.textContent ||
-      "⋯";
+      glyphs[select.value];
+    trigger.textContent = glyph || option?.textContent || "⋯";
+    trigger.classList.toggle("glyph-select-text", !glyph);
     trigger.title =
       (select.getAttribute("aria-label") || "") + ": " + option?.textContent;
     trigger.setAttribute("aria-label", trigger.title);
