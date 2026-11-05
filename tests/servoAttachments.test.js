@@ -158,3 +158,24 @@ test("garden includes editable Poliplan source, exported leaf and consistent sta
       ),
     );
 });
+
+test('SG90 and MG90S catalog profiles preserve servo pins, attachments and compiled behavior', async () => {
+  const {searchElements,elementPins}=await import('../sim/elements.js');
+  const {SERVO_MODELS}=await import('../sim/servoCatalog.js');
+  for(const name of ['SG90','MG90S']) {
+    const entries=searchElements(name);
+    assert.equal(entries.length,1);
+    assert.equal(entries[0].type,'wokwi-servo');
+    assert.equal(entries[0].attrs.servoModel,name);
+    assert.deepEqual(elementPins({type:'wokwi-servo',attrs:entries[0].attrs}),['GND','V+','PWM']);
+    assert.match(SERVO_MODELS[name].url,/^https:\/\/towerpro.com.tw\/product\//);
+  }
+  const p=garden();
+  const profiles=p.diagram.parts.filter(p=>p.type==='wokwi-servo');
+  assert.equal(profiles.filter(p=>p.attrs.servoModel==='SG90').length,6);
+  assert.equal(profiles.filter(p=>p.attrs.servoModel==='MG90S').length,6);
+  const note=p.workbench.references.find(r=>r.id==='servo-hardware-specs');
+  for(const model of Object.values(SERVO_MODELS))assert.ok(note.source.includes(model.url));
+  const r=new UnoRuntime(p.artifact.hex,resolveCircuit(p.diagram),p.controls);r.advance(2e6);
+  for(const part of profiles){assert.ok(r.snapshot().parts[part.id].pulse>400);assert.ok(part.attrs.servoAttachment);}
+});

@@ -28,11 +28,26 @@
         "kind": "note",
         "name": "Twelve servo garden",
         "x": -380,
-        "y": 760,
-        "width": 310,
+        "y": 720,
+        "width": 360,
         "opacity": 1,
-        "source": "# Twelve servo garden\n\n**Speed**: turn A0. **Pattern**: traveling wave / alternating petals.\n\nSelect a servo → Properties → **Shaft attachment**. Try arm, arc or pen.\n\nIn **Draw**, select your artwork and right-click **Mount selection on selected servo**. Teal leaves use a Poliplan SVG.\n\nUno / Nano: **12** channels. Mega: **48** in Servo.h.\n\nReal hardware: separate servo supply, shared ground.",
+        "source": "## Twelve servo garden\n\nTurn **Speed** (A0). **Pattern** (A1) selects waves / alternating petals.\n\nSelect a servo → **Properties** for its model, specs and shaft attachment.\n\nIn **Draw**, select artwork → right-click **Mount selection on selected servo**.",
         "fontSize": 14,
+        "background": "#f6f4ee",
+        "showLabel": false,
+        "height": 170
+      },
+      {
+        "id": "servo-hardware-specs",
+        "kind": "note",
+        "name": "SG90 / MG90S specifications",
+        "x": -380,
+        "y": 910,
+        "width": 360,
+        "height": 365,
+        "opacity": 1,
+        "source": "## SG90 / MG90S · hardware reference\n\n| At 4.8 V | [SG90 Analog](https://towerpro.com.tw/product/sg90-analog/) | [MG90S](https://towerpro.com.tw/product/mg90s-3/) |\n| --- | --- | --- |\n| Mass | 9 g | 13.4 g |\n| Body, mm | 23 × 12.2 × 29 | 22.8 × 12.2 × 28.5 |\n| Gears | POM / plastic | Metal |\n| Stall torque | 1.8 kgf·cm | 1.8 kgf·cm |\n| Speed / 60° | 0.12 s | 0.10 s |\n\nTowerPro's published specs, checked Nov 5, 2026. SG90 figures refer to the analog version's specification list. Other versions vary; calibrate actual travel and check your unit's voltage/current ratings.\n\nThe shared schematic symbol and ideal 0–180° pulse model do not simulate size, load, torque, speed or current. These are positional servo profiles.\n\n**Real hardware:** separate regulated servo supply with shared ground. Uno / classic Nano: 12 Servo.h channels; Mega: 48 (canvas limit: 40 parts).\n",
+        "fontSize": 12,
         "background": "#f6f4ee",
         "showLabel": false
       }
@@ -171,9 +186,10 @@
             "offset": 180,
             "color": "#bf795c",
             "trace": false
-          }
+          },
+          "servoModel": "SG90"
         },
-        "label": "01 · D2"
+        "label": "01 · SG90 · D2"
       },
       {
         "id": "power1",
@@ -204,9 +220,10 @@
             "offset": 210,
             "color": "#7b74b1",
             "trace": true
-          }
+          },
+          "servoModel": "MG90S"
         },
-        "label": "02 · D3"
+        "label": "02 · MG90S · D3"
       },
       {
         "id": "power2",
@@ -241,9 +258,10 @@
             "aspect": 2.4893617021276597,
             "pivotX": 0.035,
             "pivotY": 0.5
-          }
+          },
+          "servoModel": "SG90"
         },
-        "label": "03 · D4"
+        "label": "03 · SG90 · D4"
       },
       {
         "id": "power3",
@@ -274,9 +292,10 @@
             "offset": 270,
             "color": "#bf795c",
             "trace": false
-          }
+          },
+          "servoModel": "MG90S"
         },
-        "label": "04 · D5"
+        "label": "04 · MG90S · D5"
       },
       {
         "id": "power4",
@@ -307,9 +326,10 @@
             "offset": 300,
             "color": "#7b74b1",
             "trace": true
-          }
+          },
+          "servoModel": "SG90"
         },
-        "label": "05 · D6"
+        "label": "05 · SG90 · D6"
       },
       {
         "id": "power5",
@@ -344,9 +364,10 @@
             "aspect": 2.4893617021276597,
             "pivotX": 0.035,
             "pivotY": 0.5
-          }
+          },
+          "servoModel": "MG90S"
         },
-        "label": "06 · D7"
+        "label": "06 · MG90S · D7"
       },
       {
         "id": "power6",
@@ -377,9 +398,10 @@
             "offset": 0,
             "color": "#bf795c",
             "trace": false
-          }
+          },
+          "servoModel": "SG90"
         },
-        "label": "07 · D8"
+        "label": "07 · SG90 · D8"
       },
       {
         "id": "power7",
@@ -410,9 +432,10 @@
             "offset": 30,
             "color": "#7b74b1",
             "trace": true
-          }
+          },
+          "servoModel": "MG90S"
         },
-        "label": "08 · D9"
+        "label": "08 · MG90S · D9"
       },
       {
         "id": "power8",
@@ -447,9 +470,10 @@
             "aspect": 2.4893617021276597,
             "pivotX": 0.035,
             "pivotY": 0.5
-          }
+          },
+          "servoModel": "SG90"
         },
-        "label": "09 · D10"
+        "label": "09 · SG90 · D10"
       },
       {
         "id": "power9",
@@ -480,9 +504,10 @@
             "offset": 90,
             "color": "#bf795c",
             "trace": false
-          }
+          },
+          "servoModel": "MG90S"
         },
-        "label": "10 · D11"
+        "label": "10 · MG90S · D11"
       },
       {
         "id": "power10",
@@ -513,9 +538,10 @@
             "offset": 120,
             "color": "#7b74b1",
             "trace": true
-          }
+          },
+          "servoModel": "SG90"
         },
-        "label": "11 · D12"
+        "label": "11 · SG90 · D12"
       },
       {
         "id": "power11",
@@ -550,9 +576,10 @@
             "aspect": 2.4893617021276597,
             "pivotX": 0.035,
             "pivotY": 0.5
-          }
+          },
+          "servoModel": "MG90S"
         },
-        "label": "12 · D13"
+        "label": "12 · MG90S · D13"
       },
       {
         "id": "power12",

@@ -1,7 +1,36 @@
+import { SERVO_MODELS, servoModel, servoReference } from "./servoCatalog.js";
 import { assetDataURL } from "./projectFiles.js";
 
 export function servoAttachmentControls(wb, panel, part, field) {
   if (part.type !== "wokwi-servo") return;
+  const modelRow = document.createElement("label");
+  modelRow.className = "attribute-row";
+  const modelLabel = document.createElement("span");
+  modelLabel.textContent = "Servo model";
+  const modelSelect = document.createElement("select");
+  modelSelect.setAttribute("aria-label", "Servo model");
+  for (const [value, label] of [
+    ["", "Generic"],
+    ...Object.values(SERVO_MODELS).map((m) => [m.name, m.variant]),
+  ]) {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = label;
+    modelSelect.append(option);
+  }
+  modelSelect.value = part.attrs?.servoModel || "";
+  modelSelect.onchange = () =>
+    wb.action(() => {
+      const attrs = { ...part.attrs };
+      if (modelSelect.value) attrs.servoModel = modelSelect.value;
+      else delete attrs.servoModel;
+      wb.ctx.updatePart({ ...part, attrs });
+      wb.selectPart();
+    });
+  modelRow.append(modelLabel, modelSelect);
+  panel.append(modelRow);
+  const model = servoModel(part);
+  if (model) panel.append(servoReference(model));
   const a = part.attrs?.servoAttachment;
   const update = (patch) =>
     wb.ctx.updatePart({

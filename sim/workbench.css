@@ -2010,3 +2010,10 @@ body.resizing-bottom, body.resizing-bottom * { cursor:row-resize !important; use
 .signal-history path[data-channel="2"] {stroke:#b8a0cf;}
 .show-signal-plots .communication-link::before {opacity:.3;}
 .communication-heading > span:last-child {text-align:right;}
+
+.servo-hardware-reference { margin:8px 0 12px; font-size:11px; line-height:1.45; }
+.servo-hardware-reference summary { margin:4px 0; font-size:12px; }
+.servo-hardware-reference table { width:100%; border-collapse:collapse; margin:6px 0; }
+.servo-hardware-reference th,.servo-hardware-reference td { padding:3px 5px; text-align:left; vertical-align:top; border-bottom:1px solid var(--ui-border); }
+.servo-hardware-reference th { font-weight:500; }
+.servo-hardware-reference p { color:var(--ui-muted); }

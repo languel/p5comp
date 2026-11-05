@@ -1,3 +1,4 @@
+import {servoModel,servoReference} from "./servoCatalog.js";
 import {
   isBreadboard,
   breadboardName,
@@ -221,7 +222,8 @@ export class PartDocs {
     const info = elementByType.get(part.type);
     if (!info) return;
     this.panel.hidden = false;
-    this.panel.querySelector("strong").textContent = info.name;
+    const model=servoModel(part);
+    this.panel.querySelector("strong").textContent = model ? `Servo · ${model.name}` : info.name;
     this.panel.querySelector(".doc-model").textContent = info.modeled
       ? "●"
       : "○";
@@ -240,17 +242,18 @@ export class PartDocs {
       variant = this.panel.querySelector(".doc-variant");
     variant.hidden = part.type !== "wokwi-ssd1306";
     variant.textContent = "Element: 8-pin module · reference: 4-pin I²C module";
-    const url = info.docs
+    const url = model?.url || (info.docs
       ? "https://docs.wokwi.com/parts/" + info.docs
       : info.source
         ? "https://github.com/wokwi/wokwi-elements/blob/main/src/" +
           info.source.replace(".js", ".ts")
-        : "https://docs.wokwi.com/guides/diagram-editor";
+        : "https://docs.wokwi.com/guides/diagram-editor");
     this.panel.querySelector("a").href = url;
     this.panel.querySelector("a").hidden = info.source === "p5comp";
-    frame.hidden = !info.docs;
-    local.hidden = !!info.docs;
-    if (info.docs) frame.src = url;
+    frame.hidden = !!model || !info.docs;
+    local.hidden = !model && !!info.docs;
+    if (model) {frame.removeAttribute("src");local.replaceChildren(servoReference(model, {expanded:true}));}
+    else if (info.docs) frame.src = url;
     else {
       frame.removeAttribute("src");
       local.replaceChildren();

@@ -75,3 +75,34 @@ its selection. Its editable source is in Draw near (1900, 1400), at the
 bottom-right of the board. The standalone SVG and Arduino source are in
 `public/examples/servo-garden/`. Use the sketch in Arduino IDE after installing
 Servo.h. `npm run verify:arduino` checks compilation for Uno, Nano and Mega.
+
+## SG90 and MG90S catalog profiles
+
+Search the component picker for **SG90** or **MG90S**, or choose **Servo model**
+in a selected servo's Properties. These are positional hardware profiles of the
+same `wokwi-servo` symbol and pulse decoder; their standard GND / V+ / PWM pins
+and Poliplan attachments remain compatible. The garden alternates six of each.
+Properties and the part's `?` reference show the selected model's specs and link.
+The example also includes a linked comparison card on the canvas.
+
+| Manufacturer's figures at 4.8 V | SG90 Analog | MG90S |
+| --- | --- | --- |
+| Mass | 9 g | 13.4 g |
+| Body (L × W × H) | 23 × 12.2 × 29 mm | 22.8 × 12.2 × 28.5 mm |
+| Gears | POM / plastic | Metal (manufacturer identifies 6061-T6 aluminum) |
+| Stall torque | 1.8 kgf·cm | 1.8 kgf·cm |
+| Speed per 60° | 0.12 s | 0.10 s |
+
+Sources checked November 5, 2026: [TowerPro SG90 Analog](https://towerpro.com.tw/product/sg90-analog/)
+and [TowerPro MG90S](https://towerpro.com.tw/product/mg90s-3/). Values use the
+manufacturer's specification lists and their common 4.8 V condition. SG90's
+analog page also has a configure table with a different speed; we use its
+explicit operating-speed specification (0.12 s). The SG90 Digital product is a
+different version. The MG90S page gives additional figures at higher voltages
+but lists 4.8 V as operating voltage, so this comparison does not infer a supply
+range from those figures. Verify the actual unit's ratings and travel.
+
+Published specs are reference data, not extra physics in the simulator. Both
+profiles share the existing ideal 0–180° angle mapping and diagram footprint;
+size, gear material, slew speed, current, stall torque and physical travel limits
+are not modeled. Selecting a profile does not imply a continuous-rotation servo.

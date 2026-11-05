@@ -1,8 +1,10 @@
+import {servoVariants} from "./servoCatalog.js";
 import { foundationCatalog } from "./foundationCatalog.js";
 import { extraCatalog } from "./extraCatalog.js";
 import { isBreadboard } from "./breadboard.js";
 import catalog from "./elements.json" with { type: "json" };
 catalog.push(...extraCatalog, ...foundationCatalog);
+catalog.find(e => e.type === "wokwi-servo").variants = servoVariants;
 const legacyBoard = catalog.find((e) => e.type === "wokwi-breadboard");
 Object.assign(legacyBoard, {
   name: "Breadboard long",
@@ -134,8 +136,9 @@ export function searchElements(query) {
       info,
       ...(info.variants || []).map((v) => ({
         ...info,
+        ...v,
         name: info.name + " (" + v.name + ")",
-        attrs: v.attrs,
+        attrs: {...info.attrs, ...v.attrs},
         pins: v.pins,
       })),
     ])
