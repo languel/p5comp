@@ -1,0 +1,181 @@
+{
+  "version": 1,
+  "id": "p5comp-avr-1",
+  "core": "arduino:avr@1.8.8",
+  "gcc": "7.3.0-atmel3.6.1-arduino7",
+  "libraries": {
+    "Servo": "1.3.0",
+    "Stepper": "1.1.3",
+    "AccelStepper": "1.64.0",
+    "LiquidCrystal": "1.0.7",
+    "Adafruit NeoPixel": "1.15.5",
+    "Firmata": "2.5.9"
+  },
+  "common": {
+    "file": "common.zip",
+    "sha256": "8f8da20e492547ee12e8505f19285152a11e8a2c8c5cf584723512c3c1d22424"
+  },
+  "boards": {
+    "uno": {
+      "mcu": "atmega328p",
+      "arch": "avr5",
+      "variant": "standard",
+      "macro": "UNO",
+      "ramStart": 256,
+      "ram": 2048,
+      "flash": 32256,
+      "bundle": "uno.zip",
+      "sha256": "38a880f204ba6fb78f3eef68ca89b51aa1fabd20c1bb60bc3e8c0e986db252dc",
+      "includes": [
+        "/arduino/core",
+        "/arduino/variants/standard",
+        "/libraries/Servo",
+        "/libraries/Stepper",
+        "/libraries/AccelStepper",
+        "/libraries/LiquidCrystal",
+        "/libraries/Adafruit_NeoPixel",
+        "/libraries/Firmata",
+        "/libraries/Wire",
+        "/libraries/SPI",
+        "/libraries/EEPROM",
+        "/libraries/SoftwareSerial"
+      ],
+      "archives": [
+        "/libs/core.a",
+        "/libs/Servo.a",
+        "/libs/Stepper.a",
+        "/libs/AccelStepper.a",
+        "/libs/LiquidCrystal.a",
+        "/libs/Adafruit_NeoPixel.a",
+        "/libs/Firmata.a",
+        "/libs/Wire.a",
+        "/libs/SPI.a",
+        "/libs/SoftwareSerial.a"
+      ]
+    },
+    "nano": {
+      "mcu": "atmega328p",
+      "arch": "avr5",
+      "variant": "eightanaloginputs",
+      "macro": "NANO",
+      "ramStart": 256,
+      "ram": 2048,
+      "flash": 30720,
+      "bundle": "nano.zip",
+      "sha256": "2e00f9460a5e2c40493e18fcd58a61804607d5c073e4c9dc57a3e18211b76a57",
+      "includes": [
+        "/arduino/core",
+        "/arduino/variants/eightanaloginputs",
+        "/libraries/Servo",
+        "/libraries/Stepper",
+        "/libraries/AccelStepper",
+        "/libraries/LiquidCrystal",
+        "/libraries/Adafruit_NeoPixel",
+        "/libraries/Firmata",
+        "/libraries/Wire",
+        "/libraries/SPI",
+        "/libraries/EEPROM",
+        "/libraries/SoftwareSerial"
+      ],
+      "archives": [
+        "/libs/core.a",
+        "/libs/Servo.a",
+        "/libs/Stepper.a",
+        "/libs/AccelStepper.a",
+        "/libs/LiquidCrystal.a",
+        "/libs/Adafruit_NeoPixel.a",
+        "/libs/Firmata.a",
+        "/libs/Wire.a",
+        "/libs/SPI.a",
+        "/libs/SoftwareSerial.a"
+      ]
+    },
+    "mega": {
+      "mcu": "atmega2560",
+      "arch": "avr6",
+      "variant": "mega",
+      "macro": "MEGA2560",
+      "ramStart": 512,
+      "ram": 8192,
+      "flash": 253952,
+      "bundle": "mega.zip",
+      "sha256": "c9f430f2b8805de52e0944c80631f15def4912afb80cddf2983107b614ddc474",
+      "includes": [
+        "/arduino/core",
+        "/arduino/variants/mega",
+        "/libraries/Servo",
+        "/libraries/Stepper",
+        "/libraries/AccelStepper",
+        "/libraries/LiquidCrystal",
+        "/libraries/Adafruit_NeoPixel",
+        "/libraries/Firmata",
+        "/libraries/Wire",
+        "/libraries/SPI",
+        "/libraries/EEPROM",
+        "/libraries/SoftwareSerial"
+      ],
+      "archives": [
+        "/libs/core.a",
+        "/libs/Servo.a",
+        "/libs/Stepper.a",
+        "/libs/AccelStepper.a",
+        "/libs/LiquidCrystal.a",
+        "/libs/Adafruit_NeoPixel.a",
+        "/libs/Firmata.a",
+        "/libs/Wire.a",
+        "/libs/SPI.a",
+        "/libs/SoftwareSerial.a"
+      ]
+    }
+  },
+  "tools": {
+    "cc1plus": {
+      "mjs": {
+        "url": "https://cdn.jsdelivr.net/npm/@horang-corp/avr-gcc-wasm@0.2.0/tools/cc1plus.mjs",
+        "sha256": "b33f286338e5774ed705f321d05556a533bf8b43dd8f832144905b2bce08e2d7",
+        "bytes": 183199
+      },
+      "wasm": {
+        "url": "https://cdn.jsdelivr.net/npm/@horang-corp/avr-gcc-wasm@0.2.0/tools/cc1plus.wasm",
+        "sha256": "c987b310a29dc685b9ba8bf7710d346cb890d735bf2d5db03d44fe864dc17584",
+        "bytes": 13844490
+      }
+    },
+    "avr-as": {
+      "mjs": {
+        "url": "https://cdn.jsdelivr.net/npm/@horang-corp/avr-gcc-wasm@0.2.0/tools/avr-as.mjs",
+        "sha256": "f87023c95bb4fb900a8787eadf8058b657fbc8117aa212e1faf629e20ed5a38b",
+        "bytes": 134895
+      },
+      "wasm": {
+        "url": "https://cdn.jsdelivr.net/npm/@horang-corp/avr-gcc-wasm@0.2.0/tools/avr-as.wasm",
+        "sha256": "cf228116046caa8865bcd49dc8f2cafe1fbf61dabc3920d51ca27cf020d0f34b",
+        "bytes": 761856
+      }
+    },
+    "avr-ld": {
+      "mjs": {
+        "url": "https://cdn.jsdelivr.net/npm/@horang-corp/avr-gcc-wasm@0.2.0/tools/avr-ld.mjs",
+        "sha256": "f7e7434ee053a8b86349e20b828cbc96e5b7dde7596ea992d775b70881dc1229",
+        "bytes": 142386
+      },
+      "wasm": {
+        "url": "https://cdn.jsdelivr.net/npm/@horang-corp/avr-gcc-wasm@0.2.0/tools/avr-ld.wasm",
+        "sha256": "8b884781cd1bde8007bc4f878e82335c502f9bed57f62b182d72ec6372371675",
+        "bytes": 1078207
+      }
+    },
+    "avr-objcopy": {
+      "mjs": {
+        "url": "https://cdn.jsdelivr.net/npm/@horang-corp/avr-gcc-wasm@0.2.0/tools/avr-objcopy.mjs",
+        "sha256": "6bda2f075bcbab021b5506175631008ef1f0db4ac8ff9ff78c2b6f7d89fb9416",
+        "bytes": 135032
+      },
+      "wasm": {
+        "url": "https://cdn.jsdelivr.net/npm/@horang-corp/avr-gcc-wasm@0.2.0/tools/avr-objcopy.wasm",
+        "sha256": "9de9e2fcc18f0ce549234340222ab4b301123f1465d670a407ed065d5f02edd4",
+        "bytes": 725405
+      }
+    }
+  }
+}

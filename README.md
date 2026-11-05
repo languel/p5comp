@@ -8,8 +8,8 @@ A browser-based Arduino and p5.js learning environment:
 
 ## Requirements
 
-- Node.js 18 or newer
-- Arduino CLI with the `arduino:avr` core installed (for compiling Arduino sketches)
+- Hosted use: a modern browser; the browser compiler supports Uno R3, classic Nano, and Mega 2560 without an installation.
+- Local development: Node.js 22 or newer. Arduino CLI is optional, for the advanced local helper.
 - Desktop Chrome or Edge on `localhost` or HTTPS (for Web Serial)
 - Arduino Uno R3 or Mega 2560 (only for physical-device work)
 
@@ -17,7 +17,7 @@ A browser-based Arduino and p5.js learning environment:
 
 ```sh
 npm install
-npm run setup:arduino # once, on the local compilation-helper machine
+npm run setup:arduino # optional: only if using the advanced local compiler
 npm run dev
 ```
 
@@ -52,7 +52,8 @@ The facade supports the stream APIs used in these lessons, not every Web
 Serial option; modem/reset signals are currently no-ops.
 
 Open **Live code** to edit ordinary Arduino C++ and p5 JavaScript. **Compile +
-run** compiles edited Arduino source with the local Arduino CLI endpoint.
+run** compiles edited Arduino source in a browser Web Worker by default. The optional
+local Arduino CLI helper is available in Settings → Compiler.
 **Run p5** restarts only the visualization. Compiled HEX is cached with its
 source and saved in the project. The browser executes compiled AVR instructions
 in a worker; sensor controls affect ADC/GPIO/echo timing, rather than supplying
@@ -180,8 +181,9 @@ sonar power/trigger produces no echo. Supply shorts and conflicting sensor
 drivers are rejected. LED/resistor series paths estimate current; this is not a general circuit solver and output contention is not electrically modeled.
 
 The default project can run from a static local/HTTPS host with no remote
-simulation service. Editing Arduino C++ still needs the local compiler helper;
-there is no browser C++ compiler or offline service-worker cache yet.
+simulation service. Editing Arduino C++ uses the browser AVR-GCC compiler for Uno, Nano and Mega.
+Its pinned static inputs are cached after the first compile; the optional local
+helper supports additional libraries and advanced projects.
 
 **Connect USB Uno** selects a physical port in a compatible browser. **Upload
 compiled sketch** uses the shared explicit-port STK500v1 uploader, checks the
@@ -286,8 +288,8 @@ Older classroom projects continue to load.
 Folder imports prioritize `p5comp.json`, then `.ino`, `sketch.js` and helper
 sources, plus `diagram.json`. Missing code/diagram receives a blank starter.
 Folder saving needs File System Access; JSON download works in other browsers.
-Multi-file Arduino compilation writes `.ino`, `.h`, `.hpp`, `.cpp` and `.c`
-files to the local compiler's sketch folder. p5 helper JS runs before sketch.js.
+Browser compilation supports `.ino`, `.h`, `.hpp` and `.cpp` helper files;
+custom `.c` translation units can use the optional local helper. p5 helper JS runs before sketch.js.
 CodeMirror supplies language-aware completion plus Arduino/p5 vocabulary.
 
 Select a component to edit its JSON, then Apply JSON. Keep ids unchanged;
@@ -300,11 +302,11 @@ and a browser-local shelf for saved class demos. Export those projects to share
 with students; browser-local shelf entries are not published automatically.
 
 GitHub Actions runs tests/builds and deploys `main` to GitHub Pages. The static
-site runs the compiled classroom emulator and p5 without a server. Edited Arduino
-C++ needs a compiler URL in Settings (local helper or a configured service).
-GitHub Pages itself cannot execute Arduino CLI. The local helper accepts only
-validated source filenames; physical upload still requires a Web Serial browser
-and a connected Uno. The compiler helper is bound to localhost by default.
+site runs the emulator, p5 and an AVR GCC WebAssembly compiler without a build
+server. Edited Uno, Nano and Mega sketches compile in a browser Worker by default.
+The optional local helper accepts validated source files and extra libraries.
+Physical upload still requires a Web Serial browser and a connected supported
+board; the local helper, when used, is bound to localhost by default.
 
 To publish a class example, place its project JSON in `public/examples/` and add
 `{"name":"Class demo", "project":"examples/class-demo.json"}` to
@@ -487,3 +489,6 @@ File → Examples → Motors.
 
 [Arduino library support](docs/library-support.md) separates the six preinstalled
 classroom libraries from other local libraries and documents simulation coverage.
+
+[Browser compilation](docs/browser-compilation.md) is the default for students.
+[Local compiler setup](docs/local-compiler.md) is an optional advanced path.

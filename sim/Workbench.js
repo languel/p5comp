@@ -1,3 +1,5 @@
+import localCompilerGuide from "../docs/local-compiler.md?raw";
+import {compilerMode} from "../shared/compile/client.js";
 import {servoAttachmentControls, mountServoDrawing} from "./servoAttachmentControls.js";
 import {fetchJSON} from "../shared/loadJSON.js";
 import communicationsGuide from "../docs/arduino-p5-communications.md?raw";
@@ -119,9 +121,10 @@ export class Workbench {
     const settingsMenu = node(
       "details",
       "wb-menu",
-      '<summary>Settings</summary><div id="globalSettings"><label>Include code in PNG/SVG <input id="exportCode" type="checkbox"></label><label>Workbench <input id="workbenchColor" type="color"></label><label>p5 background <input id="outputColor" type="color"></label><label>Compiler URL <input id="compilerURL" placeholder="http://127.0.0.1:8771/api/compile"></label></div>',
+      '<summary>Settings</summary><div id="globalSettings"><label>Include code in PNG/SVG <input id="exportCode" type="checkbox"></label><label>Workbench <input id="workbenchColor" type="color"></label><label>p5 background <input id="outputColor" type="color"></label><label>Compiler <select id="compilerBackend" aria-label="Compiler"><option value="browser">Browser compiler</option><option value="local">Local helper (advanced)</option></select></label><label id="compilerURLField" hidden>Compiler URL <input id="compilerURL" placeholder="http://127.0.0.1:3001/api/compile"></label><details id="localCompilerHelp"><summary>Local helper setup (advanced)</summary><div></div></details></div>',
     );
     this.title.after(settingsMenu);
+    $("localCompilerHelp").querySelector("div").innerHTML = lessonHTML(localCompilerGuide,"markdown");
     $("themeToggle").hidden = true;
     settingsMenu
       .querySelector("div")
@@ -820,6 +823,11 @@ export class Workbench {
       this.settings.exportCode = $("exportCode").checked;
       ctx.persist();
     };
+    $("compilerBackend").onchange = () => {
+      this.settings.compilerMode = $("compilerBackend").value;
+      $("compilerURLField").hidden = this.settings.compilerMode !== "local";
+      ctx.persist();
+    };
     $("compilerURL").onchange = () => {
       this.settings.compiler = $("compilerURL").value;
       ctx.persist();
@@ -1359,6 +1367,8 @@ export class Workbench {
     $("workbenchColor").value = this.settings.background || "#484b4d";
     $("outputColor").value = this.settings.output || "#242728";
     $("compilerURL").value = this.settings.compiler || "";
+    $("compilerBackend").value = compilerMode(this.settings);
+    $("compilerURLField").hidden = compilerMode(this.settings) !== "local";
     $("p5Major").value = String(this.settings.p5Major === 1 ? 1 : 2);
     $("exportCode").checked = this.settings.exportCode !== false;
   }

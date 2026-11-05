@@ -24,6 +24,12 @@ jobs:
       - run: npm run build
         env:
           PAGES_BASE: /p5comp/
+      - name: Verify actual browser compiler toolchain
+        run: |
+          python3 -m http.server 4173 --directory dist --bind 127.0.0.1 > /tmp/p5comp-compiler-http.log 2>&1 &
+          curl --retry 10 --retry-delay 1 --retry-connrefused --fail --silent --show-error http://127.0.0.1:4173/compiler/avr/manifest.json > /dev/null
+          COMPILER_ASSET_URL=http://127.0.0.1:4173/compiler/avr/ npm run verify:browser-compiler
+      - run: npm run verify:compiler-assets
       - run: npm run verify:examples
       - run: npm run verify:drawing
       - uses: actions/configure-pages@v5

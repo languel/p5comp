@@ -1,6 +1,7 @@
 # Motors and Arduino libraries
 
-Run `npm run setup:arduino` once on the machine running the compilation helper.
+Students use the browser compiler with these libraries already bundled. For the
+optional local compiler, run `npm run setup:arduino` once on the helper machine.
 It installs the Arduino AVR core plus the explicit library versions in
 `scripts/arduino-libraries.json`: Servo, Stepper, AccelStepper, LiquidCrystal,
 Adafruit NeoPixel and Firmata. This command may replace other installed versions

@@ -2,9 +2,9 @@
 
 `npm run setup:arduino` installs the AVR core and the six library versions below
 on the machine running the compilation helper. The setup manifest is
-`scripts/arduino-libraries.json`. These are locally installed Arduino libraries,
-not browser downloads: hosted/static pages run the cached firmware in examples;
-compiling edited sketches requires the local helper.
+`scripts/arduino-libraries.json`. The same six library versions are bundled as static inputs for the browser
+compiler, which is the default student path. The optional local helper can use
+additional compatible libraries installed on its own machine.
 
 | Installed by setup | Version | Supported in the simulator |
 | --- | --- | --- |
@@ -22,7 +22,7 @@ third-party peripheral protocols are not currently simulated. SoftwareSerial doe
 not become the host serial connection; that connection uses the board's hardware
 UART. The dedicated EEPROM controller and persistence are not modeled.
 
-The compiler uses normal Arduino CLI library discovery. More libraries can be
+The optional local compiler uses normal Arduino CLI library discovery. More libraries can be
 installed with `arduino-cli lib install "Library Name"`; compatibility depends
 on the selected board and library. `npm run verify:arduino` compiles the six
 common headers plus AVR core headers and all seven motor lessons for **Uno,
@@ -67,3 +67,7 @@ JSON/properties or note source):
 Formatting uses clang-format for C++ and Prettier for JS/HTML/CSS/Markdown. It is
 undoable; LaTeX source is left unchanged. Outside text editors, **D / Alt+Z**
 continues to toggle the circuit drawing layer.
+
+The [browser compiler](browser-compilation.md) runs without Arduino CLI. Use the
+[optional local helper instructions](local-compiler.md) for additional libraries or
+custom C helper sources. Compilation support and device simulation remain separate.

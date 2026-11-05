@@ -23,3 +23,13 @@ jsPDF is MIT-licensed and provides PDF document export.
 
 - Prettier 3.9.10: MIT. Browser JavaScript/HTML/CSS formatting; notice in `public/licenses/prettier-MIT.txt`.
 - @wasm-fmt/clang-format 23.1.1: package declares MIT. Browser C++ formatting; package notice in `public/licenses/clang-format-wrapper-MIT.txt`. Its bundled clang-format derives from LLVM.
+
+## Browser AVR compiler
+
+The compiler runs GPL AVR GCC/binutils WebAssembly tools fetched from pinned
+`@horang-corp/avr-gcc-wasm@0.2.0` CDN URLs, with integrity checks. The tools are
+not mirrored into this distribution. Static Arduino/core/library/avr-libc inputs
+and their provenance are documented in `public/compiler/avr/NOTICE.md`; source
+for the packaged core and library archives is provided in `sources.zip`.
+The app includes build scripts for those inputs and does not modify the downloaded
+compiler modules.

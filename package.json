@@ -16,7 +16,10 @@
     "vendor:poliplan": "sh -c 'cd \"${AMS_DIR:-$HOME/dev/artistmodelstudio}\" && if [ -n \"$AMS_FULL\" ]; then npm run build:embed:full && scripts/sync-embed.sh \"$OLDPWD/public/vendor/ams-editor\" full; else npm run build:embed && scripts/sync-embed.sh \"$OLDPWD/public/vendor/ams-editor\"; fi'",
     "verify:drawing": "node scripts/verify-drawing.mjs",
     "setup:arduino": "node scripts/setup-arduino.mjs",
-    "verify:arduino": "node scripts/verify-arduino.mjs"
+    "verify:arduino": "node scripts/verify-arduino.mjs",
+    "build:compiler-assets": "node scripts/build-browser-compiler-assets.mjs",
+    "verify:browser-compiler": "node scripts/verify-browser-compiler.mjs",
+    "verify:compiler-assets": "node scripts/verify-compiler-assets.mjs"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.18.6",

@@ -1,4 +1,4 @@
-import {responseJSON} from "../shared/loadJSON.js";
+import {compileSketch,compilerMode} from "../shared/compile/client.js";
 import { initializeSectionUI } from "../shared/ui/sectionUI.js";
 import { createEditor } from "../shared/editor/createEditor.js";
 import { boardForId, boards } from "../shared/boards/boards.js";
@@ -19,6 +19,13 @@ initializeTheme();
 const store = new SignalStore();
 const serial = new SerialConnection();
 const uploader = new AVRUploader();
+const compilerSettings = loadJSON("p5comp.code.compiler", {});
+const compilerSelect=document.querySelector("#compilerBackend"),compilerURL=document.querySelector("#compilerURL");
+compilerSelect.value=compilerMode(compilerSettings);compilerURL.value=compilerSettings.compiler || "";
+const syncCompiler=()=>{document.querySelector("#compilerURLField").hidden=compilerSelect.value!=="local";};syncCompiler();
+compilerSelect.onchange=()=>{compilerSettings.compilerMode=compilerSelect.value;saveJSON("p5comp.code.compiler",compilerSettings);syncCompiler();};
+compilerURL.onchange=()=>{compilerSettings.compiler=compilerURL.value;saveJSON("p5comp.code.compiler",compilerSettings);};
+
 const boardSelect = document.querySelector("#boardSelect");
 const baudSelect = document.querySelector("#baudSelect");
 const connectBtn = document.querySelector("#connectBtn");
@@ -390,21 +397,15 @@ async function compileAndUpload() {
   addLog(buildOutput, `Compiling for ${currentBoard().label}…`, "out");
   setStatus("Compiling…", "busy");
   try {
-    const response = await fetch("/api/compile", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        board: boardSelect.value,
-        source: arduinoEditor.state.doc.toString(),
-      }),
+    const result = await compileSketch({board:boardSelect.value,source:arduinoEditor.state.doc.toString()}, {
+      mode:compilerMode(compilerSettings),url:compilerSettings.compiler || "/api/compile",
+      progress:message=>setStatus(message,"busy"),
     });
-    const result = await responseJSON(response, "Compilation helper (start npm run dev locally)", {allowHTTPError: true});
-    if (!result || typeof result !== "object") throw new Error("Compilation helper returned invalid data.");
     if (result.stdout) addCompilerOutput(result.stdout, "out");
     if (result.stderr)
       addCompilerOutput(result.stderr, result.ok ? "warn" : "error");
-    if (!response.ok || !result.ok)
-      throw new Error(result.stderr || `Compile failed (${response.status}).`);
+    if (!result.ok)
+      throw new Error(result.stderr || "Compile failed.");
     addLog(
       buildOutput,
       "Compile complete. Preparing the board for upload…",

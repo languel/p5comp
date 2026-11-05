@@ -1,3 +1,6 @@
+import {compileSketch, compilerMode} from "../shared/compile/client.js";
+import {AVRUploader} from "../shared/serial/AVRUploader.js";
+import {boardForId} from "../shared/boards/boards.js";
 import {ServoAttachments} from "./servoAttachments.js";
 import {responseJSON} from "../shared/loadJSON.js";
 import {validateProject} from "./validateProject.js";
@@ -99,6 +102,7 @@ const circuitAudio=new CircuitAudio({onError:message=>log(message),onInput:value
   worker?.postMessage({type:"controls",controls});
 }});
 let compiling = false;
+let pendingCompiler = null;
 let running = false,
   paused = false,
   mode = "simulation",
@@ -328,27 +332,26 @@ async function getFirmware() {
     persist();
     return hex;
   }
-  status("Compiling locally…");
-  log(
-    `Compiling Arduino ${board === "mega" ? "Mega" : board === "nano" ? "Nano" : "Uno"}…`,
-  );
-  let response;
+  const backend = compilerMode(workbench?.settings || savedWorkbench.settings);
+  status(backend === "local" ? "Compiling with local helper…" : "Compiling in browser…");
+  log(`Compiling Arduino ${board} · ${backend === "local" ? "local helper" : "browser WASM"}…`);
+  let lastProgress = "";
+  if(pendingCompiler)throw Error("A compilation is already running. Wait for it to finish or stop it first.");
+  const controller = new AbortController(); pendingCompiler = controller;
+  let result;
   try {
-    response = await fetch(
-      workbench?.compilerURL() || basePath("api/compile"),
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ board, source, files }),
-      },
-    );
-  } catch {
-    throw new Error(
-      "Edited Arduino code needs the local compilation helper. The bundled lesson runs without it.",
-    );
-  }
-  const result = await responseJSON(response, "Compilation helper (start npm run dev locally)", {allowHTTPError: true});
-  if (!result || typeof result !== "object") throw new Error("Compilation helper returned invalid data.");
+    result = await compileSketch({board,source,files}, {
+    signal: controller.signal,
+    mode:backend,
+    url:workbench?.compilerURL() || basePath("api/compile"),
+    progress:message=>{status(message);if(message !== lastProgress){log(message);lastProgress=message;}},
+  });
+  } catch (error) {
+    status(error.name === "AbortError" ? "Compilation cancelled" : "Compilation failed");
+    throw error;
+  } finally { if(pendingCompiler===controller)pendingCompiler=null; }
+  if(sourceValue(arduinoEditor)!==source || JSON.stringify(workbench?.arduinoFiles() || {})!==JSON.stringify(files) || boardKind(diagram.parts.find(p=>isAVRBoard(p.type))?.type)!==board)
+    throw Error("The sketch or board changed during compilation. Compile the current project again.");
   log(result.stdout || "");
   if (!result.ok) throw new Error(result.stderr || "Compilation failed.");
   if (result.stderr) log(result.stderr);
@@ -359,8 +362,8 @@ async function getFirmware() {
       "warning",
     );
   if (typeof result.hex !== "string" || !result.hex.trim().startsWith(":")) throw new Error("Compilation helper returned no valid firmware. Retry compilation.");
-  artifact = { source, buildKey, hex: result.hex };
-  $("firmwareState").textContent = "Compiled locally · cached in project";
+  artifact = { source, buildKey, hex: result.hex, compiler: result.compiler || result.backend };
+  $("firmwareState").textContent = `Compiled ${result.backend === "browser" ? "in browser" : "with local helper"} · cached in project`;
   log("Compilation complete · firmware cached.");
   persist();
   return result.hex;
@@ -555,6 +558,7 @@ async function runArduino() {
   }
 }
 function stop() {
+  pendingCompiler?.abort();
   circuitAudio.silence();
   if (running && !agentMuteActions)
     agentSurface?.action("runtime", { action: "stop" });
@@ -1616,12 +1620,6 @@ $("usb").onclick = () => {
 };
 async function uploadFirmware() {
   if (usbBusy) return;
-  if (diagram.parts.some((p) => p.type === "wokwi-arduino-mega")) {
-    notice(
-      "Mega simulation/compilation is supported; use the reference Code uploader for Mega hardware (STK500v2).",
-    );
-    return;
-  }
   usbBusy = true;
   $("upload").disabled = true;
   $("compileUpload").disabled = true;
@@ -1630,15 +1628,15 @@ async function uploadFirmware() {
     await getFirmware();
     const port = await serial.releasePort();
     try {
-      await flashUno(port, artifact.hex, (p) => {
-        status(p);
-        log(p);
-      });
+      const board = boardForId(boardKind(diagram.parts.find(p=>isAVRBoard(p.type))?.type));
+      const progress = message => {status(message);log(message);};
+      if (board.id === "mega") await new AVRUploader().flash({board,port,firmware:artifact.hex,onProgress:progress});
+      else await flashUno(port,artifact.hex,progress);
     } finally {
       await serial.reconnect(port, Number($("monitorBaud").value));
     }
-    status(`Uploaded and verified · ${usbIdentity()} (${boardLabel()})`);
-    log(`Uploaded and verified · ${usbIdentity()} (${boardLabel()})`);
+    status(`Uploaded${boardLabel() === "MEGA" ? "" : " and verified"} · ${usbIdentity()} (${boardLabel()})`);
+    log(`Uploaded${boardLabel() === "MEGA" ? "" : " and verified"} · ${usbIdentity()} (${boardLabel()})`);
   } catch (e) {
     notice(e.message);
     log("Upload failed: " + e.message);

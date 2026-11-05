@@ -1154,3 +1154,11 @@ a:focus-visible {
   outline: 1px dashed var(--ui-focus);
   outline-offset: 2px;
 }
+
+.compiler-options { position:relative; font-size:12px; }
+.compiler-options summary { cursor:pointer; }
+.compiler-options[open] { padding:8px; border:1px solid var(--ui-border); background:var(--ui-panel); }
+.compiler-options label,.compiler-options a { display:block; margin:6px 0; }
+.compiler-options [hidden] { display:none; }
+#localCompilerHelp { font-size:12px; line-height:1.5; }
+#localCompilerHelp pre { overflow:auto; }
