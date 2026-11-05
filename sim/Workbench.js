@@ -1,4 +1,5 @@
 import localCompilerGuide from "../docs/local-compiler.md?raw";
+import gettingStartedGuide from "../docs/getting-started.md?raw";
 import {compilerMode} from "../shared/compile/client.js";
 import {servoAttachmentControls, mountServoDrawing} from "./servoAttachmentControls.js";
 import {fetchJSON} from "../shared/loadJSON.js";
@@ -274,7 +275,15 @@ export class Workbench {
       link.setAttribute("download", "");
     }
     commsGuide.append(commsBody);
-    this.editorPanel.querySelector("#helpHome").append(commsGuide,guide,electronicsGuide);
+    const gettingStarted = node("details", "diy-guide");
+    gettingStarted.append(node("summary", "", "Getting started · signals to feedback"));
+    const gettingStartedBody = node("div", "lesson-note");
+    gettingStartedBody.innerHTML = lessonHTML(gettingStartedGuide, "markdown");
+    const loadLesson = node("button", "", "Load guided replay");
+    loadLesson.title = "Load the lesson's starting project; save your current work first";
+    loadLesson.onclick = () => document.dispatchEvent(new Event("p5comp:load-getting-started"));
+    gettingStarted.append(loadLesson, gettingStartedBody);
+    this.editorPanel.querySelector("#helpHome").append(gettingStarted,commsGuide,guide,electronicsGuide);
     $("code").hidden = true;
     main.append(this.editorPanel);
     const settingsButton = this.editorPanel.querySelector(
@@ -953,6 +962,10 @@ export class Workbench {
         ) + "px";
     });
     this.renderExamples();
+    const gettingStartedLesson = node("button", "repository-example", "Guided lesson · signals to feedback");
+    gettingStartedLesson.title = "Load the lesson's starting project; save your current work first";
+    gettingStartedLesson.onclick = () => document.dispatchEvent(new Event("p5comp:load-getting-started"));
+    this.exampleFolder("Getting started").append(gettingStartedLesson);
     this.action(async () => {
       const entries = await fetchJSON(basePath("examples/index.json"), "Examples catalog");
       if (!Array.isArray(entries)) throw new Error("Examples catalog is invalid. Reload the app to retry.");

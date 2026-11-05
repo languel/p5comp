@@ -5,6 +5,35 @@ import {
   validateTake,
 } from "../shared/automation/Controller.js";
 import { diff, applyPatch } from "../shared/automation/patch.js";
+import { readFileSync } from "node:fs";
+test("exported process patches survive undefined optional drawing fields", () => {
+  const before = { workbench: { drawing: undefined } };
+  const after = { workbench: { drawing: { elements: [] } } };
+  const exported = value => JSON.parse(JSON.stringify(value));
+  assert.deepEqual(applyPatch(exported(before), exported(diff(before, after))), after);
+  assert.deepEqual(applyPatch(after, exported(diff(after, before))), exported(before));
+});
+test("Getting started recording survives export and steps through all three demos", async () => {
+  const take = JSON.parse(readFileSync(new URL("../public/lessons/getting-started.p5comp-process.json", import.meta.url)));
+  assert.ok(validateTake(take));
+  const h = harness();
+  await h.controller.replay({ action: "load", recording: take });
+  const names = new Set([h.get().workbench.name]);
+  for (const entry of take.entries) {
+    await h.controller.replay({ action: "step" });
+    names.add(h.get().workbench.name);
+  }
+  assert.equal(names.size, 3);
+  assert.ok([...names].some(n => n.includes("HelloLED")));
+  assert.ok([...names].some(n => n.includes("Four signals")));
+  assert.ok([...names].some(n => n.includes("Field / feedback")));
+  assert.deepEqual(h.get(), take.final);
+  assert.equal(h.get().controls.A0, 850);
+  assert.equal(h.get().controls.sonar, 45);
+  assert.equal(h.get().controls.D7, 0);
+  assert.equal(h.actions.filter(([n,a]) => n === "runtime" && a.action === "start").length, 3);
+  assert.ok(take.entries.filter(e=>e.kind==="mark").every(e=>e.note));
+});
 function harness() {
   let project = {
     diagram: { parts: [], connections: [] },

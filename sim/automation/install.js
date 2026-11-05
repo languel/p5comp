@@ -2,6 +2,7 @@ import { AgentController } from "../../shared/automation/Controller.js";
 import { TOOLS } from "../../shared/automation/tools.js";
 import { basePath } from "../../shared/basePath.js";
 import { icon } from "../uiIcons.js";
+import { fetchJSON } from "../../shared/loadJSON.js";
 export function installAgentSurface(adapter) {
   const controller = new AgentController(adapter, { storage: localStorage });
   const callTool = (name, args, meta) => controller.call(name, args, meta);
@@ -55,6 +56,7 @@ export function installAgentSurface(adapter) {
     '<h4>Agents & process</h4><p>API: <code>window.p5comp</code> · WebMCP · local MCP/HTTP</p><label>Recording title <input id="processTitle" value="Class demo"></label><label>Saved recording <select id="processSaved"><option value="">Latest recording</option></select></label><label><input type="checkbox" id="processTimed"> Keep original timing</label><label>Step annotation <input id="processNote" placeholder="Explain this step…"></label><div><button id="processMark">Add annotation</button><button id="processCancel">Cancel replay</button><button id="processRecord">Record actions</button><button id="processStop">Stop recording</button><button id="processExport">Export recording</button><button id="processReplay">Load replay</button><button id="processStep">Next step</button><button id="processPlay">Replay all</button><button id="processImport">Import recording</button></div><output id="processStatus">Ready</output><output id="agentRelayStatus">Local relay: connecting…</output>';
   settings.append(group);
   let recent = null;
+  let annotation = "";
   const output = group.querySelector("#processStatus");
   const select = group.querySelector("#processSaved");
   const refreshSaved = () => {
@@ -74,6 +76,7 @@ export function installAgentSurface(adapter) {
 
   const run = async (name, args) => {
     try {
+      if (name === "p5comp_replay" && args.action === "load") annotation = "";
       const r = await callTool(name, args, { source: "human" });
       if (args.action === "stop") recent = r.result;
       output.textContent = controller.take
@@ -83,6 +86,7 @@ export function installAgentSurface(adapter) {
           : recent
             ? `Saved · ${recent.entries.length} actions`
             : "Ready";
+      if (controller.replayState() && annotation) output.textContent += " · " + annotation;
       refreshSaved();
       return r;
     } catch (e) {
@@ -146,6 +150,8 @@ export function installAgentSurface(adapter) {
     f.click();
   };
   controller.subscribe((e) => {
+    if (e.type === "replay.step" && e.data.entry.kind === "mark")
+      annotation = [e.data.entry.title, e.data.entry.note].filter(Boolean).join(" — ");
     if (e.type === "recording.stopped") {
       recent = controller.saved.find((t) => t.id === e.data.id);
       refreshSaved();
@@ -158,9 +164,33 @@ export function installAgentSurface(adapter) {
         : recent
           ? `Saved · ${recent.entries.length} actions`
           : "Ready";
-    if (e.type === "replay.step" && e.data.entry.kind === "mark")
-      output.textContent +=
-        " · " + (e.data.entry.title || e.data.entry.note || "Annotation");
+    if (playback && annotation) output.textContent += " · " + annotation;
+  });
+  document.addEventListener("p5comp:load-getting-started", async () => {
+    try {
+      if (controller.take) throw Error("Stop recording before loading the guided lesson.");
+      const recording = await fetchJSON(basePath("lessons/getting-started.p5comp-process.json"), "Getting started recording");
+      annotation = "";
+      await callTool("p5comp_replay", { action: "load", recording }, { source: "human" });
+      // Keep a portable copy in the existing recording picker for export/reload.
+      let saved = controller.saved.find(t => t.bundledId === recording.id);
+      if (!saved) {
+        const imported = await callTool("p5comp_recording", {
+          action: "import", recording: { ...recording, bundledId: recording.id },
+        }, { source: "human" });
+        saved = controller.saved.find(t => t.id === imported.result.id);
+      }
+      recent = saved;
+      refreshSaved();
+      select.value = saved.id;
+      await callTool("p5comp_view", { inspector: "settings" }, { source: "human" });
+      output.textContent = `Getting started · ${recording.entries.length} steps · choose Next step to begin.`;
+      group.scrollIntoView({ block: "nearest" });
+    } catch (error) {
+      await callTool("p5comp_view", { inspector: "settings" }, { source: "human" });
+      output.textContent = error.message;
+      group.scrollIntoView({ block: "nearest" });
+    }
   });
   const badge = document.createElement("button");
   badge.id = "agentProcess";

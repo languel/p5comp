@@ -11,12 +11,14 @@ export function diff(before, after, path = "") {
     typeof after === "object"
   ) {
     const patches = [];
-    for (const k of Object.keys(before))
-      if (!(k in after))
+    // Undefined object fields disappear on JSON export. Treat them as absent so
+    // a recorded patch remains applicable after its baseline is serialized.
+    for (const k of Object.keys(before).filter(k => before[k] !== undefined))
+      if (!(k in after) || after[k] === undefined)
         patches.push({ op: "remove", path: path + "/" + encode(k) });
-    for (const k of Object.keys(after))
+    for (const k of Object.keys(after).filter(k => after[k] !== undefined))
       patches.push(
-        ...(k in before
+        ...(k in before && before[k] !== undefined
           ? diff(before[k], after[k], path + "/" + encode(k))
           : [{ op: "add", path: path + "/" + encode(k), value: after[k] }]),
       );

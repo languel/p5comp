@@ -1,5 +1,6 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
+import { validateTake } from "../shared/automation/Controller.js";
 const source = resolve("public/examples"),
   built = resolve("dist/examples");
 const index = JSON.parse(readFileSync(resolve(source, "index.json"), "utf8"));
@@ -52,3 +53,9 @@ for (const name of [
 console.log(
   `Verified all ${index.length} catalog demos and StandardFirmata source in dist/examples.`,
 );
+const lessonName = "lessons/getting-started.p5comp-process.json";
+const lesson = readFileSync(resolve("public", lessonName));
+if (!lesson.equals(readFileSync(resolve("dist", lessonName))))
+  throw Error("Getting started recording missing or different in dist");
+validateTake(JSON.parse(lesson));
+console.log("Verified portable Getting started recording in dist/lessons.");

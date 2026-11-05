@@ -10,6 +10,11 @@
     "folder": "Getting started"
   },
   {
+    "name": "Field / feedback · two-way generative signals",
+    "project": "examples/field-feedback.json",
+    "folder": "Getting started"
+  },
+  {
     "name": "HelloLEDp5 · blink rate from p5",
     "project": "examples/helloled-p5.json",
     "folder": "Communications"

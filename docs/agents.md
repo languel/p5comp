@@ -6,6 +6,12 @@ WebMCP tools, local HTTP relay and stdio MCP server. Tool schemas are defined in
 
 ## Record a lesson
 
+A bundled [Getting started lesson](getting-started.md) covers HelloLED,
+Four signals, and Field / feedback. Load it from File → Examples → Getting started
+→ Guided lesson · signals to feedback, then use Next step. Its portable recording
+is `public/lessons/getting-started.p5comp-process.json`. Save your project before
+loading: replay restores the recording's starting workspace.
+
 Open **Record / replay actions** (circle glyph beside Settings), then:
 
 1. Give the recording a title and press **Record actions**.

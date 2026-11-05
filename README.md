@@ -491,6 +491,8 @@ File → Examples → Motors.
 classroom libraries from other local libraries and documents simulation coverage.
 
 [Browser compilation](docs/browser-compilation.md) is the default for students.
+[Getting started](docs/getting-started.md) includes a guided process recording
+through HelloLED, Four signals, and Field / feedback, available in the Examples menu.
 [Local compiler setup](docs/local-compiler.md) is an optional advanced path.
 
 [Compiler and motor handoff](docs/HANDOFF-browser-compiler-and-motors.md) records
