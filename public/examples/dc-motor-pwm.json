@@ -1,0 +1,113 @@
+{
+  "version": 2,
+  "canvas": {
+    "camera": {
+      "x": 70,
+      "y": 60,
+      "zoom": 0.85
+    },
+    "snap": true,
+    "orthogonal": true,
+    "color": "#788fa5",
+    "labels": true,
+    "gridMultiplier": 1,
+    "gridReference": "breadboard",
+    "gridBetween": false
+  },
+  "workbench": {
+    "name": "DC motor · speed and direction",
+    "arduinoName": "dc-motor-pwm.ino",
+    "layout": "tabs",
+    "activeView": "circuit",
+    "files": {
+      "index.html": "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"utf-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <title>p5 sketch</title>\n    <script src=\"p5.js\"></script>\n    <style>\n      html,\n      body {\n        margin: 0;\n        padding: 0;\n      }\n      canvas {\n        display: block;\n      }\n    </style>\n  </head>\n  <body>\n    <main id=\"canvas\"></main>\n    <script src=\"sketch.js\"></script>\n  </body>\n</html>\n"
+    }
+  },
+  "diagram": {
+    "version": 1,
+    "parts": [
+      {
+        "id": "board",
+        "type": "wokwi-arduino-uno",
+        "left": 0,
+        "top": 80,
+        "attrs": {}
+      },
+      {
+        "id": "driver",
+        "type": "p5comp-hbridge",
+        "left": 360,
+        "top": 80,
+        "attrs": {}
+      },
+      {
+        "id": "motor",
+        "type": "p5comp-dc-motor",
+        "left": 610,
+        "top": 90,
+        "attrs": {}
+      }
+    ],
+    "connections": [
+      [
+        "board:5V",
+        "driver:VCC",
+        "#c46a62",
+        []
+      ],
+      [
+        "board:5V",
+        "driver:VMOT",
+        "#c46a62",
+        []
+      ],
+      [
+        "board:GND.1",
+        "driver:GND",
+        "#151515",
+        []
+      ],
+      [
+        "board:5",
+        "driver:ENA",
+        "#668ca3",
+        []
+      ],
+      [
+        "board:7",
+        "driver:IN1",
+        "#668ca3",
+        []
+      ],
+      [
+        "board:8",
+        "driver:IN2",
+        "#668ca3",
+        []
+      ],
+      [
+        "driver:OUT1",
+        "motor:+",
+        "#668ca3",
+        []
+      ],
+      [
+        "driver:OUT2",
+        "motor:-",
+        "#668ca3",
+        []
+      ]
+    ]
+  },
+  "controls": {},
+  "api": "none",
+  "p5": {
+    "none": "function setup() {\n  createCanvas(400, 180);\n  background(38);\n  fill(220);\n  text(\"Use the circuit controls and Serial tab\", 20, 45);\n}\n"
+  },
+  "arduino": "// PWM controls speed; IN1/IN2 control direction through an H-bridge.\n// Never connect a physical motor directly to Arduino GPIO.\n// This ideal driver uses 5V VMOT; real motors need a rated driver/supply,\n// common ground and the driver's recommended protection/decoupling.\nconst int enablePin = 5, in1 = 7, in2 = 8;\nvoid setup() {\n  pinMode(enablePin, OUTPUT); pinMode(in1, OUTPUT); pinMode(in2, OUTPUT);\n}\nvoid loop() {\n  for (int direction = 0; direction < 2; direction++) {\n    digitalWrite(in1, direction == 0); digitalWrite(in2, direction != 0);\n    analogWrite(enablePin, 64); delay(600);\n    analogWrite(enablePin, 192); delay(600);\n    analogWrite(enablePin, 0); delay(300); // stop before reversing\n  }\n}\n",
+  "artifact": {
+    "source": "// PWM controls speed; IN1/IN2 control direction through an H-bridge.\n// Never connect a physical motor directly to Arduino GPIO.\n// This ideal driver uses 5V VMOT; real motors need a rated driver/supply,\n// common ground and the driver's recommended protection/decoupling.\nconst int enablePin = 5, in1 = 7, in2 = 8;\nvoid setup() {\n  pinMode(enablePin, OUTPUT); pinMode(in1, OUTPUT); pinMode(in2, OUTPUT);\n}\nvoid loop() {\n  for (int direction = 0; direction < 2; direction++) {\n    digitalWrite(in1, direction == 0); digitalWrite(in2, direction != 0);\n    analogWrite(enablePin, 64); delay(600);\n    analogWrite(enablePin, 192); delay(600);\n    analogWrite(enablePin, 0); delay(300); // stop before reversing\n  }\n}\n",
+    "buildKey": "// PWM controls speed; IN1/IN2 control direction through an H-bridge.\n// Never connect a physical motor directly to Arduino GPIO.\n// This ideal driver uses 5V VMOT; real motors need a rated driver/supply,\n// common ground and the driver's recommended protection/decoupling.\nconst int enablePin = 5, in1 = 7, in2 = 8;\nvoid setup() {\n  pinMode(enablePin, OUTPUT); pinMode(in1, OUTPUT); pinMode(in2, OUTPUT);\n}\nvoid loop() {\n  for (int direction = 0; direction < 2; direction++) {\n    digitalWrite(in1, direction == 0); digitalWrite(in2, direction != 0);\n    analogWrite(enablePin, 64); delay(600);\n    analogWrite(enablePin, 192); delay(600);\n    analogWrite(enablePin, 0); delay(300); // stop before reversing\n  }\n}\n{}",
+    "hex": ":100000000C945C000C946E000C946E000C946E00CA\n:100010000C946E000C946E000C946E000C946E00A8\n:100020000C946E000C946E000C946E000C946E0098\n:100030000C946E000C946E000C946E000C946E0088\n:100040000C9478010C946E000C946E000C946E006D\n:100050000C946E000C946E000C946E000C946E0068\n:100060000C946E000C946E00000000080002010069\n:100070000003040700000000000000000000000072\n:10008000250028002B0000000000240027002A0083\n:10009000040404040404040402020202020203032E\n:1000A0000303030301020408102040800102040836\n:1000B000102001020408102011241FBECFEFD8E049\n:1000C000DEBFCDBF21E0A0E0B1E001C01D92A930AC\n:1000D000B207E1F70E94C2010C944E020C9400009A\n:1000E00090E0FC01EC55FF4F249180579F4FFC019D\n:1000F0008491882399F090E0880F991FFC01EA57BA\n:10010000FF4FA591B491FC01E458FF4F8591949164\n:100110008FB7F894EC91E22BEC938FBF089590E0A9\n:10012000FC01E859FF4F2491FC01EC55FF4F34913D\n:10013000FC01E057FF4FE491EE23C9F0222339F090\n:10014000233001F1A8F4213019F1223029F1F0E037\n:10015000EE0FFF1FE458FF4FA591B4918FB7F894AD\n:10016000EC91611126C030953E233C938FBF0895DA\n:100170002730A9F02830C9F0243049F78091800059\n:100180008F7D03C0809180008F7780938000DFCFC8\n:1001900084B58F7784BDDBCF84B58F7DFBCF809115\n:1001A000B0008F778093B000D2CF8091B0008F7D68\n:1001B000F9CF3E2BDACFEDE6F0E0E491E33039F110\n:1001C00060F4E130D1F0E230E9F060E08038910590\n:1001D0000CF061E085E00C948F00E73011F1E8301D\n:1001E00041F1E43091F7209180002062209380005B\n:1001F00090938B0080938A00089594B5906894BD85\n:1002000087BD089594B5906294BD88BD08952091EE\n:10021000800020682093800090938900809388005C\n:1002200008959091B00090689093B0008093B300CF\n:1002300008959091B00090629093B0008093B400C4\n:1002400008953FB7F8948091050190910601A0911F\n:100250000701B091080126B5A89B05C02F3F19F0F2\n:100260000196A11DB11D3FBFBA2FA92F982F882736\n:10027000BC01CD01620F711D811D911D42E0660F11\n:10028000771F881F991F4A95D1F708958F929F92E3\n:10029000AF92BF92CF92DF92EF92FF924B015C013F\n:1002A0000E9421016B017C010E9421016C197D09D2\n:1002B0008E099F09683E734081059105A8F321E0EE\n:1002C000821A9108A108B10888EEC80E83E0D81EF2\n:1002D000E11CF11C81149104A104B10429F7FF90E1\n:1002E000EF90DF90CF90BF90AF909F908F90089548\n:1002F0001F920F920FB60F9211242F933F938F935B\n:100300009F93AF93BF938091010190910201A091BF\n:100310000301B09104013091000123E0230F2D3738\n:1003200058F50196A11DB11D209300018093010194\n:1003300090930201A0930301B09304018091050101\n:1003400090910601A0910701B09108010196A11DAD\n:10035000B11D8093050190930601A0930701B0930E\n:100360000801BF91AF919F918F913F912F910F9075\n:100370000FBE0F901F90189526E8230F0296A11D1F\n:10038000B11DD2CF789484B5826084BD84B581607C\n:1003900084BD85B5826085BD85B5816085BD809150\n:1003A0006E00816080936E001092810080918100C8\n:1003B00082608093810080918100816080938100C0\n:1003C000809180008160809380008091B100846082\n:1003D0008093B1008091B00081608093B0008091E3\n:1003E0007A00846080937A0080917A0082608093A2\n:1003F0007A0080917A00816080937A0080917A00FF\n:10040000806880937A001092C10085E00E9470009D\n:1004100087E00E94700088E00E94700000E010E019\n:10042000D0E0C0E0BE0181E0682787E00E948F0035\n:100430006C2F88E00E948F0085E00E94700080E4AD\n:1004400090E00E94DB0068E572E080E090E00E94AE\n:10045000460185E00E94700080EC90E00E94DB0085\n:1004600068E572E080E090E00E94460185E00E942D\n:10047000700060E085E00E948F006CE271E080E037\n:1004800090E00E944601219731F40115110541F2D7\n:100490000E940000C5CFC1E0D0E0C4CFF894FFCFE8\n:00000001FF\n"
+  }
+}

@@ -8,3 +8,8 @@ test('fresh and invalid caches start with complete HelloLED project',async()=>{
  const a=await startupProject(null,loadDefault);a.diagram.parts=[];assert.equal((await startupProject(null,loadDefault)).diagram.parts.length,2);
 });
 test('saved project is restored rather than replaced',async()=>{const p=await startupProject(null,loadDefault);p.workbench.name='My lesson';p.arduino='// saved';assert.deepEqual(await startupProject(JSON.stringify(p),()=>{throw Error("Saved projects must not fetch the starter");}),p);});
+test('missing or invalid starter leaves a usable workspace with a recovery notice',async()=>{
+ for(const load of [async()=>{throw Error('HelloLED returned a web page instead of JSON.');},async()=>({diagram:{bad:true}})]){
+  const p=await startupProject(null,load);assert.equal(p.workbench.name,'Untitled');assert.deepEqual(p.diagram.parts,[]);assert.match(p.startupWarning,/empty workspace/);assert.match(p.arduino,/void setup/);
+ }
+});

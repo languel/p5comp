@@ -17,6 +17,7 @@ A browser-based Arduino and p5.js learning environment:
 
 ```sh
 npm install
+npm run setup:arduino # once, on the local compilation-helper machine
 npm run dev
 ```
 
@@ -333,7 +334,8 @@ editor font size and Follow theme, Subdued light/dark, GitHub light/dark palette
 - **⌘/Ctrl Enter**: compile/run Arduino or run p5 from its editor.
 - **⌘/Ctrl Shift Enter**: compile/upload from an Arduino editor, after connecting USB.
 - **⌘/Ctrl Shift + / −**: adjust editor font size (8–32 px).
-- **⌘/Ctrl Shift F**: tidy the current C++/JavaScript/HTML/CSS source. C++ uses
+- **Alt+Z**: toggle word wrap while a code editor has focus; the preference applies to all code editors.
+- **Alt+Shift+F** (also **⌘/Ctrl Shift F**): tidy the current C++/JavaScript/HTML/CSS source. C++ uses
   lazy-loaded browser clang-format WASM; other sources use Prettier.
 
 Arduino's compile/run and USB compile/upload controls live in its tab. Compiler
@@ -475,3 +477,13 @@ and Webcam. Adding a webcam overlay does not start camera capture until requeste
 [Live p5 parameters](docs/p5-parameters.md) expose real `let` variables through
 `@param`, read live values through `@watch`, and connect circuit/code rows with
 `@link`. The Field / feedback example includes working mappings and live sliders.
+
+[Motor lessons and common Arduino libraries](docs/motors-and-libraries.md) covers
+Servo, Stepper, AccelStepper, DC/gear motors, library setup and missing-file recovery.
+
+[Servo garden](docs/servo-garden.md) arranges twelve Servo.h channels on a circle,
+with geometric arms, pen trails and mountable Poliplan artwork. Find it under
+File → Examples → Motors.
+
+[Arduino library support](docs/library-support.md) separates the six preinstalled
+classroom libraries from other local libraries and documents simulation coverage.

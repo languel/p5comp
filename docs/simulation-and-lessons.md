@@ -192,3 +192,11 @@ observed traffic; physical mode does not mirror the hardware's pin state.
 
 For baud constants, optional auto-connect, hidden connection controls, and custom
 message protocols, see the [Arduino ↔ p5 communications guide](arduino-p5-communications.md).
+
+## Motor lessons and libraries
+
+See [motor lessons and common libraries](motors-and-libraries.md) for Servo.h,
+Stepper.h and AccelStepper lessons, ideal PWM DC/gear motor models and the dual
+H-bridge. DC shafts report emulated-time angle and average RPM; gear ratio divides
+output speed. Missing motor/driver wires disable drive. No load, torque, current
+or arbitrary motor-voltage model is provided.

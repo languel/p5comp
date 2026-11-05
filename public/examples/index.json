@@ -133,5 +133,40 @@
     "name": "Op-amp buffer and comparator",
     "project": "examples/opamp-comparator.json",
     "folder": "Electronics foundations"
+  },
+  {
+    "name": "Servo · Servo.h sweep",
+    "project": "examples/servo-sweep.json",
+    "folder": "Motors"
+  },
+  {
+    "name": "Servo · potentiometer position",
+    "project": "examples/servo-knob.json",
+    "folder": "Motors"
+  },
+  {
+    "name": "Stepper · Stepper.h and H-bridge",
+    "project": "examples/stepper-library.json",
+    "folder": "Motors"
+  },
+  {
+    "name": "Stepper · AccelStepper acceleration",
+    "project": "examples/stepper-acceleration.json",
+    "folder": "Motors"
+  },
+  {
+    "name": "DC motor · speed and direction",
+    "project": "examples/dc-motor-pwm.json",
+    "folder": "Motors"
+  },
+  {
+    "name": "Gear motor · compare shaft speeds",
+    "project": "examples/gear-motor-ratio.json",
+    "folder": "Motors"
+  },
+  {
+    "name": "Servo garden · twelve moving petals",
+    "project": "examples/servo-garden.json",
+    "folder": "Motors"
   }
 ]

@@ -1,3 +1,4 @@
+import {responseJSON} from "../shared/loadJSON.js";
 import { initializeSectionUI } from "../shared/ui/sectionUI.js";
 import { createEditor } from "../shared/editor/createEditor.js";
 import { boardForId, boards } from "../shared/boards/boards.js";
@@ -397,7 +398,8 @@ async function compileAndUpload() {
         source: arduinoEditor.state.doc.toString(),
       }),
     });
-    const result = await response.json();
+    const result = await responseJSON(response, "Compilation helper (start npm run dev locally)", {allowHTTPError: true});
+    if (!result || typeof result !== "object") throw new Error("Compilation helper returned invalid data.");
     if (result.stdout) addCompilerOutput(result.stdout, "out");
     if (result.stderr)
       addCompilerOutput(result.stderr, result.ok ? "warn" : "error");

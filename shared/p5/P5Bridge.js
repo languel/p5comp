@@ -10,7 +10,10 @@ export class P5Bridge extends EventTarget {
         const response = await fetch(url);
         if (!response.ok)
           throw new Error(`Preview could not load (${response.status}).`);
-        return response.text();
+        const html = await response.text();
+        if (!/<meta\s+name=["']p5comp-preview["']/i.test(html))
+          throw new Error("The p5 preview document is missing or invalid. Reload the app and try again.");
+        return html;
       },
       startupTimeout = 15000,
     } = {},

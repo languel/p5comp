@@ -31,6 +31,8 @@ if (
 )
   throw Error("StandardFirmata source not packaged");
 for (const name of [
+  "servo-garden/sketch.ino",
+  "servo-garden/servo-leaf.svg",
   "helloled-p5/sketch.js",
   "helloled-p5/sketch.ino",
   "helloled-p5/index.html",

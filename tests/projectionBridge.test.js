@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { P5Bridge } from "../shared/p5/P5Bridge.js";
-async function fixture(run) {
+async function fixture(run, options = {}) {
   const oldWindow = globalThis.window,
     oldDocument = globalThis.document,
     sent = [],
@@ -29,6 +29,7 @@ async function fixture(run) {
   };
   const bridge = new P5Bridge(frame, {
     loadSandbox: async () => "<html><head></head><body></body></html>",
+    ...options,
   });
   try {
     await run({
@@ -165,3 +166,19 @@ test("preview defaults to p5 2 and carries the explicit compatibility selection"
     await bridge.run("function setup(){}", {p5Major:1});
     assert.match(frame.srcdoc, /p5comp-p5-major" content="1"/);
   }));
+
+test("missing preview HTML and app fallback documents report errors before frame startup", async () => {
+  const originalFetch = globalThis.fetch;
+  try {
+    for (const response of [new Response("<html><head></head><body>App fallback</body></html>"), new Response("Not found", {status:404})]) {
+      globalThis.fetch = async () => response;
+      await fixture(async ({bridge}) => {
+        const errors=[];
+        bridge.addEventListener("runtimeError", event => errors.push(event.detail.message));
+        await bridge.run("function setup() {}");
+        assert.equal(errors.length, 1);
+        assert.match(errors[0], /missing or invalid|could not load/);
+      }, {loadSandbox: undefined});
+    }
+  } finally { globalThis.fetch = originalFetch; }
+});

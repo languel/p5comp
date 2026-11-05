@@ -59,6 +59,11 @@ export function circuitSVG(diagram, references, background, sources = {}) {
         )?.offsetHeight || r.width,
     })),
   ];
+  const attachments = document.querySelector(".servo-attachments");
+  if (attachments?.children.length) {
+    const bounds = attachments.getBBox();
+    rectangles.push({x:bounds.x-8,y:bounds.y-8,w:bounds.width+16,h:bounds.height+16});
+  }
   const x = Math.min(0, ...rectangles.map((r) => r.x)) - 30,
     y = Math.min(0, ...rectangles.map((r) => r.y)) - 30;
   const width = Math.max(850, ...rectangles.map((r) => r.x + r.w)) - x + 30,
@@ -168,6 +173,7 @@ export function circuitSVG(diagram, references, background, sources = {}) {
       scene.append(copy);
     }
   }
+  if (attachments) for (const child of attachments.children) scene.append(child.cloneNode(true));
   let textY = circuitHeight + 30;
   for (const [name, source] of Object.entries(sources)) {
     const heading = svgNode("text", {

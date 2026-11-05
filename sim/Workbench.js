@@ -1,3 +1,5 @@
+import {servoAttachmentControls, mountServoDrawing} from "./servoAttachmentControls.js";
+import {fetchJSON} from "../shared/loadJSON.js";
 import communicationsGuide from "../docs/arduino-p5-communications.md?raw";
 import foundationGuide from "../docs/electronics-foundations.md?raw";
 import diyGuide from "../docs/diy-elements.md?raw";
@@ -487,7 +489,7 @@ export class Workbench {
         "",
         '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h16"/></svg>',
       );
-      tidy.title = "Tidy code (⌘/Ctrl Shift F)";
+      tidy.title = "Tidy code (Alt Shift F · ⌘/Ctrl Shift F)";
       tidy.setAttribute("aria-label", "Tidy " + kind + " code");
       tidy.onclick = () => {
         const selected = this[kind + "Bar"].querySelector(
@@ -619,6 +621,7 @@ export class Workbench {
       canvas: ctx.canvas,
       tools: document.querySelector(".canvas-tools"),
       persist: () => ctx.persist(),
+      mountServo: ids => mountServoDrawing(this, ctx.selected()?.id, ids),
       assetNames: (wanted) => {   // drawing.png, then drawing-2.png, …
         const [, stem, ext] = /^(.*)\.(\w+)$/.exec(wanted);
         let name = wanted;
@@ -943,16 +946,16 @@ export class Workbench {
     });
     this.renderExamples();
     this.action(async () => {
-      const response = await fetch(basePath("examples/index.json"));
-      if (!response.ok) return;
-      const entries = await response.json();
-      const order = ["Getting started", "Inputs", "Outputs", "Boards"];
-      entries.sort(
+      const entries = await fetchJSON(basePath("examples/index.json"), "Examples catalog");
+      if (!Array.isArray(entries)) throw new Error("Examples catalog is invalid. Reload the app to retry.");
+      const order = ["Getting started", "Inputs", "Outputs", "Motors", "Boards"];
+      const usableEntries = entries.filter(e => e && typeof e.name === "string" && typeof e.project === "string" && (e.folder == null || typeof e.folder === "string"));
+      usableEntries.sort(
         (a, b) =>
           (order.indexOf(a.folder) < 0 ? 99 : order.indexOf(a.folder)) -
           (order.indexOf(b.folder) < 0 ? 99 : order.indexOf(b.folder)),
       );
-      for (const entry of entries) {
+      for (const entry of usableEntries) {
         if (
           !entry.name ||
           !/^[\w/-]+\.json$/.test(entry.project) ||
@@ -963,9 +966,8 @@ export class Workbench {
         button.textContent = "▦  " + entry.name;
         button.onclick = () =>
           this.action(async () => {
-            const response = await fetch(basePath(entry.project));
-            if (!response.ok) throw new Error("Example could not load.");
-            ctx.openProject(await response.json());
+            const project = await fetchJSON(basePath(entry.project), `Example “${entry.name}”`);
+            ctx.openProject(project);
           });
         this.exampleFolder(entry.folder || "Other").append(button);
       }
@@ -1331,7 +1333,7 @@ export class Workbench {
     this.disableAutorun();
     this.arduinoName = d.arduinoName || "sketch.ino";
     this.p5Name = d.p5Name || "sketch.js";
-    this.files["index.html"] ??= defaultP5HTML(this.p5Name);
+    this.files["index.html"] ||= defaultP5HTML(this.p5Name);
     for (const stream of this.cameraStreams?.values() || [])
       stream.getTracks().forEach((t) => t.stop());
     this.cameraStreams?.clear();
@@ -1581,6 +1583,7 @@ export class Workbench {
         '<summary>Switch contacts · wiring</summary><pre>1.l ───── 1.r\n     ╲   closes while pressed\n2.l ───── 2.r</pre><p>Same number = always connected. Connect one wire to contact 1 and the other to contact 2 (either side). No polarity; rotation changes the position, not the pin names.</p><p>Input example: D2 → 1.l, GND → 2.l, with INPUT_PULLUP. Released = HIGH; pressed = LOW. For an LED, put the switch in series with its resistor.</p><a href="https://docs.wokwi.com/parts/wokwi-pushbutton" target="_blank" rel="noopener">Official pin reference ↗</a>';
       panel.append(help);
     }
+    servoAttachmentControls(this, panel, part, field);
     const modelAttributes =
       {
         "wokwi-photoresistor-sensor": { threshold: 2.5, rl10: 50, gamma: 0.7 },
@@ -1592,6 +1595,8 @@ export class Workbench {
           retrigger: "1",
         },
         "wokwi-relay-module": { transistor: "npn", activeLow: false },
+        "p5comp-dc-motor": { noLoadRPM: 6000 },
+        "p5comp-gear-motor": { noLoadRPM: 6000, gearRatio: 100 },
         "wokwi-stepper-motor": { stepsPerRevolution: 200 },
         "wokwi-biaxial-stepper": { stepsPerRevolution: 200 },
         "wokwi-neopixel": { colorOrder: "GRB" },

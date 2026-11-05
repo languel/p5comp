@@ -5,7 +5,9 @@ import http from "node:http";
 import { createAgentRelay } from "../server/agentRelay.js";
 test("relay enforces loopback/origin/auth and isolates sessions, results and timeouts", async () => {
   const app = express(),
-    relay = createAgentRelay({ timeout: 100 });
+    // Several authenticated loopback requests must finish before the command expires.
+    // Leave scheduling margin when the rest of the test suite is using the CPU.
+    relay = createAgentRelay({ timeout: 1000 });
   app.use("/api/agent", relay);
   const server = app.listen(0, "127.0.0.1");
   await new Promise((r) => server.once("listening", r));

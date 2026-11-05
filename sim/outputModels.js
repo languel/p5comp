@@ -1,3 +1,4 @@
+import { isDCMotor, terminalHigh, integrateMotor } from "./motorModels.js";
 export const isNeoPixel = (type) =>
   [
     "wokwi-neopixel",
@@ -101,7 +102,12 @@ export class ExtendedOutputs {
   tick(cycles, high) {
     for (const p of this.parts) {
       const m = this.memory.get(p.id),
-        read = (n) => (p.pins[n] != null ? high(p.pins[n]) : !!p.levels?.[n]);
+        read = (n) => p.motorTerminals?.[n] ? terminalHigh(p.motorTerminals[n], high) : (p.pins[n] != null ? high(p.pins[n]) : !!p.levels?.[n]);
+      if (isDCMotor(p.type)) {
+        integrateMotor(m, cycles, p.attrs, p.type === "p5comp-gear-motor");
+        m.drive = Object.values(p.motorTerminals || {}).every(t => t.powered) ? Number(read("+")) - Number(read("-")) : 0;
+        continue;
+      }
       if (m.decoder) {
         m.decoder.tick(cycles, read("DIN"));
         continue;
@@ -174,7 +180,13 @@ export class ExtendedOutputs {
     const result = {};
     for (const p of this.parts) {
       const m = this.memory.get(p.id);
-      if (m.decoder) {
+      if (isDCMotor(p.type)) {
+        integrateMotor(m, cycles, p.attrs, p.type === "p5comp-gear-motor");
+        const elapsed = cycles - (m.reportCycle ?? 0);
+        const rpm = elapsed > 0 ? (m.angle - (m.reportAngle ?? 0)) * 16e6 / (elapsed * 6) : (m.rpm ?? 0);
+        if (elapsed > 0) { m.reportCycle = cycles; m.reportAngle = m.angle; m.rpm = rpm; }
+        result[p.id] = { angle: m.angle, rpm, direction: Math.sign(rpm), active: Math.abs(rpm) > 0.01 };
+      } else if (m.decoder) {
         const pixels = p.powered
           ? m.decoder.snapshot(cycles)
           : Array.from({ length: p.count }, () => ({ r: 0, g: 0, b: 0 }));

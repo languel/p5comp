@@ -1,0 +1,1279 @@
+{
+  "version": 2,
+  "canvas": {
+    "camera": {
+      "x": 300,
+      "y": 30,
+      "zoom": 0.55
+    },
+    "snap": true,
+    "orthogonal": true,
+    "color": "#788fa5",
+    "labels": true,
+    "gridMultiplier": 1,
+    "gridReference": "breadboard",
+    "gridBetween": false
+  },
+  "workbench": {
+    "name": "Servo garden · twelve moving petals",
+    "arduinoName": "servo-garden.ino",
+    "layout": "tabs",
+    "activeView": "circuit",
+    "files": {
+      "index.html": "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"utf-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <title>p5 sketch</title>\n    <script src=\"p5.js\"></script>\n    <style>\n      html,\n      body {\n        margin: 0;\n        padding: 0;\n      }\n      canvas {\n        display: block;\n      }\n    </style>\n  </head>\n  <body>\n    <main id=\"canvas\"></main>\n    <script src=\"sketch.js\"></script>\n  </body>\n</html>\n"
+    },
+    "references": [
+      {
+        "id": "garden-guide",
+        "kind": "note",
+        "name": "Twelve servo garden",
+        "x": -380,
+        "y": 760,
+        "width": 310,
+        "opacity": 1,
+        "source": "# Twelve servo garden\n\n**Speed**: turn A0. **Pattern**: traveling wave / alternating petals.\n\nSelect a servo → Properties → **Shaft attachment**. Try arm, arc or pen.\n\nIn **Draw**, select your artwork and right-click **Mount selection on selected servo**. Teal leaves use a Poliplan SVG.\n\nUno / Nano: **12** channels. Mega: **48** in Servo.h.\n\nReal hardware: separate servo supply, shared ground.",
+        "fontSize": 14,
+        "background": "#f6f4ee",
+        "showLabel": false
+      }
+    ],
+    "drawing": {
+      "type": "ams-process",
+      "version": 1,
+      "title": "Untitled",
+      "artboard": {
+        "width": 2400,
+        "height": 1600,
+        "ground": "transparent",
+        "title": "drawing",
+        "hideLabel": true,
+        "hideBorder": true
+      },
+      "stages": [
+        {
+          "id": "construction",
+          "name": "Construction",
+          "kind": "construction",
+          "visible": true,
+          "locked": false
+        },
+        {
+          "id": "marks",
+          "name": "Marks",
+          "kind": "marks",
+          "visible": true,
+          "locked": false
+        },
+        {
+          "id": "notes",
+          "name": "Notes",
+          "kind": "notes",
+          "visible": true,
+          "locked": false
+        }
+      ],
+      "elements": [
+        {
+          "id": "el_mw2c3wva10oc",
+          "stage": "notes",
+          "role": "plane",
+          "points": [
+            [
+              1900,
+              1400,
+              0,
+              0.5
+            ],
+            [
+              1950,
+              1365,
+              16,
+              0.5
+            ],
+            [
+              2020,
+              1380,
+              32,
+              0.5
+            ],
+            [
+              2110,
+              1400,
+              48,
+              0.5
+            ],
+            [
+              2020,
+              1420,
+              64,
+              0.5
+            ],
+            [
+              1950,
+              1435,
+              80,
+              0.5
+            ]
+          ],
+          "closed": true,
+          "realize": {
+            "brush": "flat",
+            "params": {}
+          },
+          "color": "#438e91",
+          "why": "A leaf-shaped servo arm: mount the narrow left end at the shaft.",
+          "by": {
+            "kind": "model",
+            "name": "agent"
+          },
+          "seed": 354057148,
+          "created": 1793809915174
+        }
+      ],
+      "decisions": [],
+      "meta": {
+        "created": "2026-11-04T16:31:15.886Z"
+      },
+      "lines": {},
+      "groups": {},
+      "brushes": {},
+      "boards": []
+    },
+    "assets": {
+      "servo-leaf.svg": {
+        "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMzQiIGhlaWdodD0iOTQiIHZpZXdCb3g9IjAgMCAyMzQgOTQiIGRhdGEtYW1zLXR5cGU9ImFtcy1wcm9jZXNzIiBkYXRhLWFtcy12ZXJzaW9uPSIxIiBkYXRhLWFtcy10aXRsZT0iVW50aXRsZWQgwrcgc2VsZWN0aW9uIj4KICA8cmVjdCBkYXRhLWFtcy1ncm91bmQ9IjEiIHdpZHRoPSIyMzQiIGhlaWdodD0iOTQiIGZpbGw9InRyYW5zcGFyZW50Ii8+CiAgPGcgZGF0YS1hbXMtc3RhZ2U9ImNvbnN0cnVjdGlvbiIgZGF0YS1hbXMtbmFtZT0iQ29uc3RydWN0aW9uIiBkYXRhLWFtcy1raW5kPSJjb25zdHJ1Y3Rpb24iPgogIDwvZz4KICA8ZyBkYXRhLWFtcy1zdGFnZT0ibWFya3MiIGRhdGEtYW1zLW5hbWU9Ik1hcmtzIiBkYXRhLWFtcy1raW5kPSJtYXJrcyI+CiAgPC9nPgogIDxnIGRhdGEtYW1zLXN0YWdlPSJub3RlcyIgZGF0YS1hbXMtbmFtZT0iTm90ZXMiIGRhdGEtYW1zLWtpbmQ9Im5vdGVzIj4KICAgIDxnIGRhdGEtYW1zLWlkPSJlbF9tdzJjM3d2YTEwb2MiIGRhdGEtYW1zLXJvbGU9InBsYW5lIiBkYXRhLWFtcy1icnVzaD0iZmxhdCIgZGF0YS1hbXMtcmVjb3JkPSd7JnF1b3Q7aWQmcXVvdDs6JnF1b3Q7ZWxfbXcyYzN3dmExMG9jJnF1b3Q7LCZxdW90O3N0YWdlJnF1b3Q7OiZxdW90O25vdGVzJnF1b3Q7LCZxdW90O3JvbGUmcXVvdDs6JnF1b3Q7cGxhbmUmcXVvdDssJnF1b3Q7cG9pbnRzJnF1b3Q7OltbMTIsNDcsMCwwLjVdLFs2MiwxMiwxNiwwLjVdLFsxMzIsMjcsMzIsMC41XSxbMjIyLDQ3LDQ4LDAuNV0sWzEzMiw2Nyw2NCwwLjVdLFs2Miw4Miw4MCwwLjVdXSwmcXVvdDtjbG9zZWQmcXVvdDs6dHJ1ZSwmcXVvdDtyZWFsaXplJnF1b3Q7OnsmcXVvdDticnVzaCZxdW90OzomcXVvdDtmbGF0JnF1b3Q7LCZxdW90O3BhcmFtcyZxdW90Ozp7fX0sJnF1b3Q7Y29sb3ImcXVvdDs6JnF1b3Q7IzQzOGU5MSZxdW90OywmcXVvdDt3aHkmcXVvdDs6JnF1b3Q7QSBsZWFmLXNoYXBlZCBzZXJ2byBhcm06IG1vdW50IHRoZSBuYXJyb3cgbGVmdCBlbmQgYXQgdGhlIHNoYWZ0LiZxdW90OywmcXVvdDtieSZxdW90Ozp7JnF1b3Q7a2luZCZxdW90OzomcXVvdDttb2RlbCZxdW90OywmcXVvdDtuYW1lJnF1b3Q7OiZxdW90O2FnZW50JnF1b3Q7fSwmcXVvdDtzZWVkJnF1b3Q7OjM1NDA1NzE0OCwmcXVvdDtjcmVhdGVkJnF1b3Q7OjE3OTM4MDk5MTUxNzR9JyBkYXRhLWFtcy13aHk9IkEgbGVhZi1zaGFwZWQgc2Vydm8gYXJtOiBtb3VudCB0aGUgbmFycm93IGxlZnQgZW5kIGF0IHRoZSBzaGFmdC4iPgogICAgICA8dGl0bGU+QSBsZWFmLXNoYXBlZCBzZXJ2byBhcm06IG1vdW50IHRoZSBuYXJyb3cgbGVmdCBlbmQgYXQgdGhlIHNoYWZ0LjwvdGl0bGU+CiAgICAgIDxwYXRoIGQ9Ik0xMiA0N0wxMi4yIDQ1LjI4TDEyLjc4IDQzLjQ2TDEzLjcyIDQxLjU2TDE0Ljk5IDM5LjZMMTYuNTYgMzcuNTlMMTguNDEgMzUuNTRMMjAuNTIgMzMuNDhMMjIuODUgMzEuNDJMMjUuMzggMjkuMzhMMjguMDkgMjcuMzZMMzAuOTUgMjUuNEwzMy45MiAyMy41TDM3IDIxLjY4TDQwLjE1IDE5Ljk2TDQzLjM0IDE4LjM2TDQ2LjU1IDE2Ljg4TDQ5Ljc2IDE1LjU1TDUyLjkzIDE0LjM4TDU2LjA1IDEzLjM4TDU5LjA4IDEyLjU5TDYyIDEyTDY0LjUyIDExLjY2TDY3LjA3IDExLjQ4TDY5LjY2IDExLjQ1TDcyLjI4IDExLjU1TDc0LjkzIDExLjc3TDc3LjYzIDEyLjEyTDgwLjM1IDEyLjU3TDgzLjExIDEzLjExTDg1LjkxIDEzLjc0TDg4Ljc0IDE0LjQ1TDkxLjYgMTUuMjNMOTQuNSAxNi4wNkw5Ny40MyAxNi45NEwxMDAuNCAxNy44NkwxMDMuNDEgMTguODFMMTA2LjQ0IDE5Ljc4TDEwOS41MiAyMC43NUwxMTIuNjMgMjEuNzNMMTE1Ljc3IDIyLjY5TDExOC45NCAyMy42M0wxMjIuMTYgMjQuNTRMMTI1LjQgMjUuNDJMMTI4LjY4IDI2LjI0TDEzMiAyN0wxMzQuNjkgMjcuNTdMMTM3LjU5IDI4LjE1TDE0MC42OCAyOC43NEwxNDMuOTQgMjkuMzRMMTQ3LjM1IDI5Ljk0TDE1MC44OCAzMC41NkwxNTQuNTIgMzEuMThMMTU4LjI1IDMxLjgxTDE2Mi4wNSAzMi40NEwxNjUuOSAzMy4wOEwxNjkuNzcgMzMuNzNMMTczLjY1IDM0LjM4TDE3Ny41MiAzNS4wM0wxODEuMzUgMzUuNjlMMTg1LjE0IDM2LjM2TDE4OC44NCAzNy4wMkwxOTIuNDYgMzcuNjlMMTk1Ljk2IDM4LjM2TDE5OS4zMyAzOS4wM0wyMDIuNTQgMzkuN0wyMDUuNTkgNDAuMzdMMjA4LjQzIDQxLjA0TDIxMS4wNyA0MS43MkwyMTMuNDYgNDIuMzlMMjE1LjYxIDQzLjA1TDIxNy40OCA0My43MkwyMTkuMDUgNDQuMzhMMjIwLjMxIDQ1LjA0TDIyMS4yNCA0NS43TDIyMS44MSA0Ni4zNUwyMjIgNDdMMjIxLjgxIDQ3LjY1TDIyMS4yNCA0OC4zTDIyMC4zMSA0OC45NkwyMTkuMDUgNDkuNjJMMjE3LjQ4IDUwLjI4TDIxNS42MSA1MC45NUwyMTMuNDYgNTEuNjFMMjExLjA3IDUyLjI4TDIwOC40MyA1Mi45NkwyMDUuNTkgNTMuNjNMMjAyLjU0IDU0LjNMMTk5LjMzIDU0Ljk3TDE5NS45NiA1NS42NEwxOTIuNDYgNTYuMzFMMTg4Ljg0IDU2Ljk4TDE4NS4xNCA1Ny42NEwxODEuMzUgNTguMzFMMTc3LjUyIDU4Ljk3TDE3My42NSA1OS42MkwxNjkuNzcgNjAuMjdMMTY1LjkgNjAuOTJMMTYyLjA1IDYxLjU2TDE1OC4yNSA2Mi4xOUwxNTQuNTIgNjIuODJMMTUwLjg4IDYzLjQ0TDE0Ny4zNSA2NC4wNkwxNDMuOTQgNjQuNjZMMTQwLjY4IDY1LjI2TDEzNy41OSA2NS44NUwxMzQuNjkgNjYuNDNMMTMyIDY3TDEyOC42OCA2Ny43NkwxMjUuNCA2OC41OEwxMjIuMTYgNjkuNDZMMTE4Ljk0IDcwLjM3TDExNS43NyA3MS4zMUwxMTIuNjMgNzIuMjdMMTA5LjUyIDczLjI1TDEwNi40NCA3NC4yMkwxMDMuNDEgNzUuMTlMMTAwLjQgNzYuMTRMOTcuNDMgNzcuMDZMOTQuNSA3Ny45NEw5MS42IDc4Ljc3TDg4Ljc0IDc5LjU1TDg1LjkxIDgwLjI2TDgzLjExIDgwLjg5TDgwLjM1IDgxLjQzTDc3LjYzIDgxLjg4TDc0LjkzIDgyLjIzTDcyLjI4IDgyLjQ1TDY5LjY2IDgyLjU1TDY3LjA3IDgyLjUyTDY0LjUyIDgyLjM0TDYyIDgyTDU5LjA4IDgxLjQxTDU2LjA1IDgwLjYyTDUyLjkzIDc5LjYyTDQ5Ljc2IDc4LjQ1TDQ2LjU1IDc3LjEyTDQzLjM0IDc1LjY0TDQwLjE1IDc0LjA0TDM3IDcyLjMyTDMzLjkyIDcwLjVMMzAuOTUgNjguNkwyOC4wOSA2Ni42NEwyNS4zOCA2NC42MkwyMi44NSA2Mi41OEwyMC41MiA2MC41MkwxOC40MSA1OC40NkwxNi41NiA1Ni40MUwxNC45OSA1NC40TDEzLjcyIDUyLjQ0TDEyLjc4IDUwLjU0TDEyLjIgNDguNzJaIiBmaWxsPSIjNDM4ZTkxIi8+CiAgICA8L2c+CiAgPC9nPgo8L3N2Zz4=",
+        "type": "image/svg+xml",
+        "size": 3278
+      }
+    }
+  },
+  "diagram": {
+    "version": 1,
+    "parts": [
+      {
+        "id": "board",
+        "type": "wokwi-arduino-uno",
+        "left": -380,
+        "top": 480,
+        "attrs": {},
+        "label": "Uno · 12 servo signals"
+      },
+      {
+        "id": "servo1",
+        "type": "wokwi-servo",
+        "left": 963.533,
+        "top": 580.227,
+        "attrs": {
+          "hornColor": "#bf795c",
+          "servoAttachment": {
+            "kind": "arc",
+            "length": 265,
+            "offset": 180,
+            "color": "#bf795c",
+            "trace": false
+          }
+        },
+        "label": "01 · D2"
+      },
+      {
+        "id": "power1",
+        "type": "p5comp-vcc",
+        "left": 897.533,
+        "top": 577.227,
+        "attrs": {},
+        "label": "5V"
+      },
+      {
+        "id": "ground1",
+        "type": "p5comp-ground",
+        "left": 927.533,
+        "top": 666.227,
+        "attrs": {},
+        "label": "GND"
+      },
+      {
+        "id": "servo2",
+        "type": "wokwi-servo",
+        "left": 914.632,
+        "top": 762.727,
+        "attrs": {
+          "hornColor": "#7b74b1",
+          "servoAttachment": {
+            "kind": "pen",
+            "length": 265,
+            "offset": 210,
+            "color": "#7b74b1",
+            "trace": true
+          }
+        },
+        "label": "02 · D3"
+      },
+      {
+        "id": "power2",
+        "type": "p5comp-vcc",
+        "left": 848.632,
+        "top": 759.727,
+        "attrs": {},
+        "label": "5V"
+      },
+      {
+        "id": "ground2",
+        "type": "p5comp-ground",
+        "left": 878.632,
+        "top": 848.727,
+        "attrs": {},
+        "label": "GND"
+      },
+      {
+        "id": "servo3",
+        "type": "wokwi-servo",
+        "left": 781.033,
+        "top": 896.326,
+        "attrs": {
+          "hornColor": "#438e91",
+          "servoAttachment": {
+            "kind": "drawing",
+            "length": 265,
+            "offset": 240,
+            "color": "#438e91",
+            "trace": false,
+            "asset": "servo-leaf.svg",
+            "aspect": 2.4893617021276597,
+            "pivotX": 0.035,
+            "pivotY": 0.5
+          }
+        },
+        "label": "03 · D4"
+      },
+      {
+        "id": "power3",
+        "type": "p5comp-vcc",
+        "left": 715.033,
+        "top": 893.326,
+        "attrs": {},
+        "label": "5V"
+      },
+      {
+        "id": "ground3",
+        "type": "p5comp-ground",
+        "left": 745.033,
+        "top": 982.326,
+        "attrs": {},
+        "label": "GND"
+      },
+      {
+        "id": "servo4",
+        "type": "wokwi-servo",
+        "left": 598.533,
+        "top": 945.227,
+        "attrs": {
+          "hornColor": "#bf795c",
+          "servoAttachment": {
+            "kind": "arc",
+            "length": 265,
+            "offset": 270,
+            "color": "#bf795c",
+            "trace": false
+          }
+        },
+        "label": "04 · D5"
+      },
+      {
+        "id": "power4",
+        "type": "p5comp-vcc",
+        "left": 532.533,
+        "top": 942.227,
+        "attrs": {},
+        "label": "5V"
+      },
+      {
+        "id": "ground4",
+        "type": "p5comp-ground",
+        "left": 562.533,
+        "top": 1031.2269999999999,
+        "attrs": {},
+        "label": "GND"
+      },
+      {
+        "id": "servo5",
+        "type": "wokwi-servo",
+        "left": 416.033,
+        "top": 896.326,
+        "attrs": {
+          "hornColor": "#7b74b1",
+          "servoAttachment": {
+            "kind": "pen",
+            "length": 265,
+            "offset": 300,
+            "color": "#7b74b1",
+            "trace": true
+          }
+        },
+        "label": "05 · D6"
+      },
+      {
+        "id": "power5",
+        "type": "p5comp-vcc",
+        "left": 350.033,
+        "top": 893.326,
+        "attrs": {},
+        "label": "5V"
+      },
+      {
+        "id": "ground5",
+        "type": "p5comp-ground",
+        "left": 380.033,
+        "top": 982.326,
+        "attrs": {},
+        "label": "GND"
+      },
+      {
+        "id": "servo6",
+        "type": "wokwi-servo",
+        "left": 282.434,
+        "top": 762.727,
+        "attrs": {
+          "hornColor": "#438e91",
+          "servoAttachment": {
+            "kind": "drawing",
+            "length": 265,
+            "offset": 330,
+            "color": "#438e91",
+            "trace": false,
+            "asset": "servo-leaf.svg",
+            "aspect": 2.4893617021276597,
+            "pivotX": 0.035,
+            "pivotY": 0.5
+          }
+        },
+        "label": "06 · D7"
+      },
+      {
+        "id": "power6",
+        "type": "p5comp-vcc",
+        "left": 216.43400000000003,
+        "top": 759.727,
+        "attrs": {},
+        "label": "5V"
+      },
+      {
+        "id": "ground6",
+        "type": "p5comp-ground",
+        "left": 246.43400000000003,
+        "top": 848.727,
+        "attrs": {},
+        "label": "GND"
+      },
+      {
+        "id": "servo7",
+        "type": "wokwi-servo",
+        "left": 233.533,
+        "top": 580.227,
+        "attrs": {
+          "hornColor": "#bf795c",
+          "servoAttachment": {
+            "kind": "arc",
+            "length": 265,
+            "offset": 0,
+            "color": "#bf795c",
+            "trace": false
+          }
+        },
+        "label": "07 · D8"
+      },
+      {
+        "id": "power7",
+        "type": "p5comp-vcc",
+        "left": 167.533,
+        "top": 577.227,
+        "attrs": {},
+        "label": "5V"
+      },
+      {
+        "id": "ground7",
+        "type": "p5comp-ground",
+        "left": 197.533,
+        "top": 666.227,
+        "attrs": {},
+        "label": "GND"
+      },
+      {
+        "id": "servo8",
+        "type": "wokwi-servo",
+        "left": 282.434,
+        "top": 397.727,
+        "attrs": {
+          "hornColor": "#7b74b1",
+          "servoAttachment": {
+            "kind": "pen",
+            "length": 265,
+            "offset": 30,
+            "color": "#7b74b1",
+            "trace": true
+          }
+        },
+        "label": "08 · D9"
+      },
+      {
+        "id": "power8",
+        "type": "p5comp-vcc",
+        "left": 216.43400000000003,
+        "top": 394.727,
+        "attrs": {},
+        "label": "5V"
+      },
+      {
+        "id": "ground8",
+        "type": "p5comp-ground",
+        "left": 246.43400000000003,
+        "top": 483.727,
+        "attrs": {},
+        "label": "GND"
+      },
+      {
+        "id": "servo9",
+        "type": "wokwi-servo",
+        "left": 416.033,
+        "top": 264.128,
+        "attrs": {
+          "hornColor": "#438e91",
+          "servoAttachment": {
+            "kind": "drawing",
+            "length": 265,
+            "offset": 60,
+            "color": "#438e91",
+            "trace": false,
+            "asset": "servo-leaf.svg",
+            "aspect": 2.4893617021276597,
+            "pivotX": 0.035,
+            "pivotY": 0.5
+          }
+        },
+        "label": "09 · D10"
+      },
+      {
+        "id": "power9",
+        "type": "p5comp-vcc",
+        "left": 350.033,
+        "top": 261.128,
+        "attrs": {},
+        "label": "5V"
+      },
+      {
+        "id": "ground9",
+        "type": "p5comp-ground",
+        "left": 380.033,
+        "top": 350.128,
+        "attrs": {},
+        "label": "GND"
+      },
+      {
+        "id": "servo10",
+        "type": "wokwi-servo",
+        "left": 598.533,
+        "top": 215.227,
+        "attrs": {
+          "hornColor": "#bf795c",
+          "servoAttachment": {
+            "kind": "arc",
+            "length": 265,
+            "offset": 90,
+            "color": "#bf795c",
+            "trace": false
+          }
+        },
+        "label": "10 · D11"
+      },
+      {
+        "id": "power10",
+        "type": "p5comp-vcc",
+        "left": 532.533,
+        "top": 212.227,
+        "attrs": {},
+        "label": "5V"
+      },
+      {
+        "id": "ground10",
+        "type": "p5comp-ground",
+        "left": 562.533,
+        "top": 301.227,
+        "attrs": {},
+        "label": "GND"
+      },
+      {
+        "id": "servo11",
+        "type": "wokwi-servo",
+        "left": 781.033,
+        "top": 264.128,
+        "attrs": {
+          "hornColor": "#7b74b1",
+          "servoAttachment": {
+            "kind": "pen",
+            "length": 265,
+            "offset": 120,
+            "color": "#7b74b1",
+            "trace": true
+          }
+        },
+        "label": "11 · D12"
+      },
+      {
+        "id": "power11",
+        "type": "p5comp-vcc",
+        "left": 715.033,
+        "top": 261.128,
+        "attrs": {},
+        "label": "5V"
+      },
+      {
+        "id": "ground11",
+        "type": "p5comp-ground",
+        "left": 745.033,
+        "top": 350.128,
+        "attrs": {},
+        "label": "GND"
+      },
+      {
+        "id": "servo12",
+        "type": "wokwi-servo",
+        "left": 914.632,
+        "top": 397.727,
+        "attrs": {
+          "hornColor": "#438e91",
+          "servoAttachment": {
+            "kind": "drawing",
+            "length": 265,
+            "offset": 150,
+            "color": "#438e91",
+            "trace": false,
+            "asset": "servo-leaf.svg",
+            "aspect": 2.4893617021276597,
+            "pivotX": 0.035,
+            "pivotY": 0.5
+          }
+        },
+        "label": "12 · D13"
+      },
+      {
+        "id": "power12",
+        "type": "p5comp-vcc",
+        "left": 848.632,
+        "top": 394.727,
+        "attrs": {},
+        "label": "5V"
+      },
+      {
+        "id": "ground12",
+        "type": "p5comp-ground",
+        "left": 878.632,
+        "top": 483.727,
+        "attrs": {},
+        "label": "GND"
+      },
+      {
+        "id": "speed",
+        "type": "wokwi-potentiometer",
+        "left": -345,
+        "top": 280,
+        "attrs": {
+          "value": 420
+        },
+        "label": "Speed · A0"
+      },
+      {
+        "id": "mode",
+        "type": "p5comp-slide-switch",
+        "left": -190,
+        "top": 307,
+        "attrs": {
+          "value": 0
+        },
+        "label": "Pattern · A1"
+      }
+    ],
+    "connections": [
+      [
+        "power1:VCC",
+        "servo1:V+",
+        "#bf7770",
+        []
+      ],
+      [
+        "ground1:GND",
+        "servo1:GND",
+        "#555555",
+        []
+      ],
+      [
+        "board:2",
+        "servo1:PWM",
+        "#bf795c99",
+        [
+          {
+            "x": -75,
+            "y": 640
+          },
+          {
+            "x": 200.0,
+            "y": 640.0
+          },
+          {
+            "x": 216.7,
+            "y": 766.82
+          },
+          {
+            "x": 265.65,
+            "y": 885.0
+          },
+          {
+            "x": 343.52,
+            "y": 986.48
+          },
+          {
+            "x": 445.0,
+            "y": 1064.35
+          },
+          {
+            "x": 563.18,
+            "y": 1113.3
+          },
+          {
+            "x": 690.0,
+            "y": 1130.0
+          },
+          {
+            "x": 816.82,
+            "y": 1113.3
+          },
+          {
+            "x": 935.0,
+            "y": 1064.35
+          },
+          {
+            "x": 1036.48,
+            "y": 986.48
+          },
+          {
+            "x": 1114.35,
+            "y": 885.0
+          },
+          {
+            "x": 1163.3,
+            "y": 766.82
+          },
+          {
+            "x": 1180.0,
+            "y": 640.0
+          }
+        ]
+      ],
+      [
+        "power2:VCC",
+        "servo2:V+",
+        "#bf7770",
+        []
+      ],
+      [
+        "ground2:GND",
+        "servo2:GND",
+        "#555555",
+        []
+      ],
+      [
+        "board:3",
+        "servo2:PWM",
+        "#7b74b199",
+        [
+          {
+            "x": -78,
+            "y": 640
+          },
+          {
+            "x": 196.0,
+            "y": 640.0
+          },
+          {
+            "x": 209.93,
+            "y": 756.46
+          },
+          {
+            "x": 250.92,
+            "y": 866.36
+          },
+          {
+            "x": 316.66,
+            "y": 963.5
+          },
+          {
+            "x": 403.45,
+            "y": 1042.4
+          },
+          {
+            "x": 506.4,
+            "y": 1098.61
+          },
+          {
+            "x": 619.7,
+            "y": 1128.97
+          },
+          {
+            "x": 736.96,
+            "y": 1131.76
+          },
+          {
+            "x": 851.57,
+            "y": 1106.83
+          },
+          {
+            "x": 957.08,
+            "y": 1055.58
+          },
+          {
+            "x": 1047.52,
+            "y": 980.9
+          },
+          {
+            "x": 1117.82,
+            "y": 887.0
+          }
+        ]
+      ],
+      [
+        "power3:VCC",
+        "servo3:V+",
+        "#bf7770",
+        []
+      ],
+      [
+        "ground3:GND",
+        "servo3:GND",
+        "#555555",
+        []
+      ],
+      [
+        "board:4",
+        "servo3:PWM",
+        "#438e9199",
+        [
+          {
+            "x": -81,
+            "y": 640
+          },
+          {
+            "x": 192.0,
+            "y": 640.0
+          },
+          {
+            "x": 205.42,
+            "y": 754.85
+          },
+          {
+            "x": 244.97,
+            "y": 863.5
+          },
+          {
+            "x": 308.51,
+            "y": 960.11
+          },
+          {
+            "x": 392.62,
+            "y": 1039.46
+          },
+          {
+            "x": 492.75,
+            "y": 1097.27
+          },
+          {
+            "x": 603.52,
+            "y": 1130.43
+          },
+          {
+            "x": 718.96,
+            "y": 1137.16
+          },
+          {
+            "x": 832.83,
+            "y": 1117.08
+          },
+          {
+            "x": 939.0,
+            "y": 1071.28
+          }
+        ]
+      ],
+      [
+        "power4:VCC",
+        "servo4:V+",
+        "#bf7770",
+        []
+      ],
+      [
+        "ground4:GND",
+        "servo4:GND",
+        "#555555",
+        []
+      ],
+      [
+        "board:5",
+        "servo4:PWM",
+        "#bf795c99",
+        [
+          {
+            "x": -84,
+            "y": 640
+          },
+          {
+            "x": 188.0,
+            "y": 640.0
+          },
+          {
+            "x": 205.11,
+            "y": 769.93
+          },
+          {
+            "x": 255.26,
+            "y": 891.0
+          },
+          {
+            "x": 335.03,
+            "y": 994.97
+          },
+          {
+            "x": 439.0,
+            "y": 1074.74
+          },
+          {
+            "x": 560.07,
+            "y": 1124.89
+          },
+          {
+            "x": 690.0,
+            "y": 1142.0
+          }
+        ]
+      ],
+      [
+        "power5:VCC",
+        "servo5:V+",
+        "#bf7770",
+        []
+      ],
+      [
+        "ground5:GND",
+        "servo5:GND",
+        "#555555",
+        []
+      ],
+      [
+        "board:6",
+        "servo5:PWM",
+        "#7b74b199",
+        [
+          {
+            "x": -87,
+            "y": 640
+          },
+          {
+            "x": 184.0,
+            "y": 640.0
+          },
+          {
+            "x": 195.06,
+            "y": 745.2
+          },
+          {
+            "x": 227.75,
+            "y": 845.81
+          },
+          {
+            "x": 280.64,
+            "y": 937.42
+          },
+          {
+            "x": 351.42,
+            "y": 1016.03
+          },
+          {
+            "x": 437.0,
+            "y": 1078.21
+          }
+        ]
+      ],
+      [
+        "power6:VCC",
+        "servo6:V+",
+        "#bf7770",
+        []
+      ],
+      [
+        "ground6:GND",
+        "servo6:GND",
+        "#555555",
+        []
+      ],
+      [
+        "board:7",
+        "servo6:PWM",
+        "#438e9199",
+        [
+          {
+            "x": -90,
+            "y": 640
+          },
+          {
+            "x": 180.0,
+            "y": 640.0
+          },
+          {
+            "x": 197.38,
+            "y": 772.0
+          },
+          {
+            "x": 248.33,
+            "y": 895.0
+          }
+        ]
+      ],
+      [
+        "power7:VCC",
+        "servo7:V+",
+        "#bf7770",
+        []
+      ],
+      [
+        "ground7:GND",
+        "servo7:GND",
+        "#555555",
+        []
+      ],
+      [
+        "board:8",
+        "servo7:PWM",
+        "#bf795c99",
+        [
+          {
+            "x": -93,
+            "y": 640
+          },
+          {
+            "x": 176.0,
+            "y": 640.0
+          },
+          {
+            "x": 176.0,
+            "y": 640.0
+          }
+        ]
+      ],
+      [
+        "power8:VCC",
+        "servo8:V+",
+        "#bf7770",
+        []
+      ],
+      [
+        "ground8:GND",
+        "servo8:GND",
+        "#555555",
+        []
+      ],
+      [
+        "board:9",
+        "servo8:PWM",
+        "#7b74b199",
+        [
+          {
+            "x": -96,
+            "y": 640
+          },
+          {
+            "x": 172.0,
+            "y": 640.0
+          },
+          {
+            "x": 189.65,
+            "y": 505.93
+          },
+          {
+            "x": 241.4,
+            "y": 381.0
+          }
+        ]
+      ],
+      [
+        "power9:VCC",
+        "servo9:V+",
+        "#bf7770",
+        []
+      ],
+      [
+        "ground9:GND",
+        "servo9:GND",
+        "#555555",
+        []
+      ],
+      [
+        "board:10",
+        "servo9:PWM",
+        "#438e9199",
+        [
+          {
+            "x": -99,
+            "y": 640
+          },
+          {
+            "x": 168.0,
+            "y": 640.0
+          },
+          {
+            "x": 185.79,
+            "y": 504.9
+          },
+          {
+            "x": 237.93,
+            "y": 379.0
+          },
+          {
+            "x": 320.89,
+            "y": 270.89
+          },
+          {
+            "x": 429.0,
+            "y": 187.93
+          }
+        ]
+      ],
+      [
+        "power10:VCC",
+        "servo10:V+",
+        "#bf7770",
+        []
+      ],
+      [
+        "ground10:GND",
+        "servo10:GND",
+        "#555555",
+        []
+      ],
+      [
+        "board:11",
+        "servo10:PWM",
+        "#bf795c99",
+        [
+          {
+            "x": -102,
+            "y": 640
+          },
+          {
+            "x": 164.0,
+            "y": 640.0
+          },
+          {
+            "x": 181.92,
+            "y": 503.86
+          },
+          {
+            "x": 234.47,
+            "y": 377.0
+          },
+          {
+            "x": 318.06,
+            "y": 268.06
+          },
+          {
+            "x": 427.0,
+            "y": 184.47
+          },
+          {
+            "x": 553.86,
+            "y": 131.92
+          },
+          {
+            "x": 690.0,
+            "y": 114.0
+          }
+        ]
+      ],
+      [
+        "power11:VCC",
+        "servo11:V+",
+        "#bf7770",
+        []
+      ],
+      [
+        "ground11:GND",
+        "servo11:GND",
+        "#555555",
+        []
+      ],
+      [
+        "board:12",
+        "servo11:PWM",
+        "#7b74b199",
+        [
+          {
+            "x": -105,
+            "y": 640
+          },
+          {
+            "x": 160.0,
+            "y": 640.0
+          },
+          {
+            "x": 174.29,
+            "y": 517.77
+          },
+          {
+            "x": 216.37,
+            "y": 402.14
+          },
+          {
+            "x": 284.0,
+            "y": 299.32
+          },
+          {
+            "x": 373.51,
+            "y": 214.87
+          },
+          {
+            "x": 480.08,
+            "y": 153.35
+          },
+          {
+            "x": 597.97,
+            "y": 118.05
+          },
+          {
+            "x": 720.82,
+            "y": 110.9
+          },
+          {
+            "x": 842.01,
+            "y": 132.27
+          },
+          {
+            "x": 955.0,
+            "y": 181.01
+          }
+        ]
+      ],
+      [
+        "power12:VCC",
+        "servo12:V+",
+        "#bf7770",
+        []
+      ],
+      [
+        "ground12:GND",
+        "servo12:GND",
+        "#555555",
+        []
+      ],
+      [
+        "board:13",
+        "servo12:PWM",
+        "#438e9199",
+        [
+          {
+            "x": -108,
+            "y": 640
+          },
+          {
+            "x": 156.0,
+            "y": 640.0
+          },
+          {
+            "x": 174.2,
+            "y": 501.79
+          },
+          {
+            "x": 227.54,
+            "y": 373.0
+          },
+          {
+            "x": 312.4,
+            "y": 262.4
+          },
+          {
+            "x": 423.0,
+            "y": 177.54
+          },
+          {
+            "x": 551.79,
+            "y": 124.2
+          },
+          {
+            "x": 690.0,
+            "y": 106.0
+          },
+          {
+            "x": 828.21,
+            "y": 124.2
+          },
+          {
+            "x": 957.0,
+            "y": 177.54
+          },
+          {
+            "x": 1067.6,
+            "y": 262.4
+          },
+          {
+            "x": 1152.46,
+            "y": 373.0
+          }
+        ]
+      ],
+      [
+        "board:5V",
+        "speed:VCC",
+        "#bf7770",
+        []
+      ],
+      [
+        "board:GND.1",
+        "speed:GND",
+        "#555555",
+        []
+      ],
+      [
+        "board:A0",
+        "speed:SIG",
+        "#438e91",
+        []
+      ],
+      [
+        "board:5V",
+        "mode:3",
+        "#bf7770",
+        []
+      ],
+      [
+        "board:GND.1",
+        "mode:1",
+        "#555555",
+        []
+      ],
+      [
+        "board:A1",
+        "mode:2",
+        "#7b74b1",
+        []
+      ]
+    ]
+  },
+  "controls": {
+    "speed": 420,
+    "mode": 0
+  },
+  "api": "none",
+  "p5": {
+    "none": "function setup() { createCanvas(420, 160); background(246); fill(60); text('Twelve servo garden — use the circuit view', 20, 40); }\n"
+  },
+  "arduino": "// Twelve servos on one Uno: the full standard Servo.h capacity.\n// D2–D13 are signal pins (ordinary GPIO is fine). A0 controls speed;\n// the A1 slide switch selects traveling wave / alternating petals.\n// The simulator's VCC symbols are ideal 5V. REAL HARDWARE: use a separate\n// regulated servo supply sized for all 12 stall currents, with common GND.\n// Do not power a bank of servos from USB or the Uno 5V regulator.\n#include <Servo.h>\nconst byte count = 12;\nServo petals[count];\nconst byte speedPin = A0, modePin = A1;\nfloat phase = 0;\nunsigned long previous = 0;\nvoid setup() {\n  for (byte i = 0; i < count; i++) petals[i].attach(i + 2);\n  pinMode(modePin, INPUT);\n  previous = millis();\n}\nvoid loop() {\n  const unsigned long now = millis();\n  const float dt = (now - previous) / 1000.0;\n  previous = now;\n  const float speed = 0.12 + analogRead(speedPin) / 1023.0 * 0.6;\n  phase += dt * speed * TWO_PI;\n  if (phase >= TWO_PI) phase -= TWO_PI;\n  const bool alternating = digitalRead(modePin);\n  for (byte i = 0; i < count; i++) {\n    const float offset = alternating ? (i % 2) * PI : i * TWO_PI / count;\n    petals[i].write(90 + 65 * sin(phase + offset));\n  }\n  delay(20);\n}\n",
+  "artifact": {
+    "source": "// Twelve servos on one Uno: the full standard Servo.h capacity.\n// D2–D13 are signal pins (ordinary GPIO is fine). A0 controls speed;\n// the A1 slide switch selects traveling wave / alternating petals.\n// The simulator's VCC symbols are ideal 5V. REAL HARDWARE: use a separate\n// regulated servo supply sized for all 12 stall currents, with common GND.\n// Do not power a bank of servos from USB or the Uno 5V regulator.\n#include <Servo.h>\nconst byte count = 12;\nServo petals[count];\nconst byte speedPin = A0, modePin = A1;\nfloat phase = 0;\nunsigned long previous = 0;\nvoid setup() {\n  for (byte i = 0; i < count; i++) petals[i].attach(i + 2);\n  pinMode(modePin, INPUT);\n  previous = millis();\n}\nvoid loop() {\n  const unsigned long now = millis();\n  const float dt = (now - previous) / 1000.0;\n  previous = now;\n  const float speed = 0.12 + analogRead(speedPin) / 1023.0 * 0.6;\n  phase += dt * speed * TWO_PI;\n  if (phase >= TWO_PI) phase -= TWO_PI;\n  const bool alternating = digitalRead(modePin);\n  for (byte i = 0; i < count; i++) {\n    const float offset = alternating ? (i % 2) * PI : i * TWO_PI / count;\n    petals[i].write(90 + 65 * sin(phase + offset));\n  }\n  delay(20);\n}\n",
+    "buildKey": "// Twelve servos on one Uno: the full standard Servo.h capacity.\n// D2–D13 are signal pins (ordinary GPIO is fine). A0 controls speed;\n// the A1 slide switch selects traveling wave / alternating petals.\n// The simulator's VCC symbols are ideal 5V. REAL HARDWARE: use a separate\n// regulated servo supply sized for all 12 stall currents, with common GND.\n// Do not power a bank of servos from USB or the Uno 5V regulator.\n#include <Servo.h>\nconst byte count = 12;\nServo petals[count];\nconst byte speedPin = A0, modePin = A1;\nfloat phase = 0;\nunsigned long previous = 0;\nvoid setup() {\n  for (byte i = 0; i < count; i++) petals[i].attach(i + 2);\n  pinMode(modePin, INPUT);\n  previous = millis();\n}\nvoid loop() {\n  const unsigned long now = millis();\n  const float dt = (now - previous) / 1000.0;\n  previous = now;\n  const float speed = 0.12 + analogRead(speedPin) / 1023.0 * 0.6;\n  phase += dt * speed * TWO_PI;\n  if (phase >= TWO_PI) phase -= TWO_PI;\n  const bool alternating = digitalRead(modePin);\n  for (byte i = 0; i < count; i++) {\n    const float offset = alternating ? (i % 2) * PI : i * TWO_PI / count;\n    petals[i].write(90 + 65 * sin(phase + offset));\n  }\n  delay(20);\n}\n{}",
+    "hex": ":100000000C9471000C9499000C9499000C94990034\n:100010000C9499000C9499000C9499000C949900FC\n:100020000C9499000C9499000C9499000C94610123\n:100030000C9499000C9499000C9499000C949900DC\n:100040000C9417010C9499000C9499000C9499004D\n:100050000C9499000C9499000C9499000C949900BC\n:100060000C9499000C94990005A84CCDB2D44EB9CB\n:100070003836A9020C50B9918688083CA6AAAA2A4B\n:10008000BE000000803F00000000240027002A007E\n:1000900000000000230026002900000000002500C9\n:1000A00028002B00040404040404040402020202D5\n:1000B000020203030303030301020408102040802B\n:1000C00001020408102001020408102000000008AA\n:1000D000000201000003040700000000000000000F\n:1000E000C70411241FBECFEFD8E0DEBFCDBF11E0A3\n:1000F000A0E0B1E0E4E5F0E102C005900D92A0308F\n:10010000B107D9F721E0A0E0B1E001C01D92AB3505\n:10011000B207E1F710E0C1E7D0E004C02197FE018B\n:100120000E942208C037D107C9F70E941D020C9413\n:1001300028080C940000833081F028F4813099F075\n:100140008230A9F008958730A9F08830C9F0843052\n:10015000B1F4809180008F7D03C0809180008F7703\n:1001600080938000089584B58F7784BD089584B509\n:100170008F7DFBCF8091B0008F778093B000089582\n:100180008091B0008F7DF9CF1F93CF93DF93282FFD\n:1001900030E0F901E453FF4F8491F901E854FF4F37\n:1001A000D491F901EC55FF4FC491CC23A9F0162F3F\n:1001B00081110E949B00EC2FF0E0EE0FFF1FE6562E\n:1001C000FF4FA591B4918FB7F894EC91111108C02D\n:1001D000D095DE23DC938FBFDF91CF911F910895DF\n:1001E000DE2BF8CF3FB7F8948091570190915801DA\n:1001F000A0915901B0915A0126B5A89B05C02F3F87\n:1002000019F00196A11DB11D3FBFBA2FA92F982F3C\n:100210008827BC01CD01620F711D811D911D42E037\n:10022000660F771F881F991F4A95D1F708951F926F\n:100230000F920FB60F9211242F933F938F939F939A\n:10024000AF93BF938091530190915401A0915501B8\n:10025000B09156013091520123E0230F2D3758F50C\n:100260000196A11DB11D20935201809353019093DB\n:100270005401A0935501B09356018091570190917C\n:100280005801A0915901B0915A010196A11DB11DCB\n:100290008093570190935801A0935901B0935A014C\n:1002A000BF91AF919F918F913F912F910F900FBE72\n:1002B0000F901F90189526E8230F0296A11DB11DDF\n:1002C000D2CF1F920F920FB60F9211242F933F930C\n:1002D0004F935F936F937F938F939F93AF93BF934E\n:1002E000CF93DF93EF93FF9380910101C0910001C1\n:1002F000D0E087FF24C01092850010928400809186\n:1003000001018F5F8093010180910101082E000C93\n:10031000990B8C179D0724F4809101018C30C4F156\n:100320008091840090918500049680349C4908F463\n:100330007AC08091840090918500049676C0809167\n:100340000101082E000C990B8C179D07C4F6E09153\n:1003500001018E2FEE0F990BFC01EE0FFF1FE80F2E\n:10036000F91FEE5FFE4F808186FFC9CFE09101014A\n:100370008E2FEE0F990BFC01EE0FFF1FE80FF91FF8\n:10038000EE5FFE4F808160E08F730E94C400B7CFA4\n:100390002091840030918500E09101018E2FEE0FB5\n:1003A000990BFC01EE0FFF1FE80FF91FEE5FFE4FE8\n:1003B00081819281820F931F90938900809388009E\n:1003C000E09101018E2FEE0F990BFC01EE0FFF1F44\n:1003D000E80FF91FEE5FFE4F808186FF11C0E091AC\n:1003E00001018E2FEE0F990BFC01EE0FFF1FE80F9E\n:1003F000F91FEE5FFE4F808161E08F730E94C400A1\n:10040000FF91EF91DF91CF91BF91AF919F918F912C\n:100410007F916F915F914F913F912F910F900FBE00\n:100420000F901F90189580E49CE990938900809329\n:1004300088008FEF80930101E3CFCF93DF9300D04B\n:1004400000D01F92CDB7DEB7789484B5826084BDAA\n:1004500084B5816084BD85B5826085BD85B58160C8\n:1004600085BD80916E00816080936E001092810046\n:100470008091810082608093810080918100816001\n:1004800080938100809180008160809380008091C2\n:10049000B10084608093B1008091B000816080934E\n:1004A000B00080917A00846080937A0080917A0015\n:1004B000826080937A0080917A00816080937A00D4\n:1004C00080917A00806880937A001092C100A6E241\n:1004D000B1E022E030E04CE052E08C918C3008F04A\n:1004E0006EC0F901E854FF4F6491F901EC55FF4FDC\n:1004F00084918823A1F090E0880F991FFC01EA57AE\n:10050000FF4FE590F490FC01E656FF4F85919491E2\n:100510008FB7F894F7019081962B90838FBF8C91C1\n:10052000682F70E0FB01EE0FFF1FE60FF71FEE5F75\n:10053000FE4F9081907C622F6F73962B9083119663\n:100540001C92119712961C921297642F0E94160803\n:10055000849F800111241C830B8370E060E00B8179\n:100560001C81060F171FF801EE0FFF1FE00FF11F90\n:10057000EE5FFE4F908196FD15C06F5F7F4F6C3030\n:10058000710569F781110EC01092800050938100AF\n:100590001092850010928400B19A80916F00826061\n:1005A00080936F00EC918E2F90E0FC01EE0FFF1F07\n:1005B000E80FF91FEE5FFE4F808180648083139601\n:1005C0002F5F3F4F2E30310509F087CFE7ECF0E089\n:1005D0002491E3EBF0E084918823D9F090E0880F38\n:1005E000991FFC01EA57FF4FA591B491FC01E65613\n:1005F000FF4F059114911C830B833FB7F8949C9196\n:10060000822F809598239C93F80190818923808381\n:100610003FBF2FB7F8948091530190915401A0915E\n:100620005501B09156012FBF80934E0190934F0119\n:10063000A0935001B093510128E8222E312C34EBC5\n:10064000832E912CA12CB12C8FB7F894409053019C\n:100650005090540160905501709056018FBF809169\n:100660004E0190914F01A0915001B0915101930121\n:100670008201081B190B2A0B3B0BC901B8010E9410\n:10068000620620E030E04AE754E40E94BA056B01BC\n:100690007C0140924E0150924F0160925001709245\n:1006A000510110E410937C0080917A008064809363\n:1006B0007A0080917A0086FDFCCF6091780070917D\n:1006C0007900072E000C880B990B0E94640620E02D\n:1006D00030EC4FE754E40E94BA052AE939E949E1D0\n:1006E0005FE30E94F5062FE832EC45EF5DE30E94E0\n:1006F0004E05A70196010E94F5062BED3FE049EC5F\n:1007000050E40E94F50620914A0130914B0140913E\n:100710004C0150914D010E944E052B013C012BEDE7\n:100720003FE049EC50E40E94F00687FF0BC1409285\n:100730004A0150924B0160924C0170924D01EBEDD9\n:10074000F0E08491E7ECF0E0F491FB83E3EBF0E080\n:10075000F491FD83F12CE12CFF23A9F081110E947B\n:100760009B000D81E02FF0E0EE0FFF1FE057FF4FE1\n:10077000A591B4918C911B81182391E080E009F43C\n:1007800090E0E92EF82E06E211E01C830B8310E0C6\n:1007900000E0E114F10409F4E6C0202F2170298360\n:1007A0001A8249815A81BA01550F880B990B0E9410\n:1007B00064062BED3FE049E450E40E94F5062091E9\n:1007C0004A0130914B0140914C0150914D010E94E2\n:1007D0004E050E94620720E030E042E852E40E94A9\n:1007E000F50620E030E044EB52E40E944E050E9402\n:1007F0002C069B01603252E07507C4F5EB81FC8149\n:1008000021812101421A510827FD5394440C551CA3\n:10081000440C551C052C000C66087708228148E51D\n:1008200052E0421B510927FD53959A01220F331FB5\n:10083000220F331F032E000C440B550B24193509CE\n:1008400046095709DB01653B710514F0A4EBB0E0E4\n:10085000B7FF02C0B0E0A0E00E941405A50194011A\n:100860000E94EA04240D351D461D571DEB81FC81B5\n:1008700040814C3078F58181B101681B710987FD99\n:100880007395CB01880F991F880F991F2817390777\n:1008900084F08281E8E5F2E0E81BF10987FDF39539\n:1008A000CF01880F991F880F991F281739070CF45B\n:1008B000C9010297880F991F6FB7F89450E09A0109\n:1008C000220F331F240F351FF901EE5FFE4F928375\n:1008D00081836FBF0F5F1F4F2B813C812D5F3F4F87\n:1008E0003C832B830C30110509F053CF0E94F2009A\n:1008F0002B013C0184E1C82ED12CE12CF12C0E946B\n:10090000F2006419750986099709683E73408105EC\n:100910009105A8F331E0C31AD108E108F10848EEC7\n:10092000440E43E0541E611C711CC114D104E10447\n:10093000F10429F760E070E0672B09F485CE0E948E\n:10094000000082CE2BED3FE049EC50E4C301B20140\n:100950000E944D0560934A0170934B0180934C01B6\n:1009600090934D01ECCEB801012E000C880B990B31\n:100970000E9464062BED3FE049EC50E40E94F5062E\n:1009800020E030E040E451E40E94BA0518CFE6E2EE\n:10099000F1E02AE431E04FEF68EB7BE08091000169\n:1009A0008C30B0F491E0980F90930001808390E038\n:1009B000DC01AA0FBB1FA80FB91FAE5FBE4F129676\n:1009C0007C936E93119733962E173F0739F708954E\n:1009D0004083F9CF052E97FB1EF400940E94010579\n:1009E00057FD07D00E941C0507FC03D04EF40C9461\n:1009F000010550954095309521953F4F4F4F5F4FE2\n:100A0000089590958095709561957F4F8F4F9F4F7A\n:100A100008950E943E05A59F900DB49F900DA49F40\n:100A2000800D911D11240895B7FF0C9409050E94B3\n:100A30000905821B930B0895A1E21A2EAA1BBB1B6A\n:100A4000FD010DC0AA1FBB1FEE1FFF1FA217B3079A\n:100A5000E407F50720F0A21BB30BE40BF50B661FB0\n:100A6000771F881F991F1A9469F760957095809574\n:100A700090959B01AC01BD01CF010895A29FB001EB\n:100A8000B39FC001A39F700D811D1124911DB29FC2\n:100A9000700D811D1124911D08955058BB27AA2760\n:100AA0000E9465050C94B6060E94A80638F00E94C4\n:100AB000AF0620F039F49F3F19F426F40C94A506F4\n:100AC0000EF4E095E7FB0C949F06E92F0E94C70601\n:100AD00058F3BA17620773078407950720F079F473\n:100AE000A6F50C94E9060EF4E0950B2EBA2FA02D76\n:100AF0000B01B90190010C01CA01A0011124FF27CB\n:100B0000591B99F0593F50F4503E68F11A16F040C5\n:100B1000A22F232F342F4427585FF3CF46953795C4\n:100B20002795A795F0405395C9F77EF41F16BA0B89\n:100B3000620B730B840BBAF09150A1F0FF0FBB1F37\n:100B4000661F771F881FC2F70EC0BA0F621F731F80\n:100B5000841F48F4879577956795B795F7959E3FDD\n:100B600008F0B0CF9395880F08F09927EE0F97956E\n:100B7000879508950E94CE050C94B6060E94AF0694\n:100B800058F00E94A80640F029F45F3F29F00C9429\n:100B90009F0651110C94EA060C94A5060E94C70604\n:100BA00068F39923B1F3552391F3951B550BBB279C\n:100BB000AA2762177307840738F09F5F5F4F220FE1\n:100BC000331F441FAA1FA9F335D00E2E3AF0E0E8D8\n:100BD00032D091505040E695001CCAF72BD0FE2F22\n:100BE00029D0660F771F881FBB1F261737074807B6\n:100BF000AB07B0E809F0BB0B802DBF01FF2793586E\n:100C00005F4F3AF09E3F510578F00C949F060C948C\n:100C1000EA065F3FE4F3983ED4F3869577956795AF\n:100C2000B795F7959F5FC9F7880F911D96958795A2\n:100C300097F90895E1E0660F771F881FBB1F6217C1\n:100C400073078407BA0720F0621B730B840BBA0B7F\n:100C5000EE1F88F7E09508950E9433066894B1115D\n:100C60000C94EA0608950E94CF0688F09F5798F0EA\n:100C7000B92F9927B751B0F0E1F0660F771F881FA1\n:100C8000991F1AF0BA95C9F714C0B13091F00E94BB\n:100C9000E906B1E008950C94E906672F782F8827BC\n:100CA000B85F39F0B93FCCF3869577956795B395E2\n:100CB000D9F73EF490958095709561957F4F8F4F51\n:100CC0009F4F0895E89409C097FB3EF49095809556\n:100CD000709561957F4F8F4F9F4F9923A9F0F92F02\n:100CE00096E9BB279395F695879577956795B79580\n:100CF000F111F8CFFAF4BB0F11F460FF1BC06F5F66\n:100D00007F4F8F4F9F4F16C0882311F096E911C077\n:100D1000772321F09EE8872F762F05C0662371F098\n:100D200096E8862F70E060E02AF09A95660F771FAC\n:100D3000881FDAF7880F9695879597F9089597F9A0\n:100D40009F6780E870E060E008959FEF80EC089571\n:100D500000240A941616170618060906089500249A\n:100D60000A9412161306140605060895092E039414\n:100D7000000C11F4882352F0BB0F40F4BF2B11F488\n:100D800060FF04C06F5F7F4F8F4F9F4F089557FDE7\n:100D90009058440F551F59F05F3F71F04795880FE9\n:100DA00097FB991F61F09F3F79F087950895121680\n:100DB00013061406551FF2CF4695F1DF08C016162C\n:100DC00017061806991FF1CF8695710561050894DD\n:100DD0000895E894BB2766277727CB0197F90895F4\n:100DE0000E946A0708F48FEF08950E9408070C9488\n:100DF000B6060E94A80638F00E94AF0620F09523A0\n:100E000011F00C949F060C94A50611240C94EA068C\n:100E10000E94C70670F3959FC1F3950F50E0551FD0\n:100E2000629FF001729FBB27F00DB11D639FAA273F\n:100E3000F00DB11DAA1F649F6627B00DA11D661F8E\n:100E4000829F2227B00DA11D621F739FB00DA11DAF\n:100E5000621F839FA00D611D221F749F3327A00D69\n:100E6000611D231F849F600D211D822F762F6A2F05\n:100E700011249F5750409AF0F1F088234AF0EE0F6A\n:100E8000FF1FBB1F661F771F881F91505040A9F797\n:100E90009E3F510580F00C949F060C94EA065F3F3C\n:100EA000E4F3983ED4F3869577956795B795F795D3\n:100EB000E7959F5FC1F7FE2B880F911D969587954B\n:100EC00097F908959F930E9490070F9007FCEE5F9B\n:100ED0000C94B907990F0008550FAA0BE0E8FEEF34\n:100EE00016161706E807F907C0F012161306E407EE\n:100EF000F50798F0621B730B840B950B39F40A26E7\n:100F000061F0232B242B252B21F408950A2609F4C4\n:100F1000A140A6958FEF811D811D08950C94A50613\n:100F20000E94CF06D8F3E894E0E0BB279F57F0F08B\n:100F30002AED3FE049EC06C0EE0FBB0F661F771F9E\n:100F4000881F28F0B23A62077307840728F0B25A64\n:100F5000620B730B840BE3959A9572F7803830F42B\n:100F60009A95BB0F661F771F881FD2F790480C9485\n:100F7000CF07EF93E0FF07C0A2EA2AED3FE049EC7C\n:100F80005FEB0E9465050E94B6060F90039401FC7A\n:100F90009058E8E6F0E00C94DB079F3F31F0915069\n:100FA00020F4879577956795B795880F911D96954D\n:100FB000879597F908959F938F937F936F93FF93EE\n:100FC000EF939B01AC010E94F506EF91FF910E9407\n:100FD000EF072F913F914F915F910C94F506DF93AE\n:100FE000CF931F930F93FF92EF92DF927B018C01BF\n:100FF000689406C0DA2EEF010E940807FE01E8940B\n:10100000A5912591359145915591A6F3EF010E9447\n:101010006505FE019701A801DA9469F7DF90EF906A\n:10102000FF900F911F91CF91DF910895991B79E067\n:1010300004C0991F961708F0961B881F7A95C9F768\n:1010400080950895EE0FFF1F0590F491E02D09940F\n:04105000F894FFCF42\n:00000001FF\n"
+  }
+}

@@ -8,6 +8,7 @@ export function outputPreview(part) {
 export function outputReading(state = {}) {
   if (state.ledRed != null) return `RGB ${[state.ledRed,state.ledGreen,state.ledBlue].map(v=>Math.round(v*100)).join('/')}%`;
   if (state.brightness != null) return `${Math.round(state.brightness*100)}%`;
+  if (state.rpm != null) return `${Math.round(state.rpm)} rpm`;
   if (state.angle != null) return `${Math.round(state.angle)}°`;
   if (state.energized != null) return state.energized ? 'On' : 'Off';
   return '—';

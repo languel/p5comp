@@ -67,3 +67,11 @@ circuit: while drawing is active, tool/navigation keys are forwarded to
 Poliplan. Selected drawings retain Delete, grouping and undo/redo shortcuts.
 Text inputs and CodeMirror keep their own keys; D remains the host drawing
 layer toggle. Forwarded events are not echoed back to the host.
+
+## Servo-mounted artwork
+
+Select a circuit servo, select marks in Poliplan, then right-click **Mount selection
+on selected servo**. An SVG copy mounts on the native shaft and follows simulated
+Servo.h pulses. Properties controls width, mount angle, normalized pivot and pen
+trails; the original drawing remains editable. See [Servo garden](servo-garden.md)
+for the twelve-servo example, limits and full mounting workflow.

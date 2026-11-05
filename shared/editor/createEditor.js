@@ -8,7 +8,7 @@ import { cppLanguage, cpp } from "@codemirror/lang-cpp";
 import { javascriptLanguage, javascript } from "@codemirror/lang-javascript";
 import { Compartment, EditorState } from "@codemirror/state";
 import { keymap } from "@codemirror/view";
-import { indentWithTab } from "@codemirror/commands";
+import { indentWithTab, isolateHistory } from "@codemirror/commands";
 import { html } from "@codemirror/lang-html";
 import { css } from "@codemirror/lang-css";
 import { Prec } from "@codemirror/state";
@@ -133,6 +133,7 @@ export function createEditor({
       if (editor.state.doc.toString() !== source) return;
       editor.dispatch({
         changes: { from: 0, to: editor.state.doc.length, insert: formatted },
+        annotations: isolateHistory.of("full"),
       });
     } catch (error) {
       document.dispatchEvent(
@@ -146,15 +147,20 @@ export function createEditor({
       if (e.altKey && !e.metaKey && !e.ctrlKey && !e.shiftKey && e.code === "KeyZ") {
         e.preventDefault();
         e.stopPropagation();
-        setEditorPreferences({ wordWrap: !(editorPreferences().wordWrap ?? lineWrapping) });
+        if (!e.repeat) setEditorPreferences({ wordWrap: !(editorPreferences().wordWrap ?? lineWrapping) });
+        return;
+      }
+      const formatShortcut = e.shiftKey && e.code === "KeyF" &&
+        ((e.altKey && !e.metaKey && !e.ctrlKey) ||
+          (!e.altKey && (e.metaKey || e.ctrlKey)));
+      if (formatShortcut) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!e.repeat) editor.tidy();
         return;
       }
       if (!(e.metaKey || e.ctrlKey) || !e.shiftKey) return;
-      if (e.key.toLowerCase() === "f") {
-        e.preventDefault();
-        e.stopPropagation();
-        editor.tidy();
-      } else if (
+      if (
         ["Equal", "Minus"].includes(e.code) ||
         ["+", "-", "_", "="].includes(e.key)
       ) {

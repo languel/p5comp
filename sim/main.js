@@ -1,3 +1,6 @@
+import {ServoAttachments} from "./servoAttachments.js";
+import {responseJSON} from "../shared/loadJSON.js";
+import {validateProject} from "./validateProject.js";
 import { parameterValue } from "../shared/p5/parameters.js";
 import { P5SignalsPanel } from "./P5SignalsPanel.js";
 let p5SignalsPanel=null, p5Parameters={rows:[],links:[]};
@@ -122,6 +125,7 @@ const notice = (message) => {
   $("notice").hidden = !message;
   $("notice").textContent = message || "";
 };
+if (initialProject.startupWarning) notice(initialProject.startupWarning);
 const boardLabel = () => boardKind(diagram.parts.find(p => isAVRBoard(p.type))?.type).toUpperCase();
 const portNames = new WeakMap();
 async function discoverPortName(port) {
@@ -343,7 +347,8 @@ async function getFirmware() {
       "Edited Arduino code needs the local compilation helper. The bundled lesson runs without it.",
     );
   }
-  const result = await response.json();
+  const result = await responseJSON(response, "Compilation helper (start npm run dev locally)", {allowHTTPError: true});
+  if (!result || typeof result !== "object") throw new Error("Compilation helper returned invalid data.");
   log(result.stdout || "");
   if (!result.ok) throw new Error(result.stderr || "Compilation failed.");
   if (result.stderr) log(result.stderr);
@@ -353,6 +358,7 @@ async function getFirmware() {
       "Compiled with warnings · check console",
       "warning",
     );
+  if (typeof result.hex !== "string" || !result.hex.trim().startsWith(":")) throw new Error("Compilation helper returned no valid firmware. Retry compilation.");
   artifact = { source, buildKey, hex: result.hex };
   $("firmwareState").textContent = "Compiled locally · cached in project";
   log("Compilation complete · firmware cached.");
@@ -363,6 +369,7 @@ document.addEventListener("p5comp:pwm-refresh", (e) =>
   worker?.postMessage({ type: "refresh", hz: e.detail }),
 );
 function startWorker(hex) {
+  servoAttachments.clearTrails();
   worker?.terminate();
   worker = new Worker(new URL("./worker.js", import.meta.url), {
     type: "module",
@@ -371,6 +378,7 @@ function startWorker(hex) {
     if (d.type === "serial") receive(d.bytes);
     if (d.type === "state") {
       agentLatestState = d;
+      servoAttachments.update(d.parts, true);
       circuitAudio?.consume(d.analogFrames||[],diagram.parts);
       for(const [id,element] of partElements)if(element.tagName==="P5COMP-OSCILLOSCOPE")element.ingest(d.analogFrames||[],id);
       $("clock").textContent = d.seconds.toFixed(2) + " s";
@@ -408,6 +416,7 @@ function startWorker(hex) {
         }
         for (const prop of [
           "angle",
+          "rpm",
           "hasSignal",
           "characters",
           "values",
@@ -624,7 +633,9 @@ function changed() {
 }
 
 const partElements = new Map();
+const servoAttachments = new ServoAttachments($("world"));
 const canvas = new CircuitCanvas({
+  onViewChange: () => servoAttachments.update(),
   stage: $("stage"),
   world: $("world"),
   wires: $("wires"),
@@ -938,6 +949,7 @@ function renderParts() {
     partElements.set(p.id, element);
     $("parts").append(wrapper);
   }
+  servoAttachments.render(diagram.parts, partElements, workbench?.assets || savedWorkbench.assets);
   renderWires();
   renderControls();
   // Lit draws asynchronously. Rotated pins depend on the final body dimensions.
@@ -974,6 +986,7 @@ function renderParts() {
         }
       }
       canvas.render();
+      servoAttachments.update();
       if (seatingChanged()) changed();
     }
   });
@@ -1455,6 +1468,7 @@ $("save").onclick = () => {
 };
 $("open").onclick = () => $("projectFile").click();
 function openProject(d) {
+  validateProject(d);
   inputSimulator.close();
   const candidate = d.diagram || d;
   validateDiagram(candidate);
@@ -1478,6 +1492,7 @@ function openProject(d) {
   }
   artifact = d.artifact || null;
   workbench?.restore(d.workbench || {});
+  servoAttachments.render(diagram.parts, partElements, workbench?.assets || {});
   canvas.undoStack = [];
   canvas.redoStack = [];
   canvas.draft = null;
@@ -1796,6 +1811,7 @@ workbench = new Workbench({
   },
   selected: () => diagram.parts.find((p) => p.id === selectedPart),
   element: () => partElements.get(selectedPart),
+  clearServoTrails: () => servoAttachments.clearTrails(),
   updatePart: (next, targetId = selectedPart) => {
     const before = canvas.checkpoint();
     if (!targetId || !diagram.parts.some((p) => p.id === targetId))

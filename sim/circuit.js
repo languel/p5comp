@@ -1,3 +1,5 @@
+import {validateServoAttachment} from "./servoAttachments.js";
+import { motorTerminals, isDCMotor } from "./motorModels.js";
 import { dipCount } from "./switchTypes.js";
 import {analogTopology} from "./analogTopology.js";
 import { isNeoPixel, pixelCount } from "./outputModels.js";
@@ -95,6 +97,7 @@ export function validateDiagram(d) {
       throw new Error("Label must be text under 100 characters.");
     if (!elementByType.has(p.type))
       throw new Error(`Unsupported part: ${p.type}`);
+    if (p.type === "wokwi-servo") validateServoAttachment(p.attrs?.servoAttachment);
     if (p.type === "wokwi-resistor") resistance(p.attrs?.value);
     if (p.attrs?.maxResistance != null && isPot(p.type))
       resistance(p.attrs.maxResistance);
@@ -126,12 +129,14 @@ export function validateDiagram(d) {
       "delayTime",
       "inhibitTime",
       "stepsPerRevolution",
+      "noLoadRPM",
+      "gearRatio",
     ])
       if (
         p.attrs?.[prop] != null &&
         (!Number.isFinite(Number(p.attrs[prop])) ||
           Number(p.attrs[prop]) < 0 ||
-          (["gamma", "rl10", "stepsPerRevolution"].includes(prop) &&
+          (["gamma", "rl10", "stepsPerRevolution", "noLoadRPM", "gearRatio"].includes(prop) &&
             Number(p.attrs[prop]) === 0))
       )
         throw new Error(`${p.id}: ${prop} needs a valid positive value.`);
@@ -466,6 +471,8 @@ export function resolveCircuit(diagram, contacts = []) {
     }
     if (
       [
+        "p5comp-dc-motor",
+        "p5comp-gear-motor",
         "wokwi-relay-module",
         "wokwi-a4988",
         "wokwi-stepper-motor",
@@ -519,6 +526,11 @@ export function resolveCircuit(diagram, contacts = []) {
                   : equal(p.id + ":2", id + ":GND.1"),
       });
     }
+  }
+  const bridges = diagram.parts.filter(p => p.type === "p5comp-hbridge");
+  for (const p of peripherals) {
+    if (isDCMotor(p.type) || p.type === "wokwi-stepper-motor" && bridges.length)
+      p.motorTerminals = motorTerminals(p, bridges, equal, target, id);
   }
   // Driver/motor links and NeoPixel DOUT chains retain explicit wiring semantics.
   for (const p of peripherals) {

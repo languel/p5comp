@@ -1,3 +1,4 @@
+import {attachmentBounds} from "./servoAttachments.js";
 import {copyCircuitSelection, pasteCircuitSelection} from "./selectionClipboard.js";
 import {deleteCircuitSelection} from "./selectionDeletion.js";
 import {snapInsertion, terminalContacts, syncSeating, unplugContacts, movingParts, groupParts, ungroupParts, connectorRole} from "./terminalContacts.js";
@@ -333,7 +334,7 @@ export class CircuitCanvas {
   fit() {
     if (!this.diagram) return;
     this.refreshPins();
-    const rects = this.rectangles(true),
+    const rects = [...this.rectangles(true), ...this.diagram.parts.map(p => attachmentBounds(p, this.size(p))).filter(Boolean)],
       points = this.diagram.connections.flatMap((c) =>
         wirePoints(c, this.pins),
       );

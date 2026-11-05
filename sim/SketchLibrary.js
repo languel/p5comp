@@ -1,3 +1,4 @@
+import {fetchJSON} from "../shared/loadJSON.js";
 import { icon } from "./uiIcons.js";
 import { basePath } from "../shared/basePath.js";
 const KEY = "p5comp.sketchLibrary";
@@ -173,18 +174,19 @@ export function installSketchLibraries(wb) {
       dialog.showModal();
       render();
       try {
-        const index = await (
-          await fetch(basePath("examples/index.json"))
-        ).json();
-        bundled = await Promise.all(
-          index.map(async (entry) => {
-            const project = await (await fetch(basePath(entry.project))).json();
+        const index = await fetchJSON(basePath("examples/index.json"), "Sketch catalog");
+        if (!Array.isArray(index)) throw new Error("Sketch catalog is invalid. Reload the app to retry.");
+        const results = await Promise.allSettled(
+          index.filter(e => e && typeof e.name === "string" && typeof e.project === "string" && /^[\w/-]+\.json$/.test(e.project) && !e.project.includes("..")).map(async (entry) => {
+            const project = await fetchJSON(basePath(entry.project), `Sketch “${entry.name}”`);
+            if (!project || typeof project !== "object") throw new Error(`Sketch “${entry.name}” is invalid.`);
             const source =
               kind === "arduino"
                 ? project.arduino
                 : typeof project.p5 === "string"
                   ? project.p5
-                  : project.p5?.webserial || project.p5?.native || "";
+                  : project.p5?.webserial || project.p5?.native || project.p5?.none || "";
+            if (typeof source !== "string") throw new Error(`Sketch “${entry.name}” has invalid source.`);
             const files = Object.fromEntries(
               Object.entries(project.workbench?.files || {}).filter(([n]) =>
                 kind === "arduino"
@@ -201,6 +203,9 @@ export function installSketchLibraries(wb) {
             };
           }),
         );
+        bundled = results.filter(r => r.status === "fulfilled").map(r => r.value);
+        const failed = results.filter(r => r.status === "rejected");
+        if (failed.length) wb.ctx.notice(`${failed.length} bundled sketch(es) could not load. The other sketches remain available. ${failed[0].reason.message}`);
         render();
       } catch (e) {
         wb.ctx.notice(e.message);

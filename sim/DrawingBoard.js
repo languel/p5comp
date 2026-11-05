@@ -12,14 +12,15 @@ const EDITOR_URL = basePath("vendor/ams-editor/");
 // One big transparent board under everything: marks need a home, and nothing of it is drawn.
 const BOARD = { id: "main", title: "drawing", width: 2400, height: 1600, ground: "transparent", hideBorder: true, hideLabel: true };
 const ACTIONS = [
+  { id: "servo", label: "Mount selection on selected servo", hint: "Attach an SVG copy of the selected artwork to the servo shaft; select a circuit servo first" },
   { id: "png", label: "Save selection as PNG to assets", hint: "The selected marks (the whole drawing when nothing is selected) as a transparent PNG project asset the p5 sketch can load" },
   { id: "svg", label: "Save selection as SVG to assets", hint: "The same as an SVG project asset" },
 ];
 const hasMarks = (doc) => Boolean(doc?.elements?.length);
 
 export class DrawingBoard {
-  constructor({ workspace, stage, canvas, tools, persist, addAsset, assetNames }) {
-    Object.assign(this, { workspace, stage, canvas, persist, addAsset, assetNames });
+  constructor({ workspace, stage, canvas, tools, persist, addAsset, assetNames, mountServo }) {
+    Object.assign(this, { workspace, stage, canvas, persist, addAsset, assetNames, mountServo });
     stage.addEventListener('p5comp:selection-box', event => {
       if (!this.active || this.tab || !this.editor) return;
       this.editor.selectBox?.(event.detail).catch(error=>console.warn('Drawing selection:',error));
@@ -274,6 +275,7 @@ export class DrawingBoard {
   /** A right-click choice: the selected marks (or the whole drawing) become a PNG or SVG project asset. */
   async save(kind, ids) {
     try {
+      if (kind === "servo") { await this.mountServo(ids); return; }
       const r = await this.editor.export(ids?.length ? { format: kind, ids, scale: 1 } : { board: BOARD.id, format: kind, scale: 1, transparent: true });
       const out = r.blob || new Blob([r.text], { type: "image/svg+xml" });   // (the whole drawing's SVG comes back as text)
       const name = this.assetNames(`drawing.${kind}`);
