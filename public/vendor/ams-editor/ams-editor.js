@@ -86,11 +86,37 @@ export function createEditor(container, { src, ns = 'ams-embed', theme = 'host',
     /** { rev, document }: the whole drawing as plain JSON. */
     getDocument: () => request('get-document'),
     /**
-     * { format: png | svg | json | excalidraw, blob | text | document | scene, … } for one board, or with `ids` just those marks as png or svg (a blob, on no paper).
+     * { format: png | bitmap | svg | json | excalidraw, blob | bitmap | text | document | scene, … } for one board, or with `ids` just those marks as png or svg (a blob, on no paper).
      * `draft: true` (png) also draws the stroke still being drawn, which is not in the document until the pointer is released:
      * answer the `draft` event with it for a live view (`change` only follows the release).
+     * `format: 'bitmap'` answers `{ bitmap: ImageBitmap }`, with no encode, for live views (a PNG costs about 16 ms at 512 px, 33 ms at 1024, 60 ms at 2048, on the editor's own thread).
+     * An editor without it answers "Unknown export format": fall back to png.
      */
     export: opts => request('export', opts),
+    /**
+     * The score as signals (see src/score/bus.js). subscribeScore({ names?, hz? }, onFrame, onEvent) → unsubscribe.
+     * onFrame gets { t, playing, features: { 'lead.x': 0.4, 'lead.u': 0.2, … } } at hz (25 by default; names are prefixes).
+     * onEvent gets { seq, t, name, phase: entry|exit|cross|end|arrive|collide, x, y, u, lat, dir, speed, traveler, other, tag }.
+     */
+    subscribeScore: ({ names, hz } = {}, onFrame, onEvent) => {
+      const subId = Math.random().toString(36).slice(2, 10);
+      const handler = e => { if (e.data?.channel === CHANNEL && e.data.subId === subId) { if (e.data.type === 'score-frame') onFrame?.(e.data); else if (e.data.type === 'score-event') onEvent?.(e.data); } };
+      window.addEventListener('message', handler);
+      request('score-subscribe', { names, hz, subId });
+      return () => { window.removeEventListener('message', handler); request('score-unsubscribe', { subId }); };
+    },
+    /** Hide the editor's tools, zoom and transport; shortcuts keep working (Alt+Z does it too, in the editor or on the host page). zen() toggles, zen(true|false) sets; the `zen` event ({ on }) says when it changed. */
+    zen: on => request('zen', on === undefined ? {} : { on }),
+    /** Host clock: init({ clock: 'host' }) first; then transport({ time, playing, rate }) each frame (seconds). */
+    transport: ({ time, playing, rate } = {}) => request('transport', { time, playing, rate }),
+    /** A designated input (an element whose play.in is the name): setScoreInput('place', 0.5) places a traveler. */
+    setScoreInput: (name, value) => request('score-input', { name, value }),
+    /** The whole score as plain JSON (scoreExport), for the standalone runtime (score-runtime.js). */
+    exportScore: () => request('score-export'),
+    /** The current signals: readScore('lead') → { t, features } (prefix names). */
+    readScore: name => request('score-read', { name }),
+    /** Events since a sequence number, newest last: recentEvents(0, 'gate') → { events }. */
+    recentEvents: (since = 0, name = null) => request('score-recent', { since, name }),
     /** Any studio tool call (ams_add, ams_board, ams_view, …); editor.listTools() lists them. */
     callTool: (name, args) => request('call', { name, args }),
     listTools: () => request('list-tools'),
