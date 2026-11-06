@@ -512,7 +512,8 @@ export class TakeTimeline {
       drawingEditor,
       drawingBusy = false,
       pendingSeek = null,
-      closed = false;
+      closed = false,
+      chosenFile = false;
     const queueDrawing = async (t) => {
       pendingSeek = t;
       if (!drawingEditor || drawingBusy) return;
@@ -592,6 +593,16 @@ export class TakeTimeline {
         for (const name of names) el("option", name, files).value = name;
         if (names.includes(selected)) files.value = selected;
       }
+      if (!chosenFile) {
+        const edit = flat
+          .filter((c) => !c.muted && c.track === "code" && c.start <= this.t)
+          .at(-1);
+        const file =
+          edit?.file ||
+          take.meta?.p5comp?.project?.workbench?.arduinoName ||
+          "sketch.ino";
+        if (names.includes(file)) files.value = file;
+      }
       source.textContent = state.files[files.value] || "";
       const active = flat.filter(
         (c) => !c.muted && c.start <= this.t && c.start + c.dur > this.t,
@@ -663,7 +674,10 @@ export class TakeTimeline {
       clock.textContent = `${time(this.t)} / ${time(Number(seek.max))}`;
       queueDrawing(this.t);
     };
-    files.onchange = render;
+    files.onchange = () => {
+      chosenFile = true;
+      render();
+    };
     seek.oninput = () => {
       this.t = Number(seek.value);
       lastT = this.t;
