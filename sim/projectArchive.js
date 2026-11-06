@@ -14,6 +14,8 @@ export function projectArchive(project, libraries = {}) {
   };
   const put = (name, text) => (files[safe(name)] = strToU8(text));
   put("p5comp.json", JSON.stringify(project, null, 2));
+  for (const [name, take] of Object.entries(workbench.takes || {}))
+    put("takes/" + name, JSON.stringify(take, null, 2));
   put("circuit/diagram.json", JSON.stringify(project.diagram, null, 2));
   put(`ino/${folder}/${ino}`, project.arduino || "");
   put(

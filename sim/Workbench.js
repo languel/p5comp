@@ -23,6 +23,7 @@ import {
   setEditorPreferences,
 } from "../shared/editor/editorPreferences.js";
 import { ProjectionWindows } from "./ProjectionWindows.js";
+import { TakeTimeline } from "./TakeTimeline.js";
 import { DrawingBoard } from "./DrawingBoard.js";
 import { createEditor } from "../shared/editor/createEditor.js";
 import { circuitSVG, svgPNG } from "./exportCircuit.js";
@@ -647,6 +648,7 @@ export class Workbench {
         this.scheduleP5();
       },
     });
+    this.timeline = new TakeTimeline(this);
     const setSplit = (ratio) => {
       this.splitRatio = Math.max(0.15, Math.min(0.85, ratio));
       workspace.style.setProperty("--view-first", this.splitRatio + "fr");
@@ -1340,9 +1342,12 @@ export class Workbench {
       splitRatio: this.splitRatio,
       bottomHeight: this.bottomHeight,
       drawing: this.drawing?.snapshot() || undefined,
+      takes: this.takes || {},
     };
   }
   restore(d) {
+    this.takes = d.takes || {};
+    this.timeline?.refresh();
     this.setBottomHeight?.(d.bottomHeight);
     this.selectedReferenceId = null;
     this.selectedNoteId = null;

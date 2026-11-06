@@ -1,0 +1,88 @@
+{
+  "type": "ams-take",
+  "version": 1,
+  "title": "Sensor playback demo",
+  "duration": 3000,
+  "baseline": {
+    "elements": [],
+    "artboard": {
+      "width": 320,
+      "height": 240
+    }
+  },
+  "source": "p5comp-demo",
+  "tracks": [],
+  "meta": {
+    "p5comp": {
+      "state": {
+        "files": {
+          "sketch.js": "function setup(){createCanvas(320,240);}\nfunction draw(){background(245);fill(25,90,180);circle(160,120,20+(signals.pot||0)/5);text(\"pot: \"+(signals.pot||0),10,20);}",
+          "index.html": "<!doctype html><html><head><script src=\"p5.js\"></script></head><body><script src=\"sketch.js\"></script></body></html>"
+        },
+        "diagram": {
+          "parts": [],
+          "connections": []
+        },
+        "signals": {
+          "pot": 0
+        }
+      },
+      "project": {
+        "version": 2,
+        "arduino": "void setup(){}\nvoid loop(){}",
+        "p5": {
+          "none": "function setup(){createCanvas(320,240);}\nfunction draw(){background(245);fill(25,90,180);circle(160,120,20+(signals.pot||0)/5);text(\"pot: \"+(signals.pot||0),10,20);}"
+        },
+        "api": "none",
+        "diagram": {
+          "parts": [],
+          "connections": []
+        },
+        "workbench": {
+          "files": {
+            "index.html": "<!doctype html><html><head><script src=\"p5.js\"></script></head><body><script src=\"sketch.js\"></script></body></html>"
+          },
+          "assets": {},
+          "p5Name": "sketch.js",
+          "arduinoName": "sketch.ino",
+          "settings": {
+            "p5Major": 2
+          }
+        }
+      }
+    },
+    "simulated": true
+  },
+  "clips": [
+    {
+      "id": "t",
+      "track": "title",
+      "text": "Sensor playback",
+      "start": 0,
+      "dur": 1000
+    },
+    {
+      "id": "s1",
+      "track": "signal",
+      "name": "pot",
+      "value": 100,
+      "start": 500,
+      "dur": 1
+    },
+    {
+      "id": "s2",
+      "track": "signal",
+      "name": "pot",
+      "value": 800,
+      "start": 1500,
+      "dur": 1
+    },
+    {
+      "id": "s3",
+      "track": "say",
+      "text": "The recorded sensor expands the circle",
+      "start": 1500,
+      "dur": 1500
+    }
+  ]
+}

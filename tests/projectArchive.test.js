@@ -14,12 +14,19 @@ test("ZIP separates Arduino, p5, assets and circuit and preserves full project m
         "index.html": "<main></main>",
         "style.css": "body{}",
       },
+      takes: {
+        "lesson.ams-take.json": { type: "ams-take", version: 1, clips: [] },
+      },
       assets: { "images/a.png": { src: "data:image/png;base64,AQID" } },
     },
   };
   const files = unzipSync(projectArchive(p));
   assert.equal(strFromU8(files["ino/sketch/sketch.ino"]), p.arduino);
   assert.equal(strFromU8(files["ino/sketch/Sensor.h"]), "class Sensor {};");
+  assert.deepEqual(
+    JSON.parse(strFromU8(files["takes/lesson.ams-take.json"])),
+    p.workbench.takes["lesson.ams-take.json"],
+  );
   assert.ok(files["p5/index.html"]);
   assert.ok(files["p5/style.css"]);
   assert.equal(strFromU8(files["p5/sketch.js"]), p.p5.native);

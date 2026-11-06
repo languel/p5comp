@@ -222,6 +222,7 @@ bridge.addEventListener("runtimeError", (e) => {
 });
 
 function persist() {
+  workbench?.timeline?.observe();
   savedP5[api] = sourceValue(p5Editor);
   try {
     localStorage.setItem(key, JSON.stringify(project()));
@@ -266,6 +267,7 @@ function updateConnection() {
     !serial.connected;
 }
 function runP5() {
+  workbench?.timeline?.action("runP5", "Run p5");
   if (!agentMuteActions)
     agentSurface?.action("runtime", { action: "p5_start" });
   updateConnection();
@@ -285,6 +287,7 @@ function receive(bytes) {
   for (const raw of chunks) {
     const line = raw.trim();
     if (!line) continue;
+    workbench?.timeline?.serial(line, "rx");
     log("← " + line);
     $("packet").textContent = line;
     lastPacket = line;
@@ -301,6 +304,7 @@ async function writeBytes(bytes) {
     }
     if (mode === "simulation" && !agentMuteActions) agentSurface?.action("serial", { action: "write", text: new TextDecoder().decode(bytes) });
     if (bytes.length) serialActivity.pulse(serialBoard(), "RX");
+    workbench?.timeline?.serial(new TextDecoder().decode(bytes).trim(), "tx");
     log("→ " + new TextDecoder().decode(bytes).trim());
   } catch (e) {
     notice(e.message);
@@ -308,6 +312,7 @@ async function writeBytes(bytes) {
 }
 
 async function getFirmware() {
+  workbench?.timeline?.action("compile", "Compile Arduino");
   const source = sourceValue(arduinoEditor);
   const files = workbench?.arduinoFiles() || {};
   const board = boardKind(diagram.parts.find((p) => isAVRBoard(p.type))?.type);
@@ -347,13 +352,14 @@ async function getFirmware() {
     progress:message=>{status(message);if(message !== lastProgress){log(message);lastProgress=message;}},
   });
   } catch (error) {
+    workbench?.timeline?.action("compile-error", error.message);
     status(error.name === "AbortError" ? "Compilation cancelled" : "Compilation failed");
     throw error;
   } finally { if(pendingCompiler===controller)pendingCompiler=null; }
   if(sourceValue(arduinoEditor)!==source || JSON.stringify(workbench?.arduinoFiles() || {})!==JSON.stringify(files) || boardKind(diagram.parts.find(p=>isAVRBoard(p.type))?.type)!==board)
     throw Error("The sketch or board changed during compilation. Compile the current project again.");
   log(result.stdout || "");
-  if (!result.ok) throw new Error(result.stderr || "Compilation failed.");
+  if (!result.ok) { workbench?.timeline?.action("compile-error", result.stderr || "Compilation failed."); throw new Error(result.stderr || "Compilation failed."); }
   if (result.stderr) log(result.stderr);
   if (/warning:/i.test((result.stderr || "") + (result.stdout || "")))
     workbench?.editorStatus(
@@ -525,6 +531,7 @@ function startWorker(hex) {
   if(activeBoard)activeBoard.ledPower=true;
 }
 async function runArduino() {
+  workbench?.timeline?.action("runArduino", "Run Arduino");
   if (compiling) return;
   if (!agentMuteActions) agentSurface?.action("runtime", { action: "start" });
   compiling = true;
@@ -1472,6 +1479,7 @@ $("save").onclick = () => {
 };
 $("open").onclick = () => $("projectFile").click();
 function openProject(d) {
+  if (workbench?.timeline?.recorder.take) { notice("Stop and save the lesson take before opening another project."); return; }
   validateProject(d);
   inputSimulator.close();
   const candidate = d.diagram || d;
@@ -1582,6 +1590,7 @@ serial.addEventListener("disconnect", () => {
 serial.addEventListener("error", (e) => notice(e.detail.message));
 let usbBusy = false;
 async function connectUSB(port = null) {
+  workbench?.timeline?.action("connectUSB", "Connect USB");
   stop();
   await serial.connect({ baudRate: Number($("monitorBaud").value), port });
 }
@@ -1619,6 +1628,7 @@ $("usb").onclick = () => {
   usbMenu.showPopover();
 };
 async function uploadFirmware() {
+  workbench?.timeline?.action("uploadFirmware", "Upload firmware");
   if (usbBusy) return;
   usbBusy = true;
   $("upload").disabled = true;
