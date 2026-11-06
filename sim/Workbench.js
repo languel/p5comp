@@ -963,6 +963,26 @@ export class Workbench {
           ),
         ) + "px";
     });
+    const exampleSearch = node("input", "example-search");
+    exampleSearch.type = "search";
+    exampleSearch.placeholder = "Search examples…";
+    exampleSearch.setAttribute("aria-label", "Search examples");
+    exampleSearch.autocomplete = "off";
+    this.exampleSearch = exampleSearch;
+    this.exampleSearchEmpty = node("p", "example-search-empty", "No matching examples.");
+    this.exampleSearchEmpty.setAttribute("role", "status");
+    this.exampleSearchEmpty.hidden = true;
+    $("exampleLibrary").prepend(exampleSearch, this.exampleSearchEmpty);
+    exampleSearch.oninput = () => this.filterExamples();
+    exampleSearch.onkeydown = (event) => {
+      // Keep typing shortcuts inside the search, and Escape clears without closing File.
+      event.stopPropagation();
+      if (event.key === "Escape") {
+        event.preventDefault();
+        exampleSearch.value = "";
+        this.filterExamples();
+      }
+    };
     this.renderExamples();
     const gettingStartedLesson = node("button", "repository-example", "Guided lesson · signals to feedback");
     gettingStartedLesson.title = "Load the lesson's starting project; save your current work first";
@@ -994,6 +1014,7 @@ export class Workbench {
           });
         this.exampleFolder(entry.folder || "Other").append(button);
       }
+      this.filterExamples();
     });
   }
   action(fn) {
@@ -1730,6 +1751,30 @@ export class Workbench {
       this.ctx.notice("Properties applied.");
     });
   }
+  filterExamples() {
+    if (!this.exampleSearch) return;
+    const terms = this.exampleSearch.value.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+    const searching = terms.length > 0;
+    let matches = 0;
+    for (const folder of $("exampleLibrary").querySelectorAll(":scope > .example-folder")) {
+      if (searching && !this.exampleSearchOpen?.has(folder)) {
+        this.exampleSearchOpen ||= new Map();
+        this.exampleSearchOpen.set(folder, folder.open);
+      }
+      let visible = 0;
+      for (const item of folder.querySelectorAll(":scope > section > button")) {
+        const text = `${folder.dataset.folder || ""} ${item.textContent}`.toLocaleLowerCase();
+        item.hidden = searching && !terms.every(term => text.includes(term));
+        if (!item.hidden) visible++;
+      }
+      folder.hidden = searching && visible === 0;
+      if (searching) folder.open = visible > 0;
+      else if (this.exampleSearchOpen?.has(folder)) folder.open = this.exampleSearchOpen.get(folder);
+      matches += visible;
+    }
+    if (!searching) this.exampleSearchOpen = null;
+    this.exampleSearchEmpty.hidden = !searching || matches > 0;
+  }
   exampleFolder(name) {
     const root = $("exampleLibrary");
     let folder = [...root.querySelectorAll(":scope > .example-folder")].find(
@@ -1770,6 +1815,7 @@ export class Workbench {
       b.onclick = () => this.action(() => this.ctx.openProject(p));
       this.exampleFolder("My examples").append(b);
     }
+    this.filterExamples();
   }
   dock(mode) {
     if (mode === "window") {

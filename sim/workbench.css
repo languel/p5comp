@@ -2025,3 +2025,27 @@ body.resizing-bottom, body.resizing-bottom * { cursor:row-resize !important; use
 .servo-hardware-reference th,.servo-hardware-reference td { padding:3px 5px; text-align:left; vertical-align:top; border-bottom:1px solid var(--ui-border); }
 .servo-hardware-reference th { font-weight:500; }
 .servo-hardware-reference p { color:var(--ui-muted); }
+
+/* Search the full examples catalog while preserving the user's folder state. */
+#exampleLibrary .example-search {
+  box-sizing: border-box;
+  width: calc(100% - 8px);
+  min-width: 0;
+  margin: 6px 4px 8px;
+  padding: 7px 9px;
+  border: 1px solid var(--ui-line);
+  border-radius: 5px;
+  background: var(--ui-input, var(--ui-panel));
+  color: var(--ui-text);
+  font: inherit;
+}
+#exampleLibrary .example-search:focus-visible {
+  outline: 1px solid var(--ui-quiet);
+  outline-offset: 1px;
+}
+#exampleLibrary .example-search-empty {
+  margin: 8px;
+  color: var(--ui-quiet);
+  font-size: 12px;
+}
+#exampleLibrary [hidden] { display: none !important; }
