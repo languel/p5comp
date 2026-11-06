@@ -10,6 +10,7 @@ const paths = {
   serialLatest: "M2 8h19M16 3l5 5-5 5M22 16H3M8 11l-5 5 5 5",
   serialFollow: "M6 2v15M12 2v15M18 2v15M2 15l10 7 10-7",
   simulation: "M2 12h4l3-8 6 16 3-8h4",
+  timeline: "M2 5h20M6 2v6M12 2v6M18 2v6M3 11h8v4H3ZM13 17h8v4h-8Z",
   windowShare: "M2 2h20v20H2ZM2 7h20M9 17l8-8M11 9h6v6",
   mirror: "M12 2v20M8 6l-6 6 6 6ZM16 6l6 6-6 6Z",
   camera: "M2 6h5l2-3h6l2 3h5v15H2ZM12 9a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Z",
@@ -155,6 +156,7 @@ export function initializeIconSystem(root = document) {
             simulation: "simulation",
             serial: "comms",
             console: "terminal",
+            timeline: "timeline",
           }[control.dataset.bottom];
           const label = control.getAttribute("aria-label") || text;
           control.setAttribute("aria-label", label);

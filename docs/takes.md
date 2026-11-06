@@ -1,6 +1,6 @@
 # Capture a lesson and play it back
 
-Open **◷ Lesson timeline** in the unified p5comp workbench (`/sim/`). Give the lesson a title and press **● Record lesson**. Edit Arduino or p5 code, draw, change the circuit, run or upload a sketch, and use serial hardware or the simulator as usual. Type a caption and press Enter to add it while recording. Press **■ Stop and save take** to save the lesson with the project.
+Select the **Lesson timeline** tab alongside Simulation, Serial and Console in the bottom tools bar in the unified p5comp workbench (`/sim/`). Give the lesson a title and press **● Record lesson**. Edit Arduino or p5 code, draw, change the circuit, run or upload a sketch, and use serial hardware or the simulator as usual. Type a caption and press Enter to add it while recording. Press **■ Stop and save take** to save the lesson with the project.
 
 The lanes show the recorded clip kinds. Click a clip or **▶ Review take** to review it in a separate, view-only window. Play/pause, seek, choose a source file, and change speed (½–2×). Captions appear above the code, recorded circuit schematic, AMS drawing replay, and p5 output. Action targets pulse as their clips pass. Playing starts an isolated p5 sketch preview; its recorded named sensor values and received serial lines drive the sketch without an Arduino. Restart preview explicitly if necessary. The preview's output callbacks have no connection to USB or the simulator.
 

@@ -31,16 +31,8 @@ export class TakeTimeline {
     this.wb = wb;
     this.recorder = new TakeRecorder();
     this.t = 0;
-    this.panel = el("section");
-    this.panel.className = "take-panel";
-    this.panel.hidden = true;
-    document.body.append(this.panel);
-    this.toggle = button(
-      document.querySelector(".bar"),
-      "◷",
-      "Lesson timeline",
-      () => (this.panel.hidden = !this.panel.hidden),
-    );
+    this.panel = wb.bottom.querySelector('[data-tool="timeline"]');
+    this.panel.classList.add("take-panel");
     this.header = el("div", "", this.panel);
     this.header.className = "take-tools";
     this.title = el("input", "", this.header);
@@ -76,7 +68,6 @@ export class TakeTimeline {
         this.file.value = "";
       });
     button(this.header, "↑", "Import take JSON", () => this.file.click());
-    button(this.header, "×", "Hide timeline", () => (this.panel.hidden = true));
     this.captionInput = el("input", "", this.panel);
     this.captionInput.placeholder =
       "Caption / narration text — Enter to add while recording";
@@ -123,7 +114,12 @@ export class TakeTimeline {
     document.addEventListener(
       "click",
       (e) => {
-        if (!this.recorder.take || this.panel.contains(e.target)) return;
+        if (
+          !this.recorder.take ||
+          this.panel.contains(e.target) ||
+          e.target.closest('[data-bottom="timeline"]')
+        )
+          return;
         const b = e.target.closest("button,[data-main-view],[data-tab]");
         if (!b) return;
         const target = b.id || b.dataset.mainView || b.dataset.tab;

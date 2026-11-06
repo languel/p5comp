@@ -380,7 +380,7 @@ export class Workbench {
     this.bottom = node(
       "section",
       "wb-bottom",
-      '<nav class="wb-tabs" role="tablist" aria-label="Tools"><button role="tab" data-bottom="simulation">Simulation</button><button role="tab" data-bottom="serial">Serial</button><button role="tab" data-bottom="console">Console</button><button id="collapseBottom" title="Collapse tools">⌄</button></nav><div data-tool="simulation"></div><div data-tool="serial"></div><div data-tool="console"><pre id="buildConsole"></pre><pre id="p5Console"></pre></div>',
+      '<nav class="wb-tabs" role="tablist" aria-label="Tools"><button role="tab" data-bottom="simulation">Simulation</button><button role="tab" data-bottom="serial">Serial</button><button role="tab" data-bottom="console">Console</button><button role="tab" id="lessonTimelineTab" data-bottom="timeline" aria-controls="lessonTimeline">Lesson timeline</button><button id="collapseBottom" title="Collapse tools">⌄</button></nav><div data-tool="simulation"></div><div data-tool="serial"></div><div data-tool="console"><pre id="buildConsole"></pre><pre id="p5Console"></pre></div><div id="lessonTimeline" data-tool="timeline" role="tabpanel" aria-labelledby="lessonTimelineTab"></div>',
     );
     main.append(this.bottom);
     const bottomResize = node('div','bottom-resize');

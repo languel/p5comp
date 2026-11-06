@@ -1,19 +1,9 @@
 .take-panel {
-  position: fixed;
-  bottom: 12px;
-  left: 12px;
-  right: 12px;
-  max-height: 42vh;
+  min-height: 0;
   overflow: auto;
-  z-index: 120;
-  background: var(--panel, #f4f3ef);
-  color: var(--text, #252421);
-  border: 1px solid #8886;
-  border-radius: 10px;
-  padding: 10px;
-  box-shadow: 0 6px 30px #0003;
-  font: 12px system-ui;
-  resize: vertical;
+  background: var(--ui-panel);
+  color: var(--ui-text);
+  font: inherit;
 }
 .take-panel[hidden] {
   display: none;
@@ -57,7 +47,7 @@
 .take-strip {
   position: relative;
   height: 18px;
-  background: #8882;
+  background: var(--ui-hover);
   border-radius: 3px;
 }
 .take-strip button {
@@ -91,10 +81,10 @@
   height: 90vh;
   max-height: 94vh;
   padding: 14px;
-  border: 1px solid #8886;
+  border: 1px solid var(--ui-line);
   border-radius: 12px;
-  background: var(--panel, #f4f3ef);
-  color: var(--text, #252421);
+  background: var(--ui-panel);
+  color: var(--ui-text);
 }
 .take-review::backdrop {
   background: #0008;
@@ -107,7 +97,7 @@
 }
 .take-cue {
   min-height: 1.4em;
-  color: #986a26;
+  color: var(--ui-warning);
   margin: 4px;
 }
 .take-preview-grid {
@@ -119,7 +109,7 @@
 .take-preview-grid > section {
   min-width: 0;
   overflow: auto;
-  border: 1px solid #8884;
+  border: 1px solid var(--ui-line);
   border-radius: 6px;
   padding: 6px;
 }
@@ -161,7 +151,7 @@
   width: 100%;
   height: calc(100% - 40px);
   border: 0;
-  background: white;
+  background: var(--ui-page);
 }
 @media (max-width: 800px) {
   .take-preview-grid {
@@ -184,20 +174,44 @@
   font: 11px system-ui;
 }
 .take-targets span {
-  border: 1px solid #8885;
+  border: 1px solid var(--ui-line);
   padding: 3px 7px;
   border-radius: 4px;
   white-space: nowrap;
 }
 .take-targets .active {
-  background: #e9bb58;
-  color: #252421;
-  box-shadow: 0 0 0 2px #e9bb5855;
+  background: var(--ui-accent-fill);
+  color: var(--ui-text);
+  box-shadow: 0 0 0 2px var(--ui-line);
 }
 .take-targets .active:before {
   content: "◉ ";
-  color: #9a4e16;
+  color: var(--ui-warning);
 }
 .take-preview-grid {
   height: calc(100% - 160px);
+}
+
+.take-panel > p {
+  color: var(--ui-quiet);
+}
+:is(.take-panel, .take-review)
+  :is(input:not([type="range"]), select, button:not([data-kind])) {
+  background-color: var(--ui-panel);
+  color: var(--ui-text);
+  border-color: var(--ui-line);
+  font: inherit;
+}
+:is(.take-panel, .take-review) button:not([data-kind]):hover {
+  background-color: var(--ui-hover);
+}
+:is(.take-panel, .take-review) :is(input, select, button):focus-visible {
+  outline: 1px solid var(--ui-focus);
+  outline-offset: 2px;
+}
+:is(.take-panel, .take-review) input::placeholder {
+  color: var(--ui-quiet);
+}
+.take-panel .take-tools [data-recording] {
+  color: #dc3b40;
 }

@@ -46,7 +46,7 @@ export function renderTakeCircuit(diagram) {
           x: (a.x + b.x) / 2 + 65,
           y: (a.y + b.y) / 2 + 20,
           "font-size": 9,
-          fill: "#555",
+          fill: "var(--ui-quiet)",
         },
         `${c[0]} → ${c[1]}`,
       ),
@@ -61,21 +61,21 @@ export function renderTakeCircuit(diagram) {
         width: 130,
         height: 48,
         rx: 5,
-        fill: "#e5e9ec",
-        stroke: "#678",
+        fill: "var(--ui-hover)",
+        stroke: "var(--ui-line)",
       }),
     );
     svg.append(
       node(
         "text",
-        { x: at.x + 6, y: at.y + 18, "font-size": 12, fill: "#202830" },
+        { x: at.x + 6, y: at.y + 18, "font-size": 12, fill: "var(--ui-text)" },
         p.label || p.id,
       ),
     );
     svg.append(
       node(
         "text",
-        { x: at.x + 6, y: at.y + 35, "font-size": 9, fill: "#4b5965" },
+        { x: at.x + 6, y: at.y + 35, "font-size": 9, fill: "var(--ui-quiet)" },
         p.type.replace(/^(wokwi|p5comp)-/, ""),
       ),
     );
