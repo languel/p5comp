@@ -52,6 +52,32 @@ export class TakeTimeline {
       this.guard(() => this.openReview()),
     );
     button(this.header, "↓", "Export take JSON", () => this.export());
+    this.htmlExport = button(
+      this.header,
+      "HTML ↓",
+      "Export playable HTML",
+      () => this.guard(() => this.exportPortable("html")),
+    );
+    this.mp4Export = button(this.header, "MP4 ↓", "Export MP4 in browser", () =>
+      this.guard(() => this.exportPortable("mp4")),
+    );
+    this.cancelExport = button(this.header, "Cancel", "Cancel export", () =>
+      this.exportController?.abort(),
+    );
+    this.cancelExport.hidden = true;
+    this.wb.ctx.bridge.addEventListener("mirrorFrame", (event) => {
+      if (
+        !this.recorder.take ||
+        performance.now() - (this.lastFrameAt || 0) < 200 ||
+        event.detail.image === this.lastFrameSource
+      )
+        return;
+      const src = event.detail.image;
+      if (!/^data:image\/(png|jpeg|webp);base64,/.test(src)) return;
+      this.lastFrameAt = performance.now();
+      this.lastFrameSource = src;
+      this.recorder.push({ track: "frame", channel: "p5", src, dur: 200 });
+    });
     this.file = el("input", "", this.panel);
     this.file.type = "file";
     this.file.accept = ".json,.ams-take.json";
@@ -206,6 +232,10 @@ export class TakeTimeline {
         this.recorder.take = null;
         throw e;
       }
+      this.mirrorWasOn = this.wb.ctx.bridge.mirroring;
+      this.lastFrameAt = 0;
+      this.lastFrameSource = null;
+      this.wb.ctx.bridge.mirror(true);
       this.record.textContent = "■";
       this.record.title = "Stop and save take";
       this.record.setAttribute("aria-label", "Stop and save take");
@@ -226,6 +256,7 @@ export class TakeTimeline {
       this.observe();
       const { take: drawing } = await this.wb.drawing.editor.recordStop();
       this.save(this.recorder.stop(drawing, this.drawOffset));
+      if (!this.mirrorWasOn) this.wb.ctx.bridge.mirror(false);
       this.record.textContent = "●";
       this.record.title = "Record lesson";
       this.record.setAttribute("aria-label", "Record lesson");
@@ -259,6 +290,9 @@ export class TakeTimeline {
   }
   render() {
     this.review.disabled = !this.take || !!this.recorder.take;
+    this.htmlExport.disabled = this.mp4Export.disabled =
+      !this.take || !!this.recorder.take || !!this.exportController;
+    this.record.disabled = !!this.busy || !!this.exportController;
     this.file.disabled = !!this.recorder.take;
     this.select.disabled = !!this.recorder.take;
     this.lanes.replaceChildren();
@@ -305,10 +339,84 @@ export class TakeTimeline {
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
+  async exportPortable(format) {
+    if (!this.take || this.recorder.take || this.exportController) return;
+    const take = structuredClone(this.take);
+    const controller = (this.exportController = new AbortController());
+    this.cancelExport.hidden = false;
+    this.render();
+    try {
+      const drawingResponse = await fetch(
+        basePath("vendor/ams-editor/take-renderer.js"),
+        { signal: controller.signal },
+      );
+      if (!drawingResponse.ok)
+        throw new Error(
+          "Drawing export runtime is missing. Run npm run vendor:ams-take.",
+        );
+      const drawingScript = await drawingResponse.text();
+      let blob;
+      if (format === "html") {
+        const { takeToHTML } = await import("../shared/takes/exportHTML.js");
+        blob = new Blob([takeToHTML(take, { drawingScript })], {
+          type: "text/html",
+        });
+      } else {
+        // The same renderer is embedded into HTML; the FFmpeg runtime is only loaded for MP4.
+        const runtimeURL = URL.createObjectURL(
+          new Blob([drawingScript + "\nexport default AMSDrawingRenderer;"], {
+            type: "text/javascript",
+          }),
+        );
+        let drawingRenderer;
+        try {
+          drawingRenderer = (await import(/* @vite-ignore */ runtimeURL))
+            .default;
+        } finally {
+          URL.revokeObjectURL(runtimeURL);
+        }
+        const { takeToMP4 } = await import("../shared/takes/exportMP4.js");
+        blob = await takeToMP4(take, {
+          drawingRenderer,
+          signal: controller.signal,
+          onProgress: (message) => (this.status.textContent = message),
+        });
+      }
+      controller.signal.throwIfAborted();
+      const name =
+        String(take.title || "lesson")
+          .replace(/[^a-z0-9_-]+/gi, "-")
+          .slice(0, 80) +
+        "." +
+        format;
+      const url = URL.createObjectURL(blob),
+        a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      this.status.textContent = `Exported ${format.toUpperCase()} · ${(blob.size / 1024 / 1024).toFixed(1)} MB`;
+    } catch (error) {
+      if (controller.signal.aborted)
+        this.status.textContent = "Export cancelled.";
+      else throw error;
+    } finally {
+      this.exportController = null;
+      this.cancelExport.hidden = true;
+      this.render();
+    }
+  }
   async openReview() {
     if (!this.take || this.recorder.take || this.dialog) return;
     const take = validateTake(this.take),
-      flat = flatten(take);
+      flat = flatten(take),
+      recordedFrames = flat.filter(
+        (c) =>
+          !c.muted &&
+          c.track === "frame" &&
+          c.channel === "p5" &&
+          /^data:image\/(png|jpeg|webp);base64,/.test(c.src),
+      );
     const dialog = (this.dialog = el("dialog"));
     dialog.className = "take-review";
     document.body.append(dialog);
@@ -320,7 +428,8 @@ export class TakeTimeline {
       this.playing = !this.playing;
       play.textContent = this.playing ? "Ⅱ" : "▶";
       this.lastFrame = performance.now();
-      if (this.playing && take.meta?.p5comp) this.guard(() => runPreview());
+      if (this.playing && take.meta?.p5comp && !recordedFrames.length)
+        this.guard(() => runPreview());
     });
     const seek = el("input", "", bar);
     seek.type = "range";
@@ -378,7 +487,18 @@ export class TakeTimeline {
       "Run recorded p5 in isolated preview",
       () => this.guard(() => runPreview()),
     );
+    const captured = el("img", "", output);
+    captured.className = "take-recorded-frame";
+    captured.alt = "Recorded p5 output";
+    captured.hidden = true;
+    const outputHint = el(
+      "p",
+      "The p5 sketch starts later in this lesson.",
+      output,
+    );
+    outputHint.hidden = !recordedFrames.length;
     const frame = el("iframe", "", output);
+    frame.hidden = !!recordedFrames.length;
     frame.title = "Recorded p5 preview";
     frame.setAttribute("sandbox", "allow-scripts");
     const preview = new P5Bridge(frame, {
@@ -410,6 +530,9 @@ export class TakeTimeline {
       }
     };
     const runPreview = async () => {
+      captured.hidden = true;
+      outputHint.hidden = true;
+      preview.frame.hidden = false;
       const state = stateAt(take, this.t),
         project = take.meta?.p5comp?.project;
       if (!project) return;
@@ -495,6 +618,13 @@ export class TakeTimeline {
       if (diagram !== lastCircuit) {
         lastCircuit = diagram;
         circuit.replaceChildren(renderTakeCircuit(state.diagram));
+      }
+      if (recordedFrames.length && !preview.source) {
+        const shot = recordedFrames.filter((c) => c.start <= this.t).at(-1);
+        captured.hidden = !shot;
+        outputHint.hidden = !!shot;
+        if (shot && captured.getAttribute("src") !== shot.src)
+          captured.src = shot.src;
       }
       if (preview.source) {
         preview.updateState(state.signals, true, "simulation");

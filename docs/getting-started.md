@@ -3,6 +3,23 @@
 A 15–20 minute lesson using **HelloLED**, **Four signals**, and **Field / feedback**.
 Use the simulator first; no board, wiring or installation is required.
 
+## LED from scratch · timeline lesson
+
+Open **File → Examples → Getting started → LED from scratch · recorded lesson**.
+The lesson starts with an empty circuit and blank Arduino/p5 source, adds an Uno,
+a 330 Ω resistor and an LED, wires pin 13 → resistor → LED → GND, then writes
+both sketches incrementally. Arduino sends `1` and `0`; p5 reads each serial
+line and uses it to color a circle. The final run uses the actual browser compiler
+and AVR simulator. It does not connect to USB.
+
+Press Play in the review window, or seek through the build. The final project is
+available for trying the code yourself. In the **Lesson timeline** bottom tab,
+use **HTML ↓** for a self-contained playable lesson or **MP4 ↓** for browser-side
+FFmpeg export. The included take also has downloadable HTML and MP4 siblings
+under `public/lessons/led-from-scratch.*`. Captions are text; there is no voiceover.
+
+The older three-example process recording below is a separate lesson.
+
 ## Play the guided recording
 
 Save your current project first: loading a replay replaces the workspace.

@@ -35,7 +35,7 @@ One `performance.now()` clock records host clips and offsets the drawing recorde
 
 ## Limits
 
-- This is a capture/review transport with clip lanes, not a full clip rearrangement or video export editor. Narration is text; microphone audio is not captured.
+- This is a capture/review transport with clip lanes, not a full clip rearrangement editor. Narration is text; microphone audio is not captured.
 - Review shows a schematic of recorded circuit parts and named connections, not the live animated electronics view. Circuit runtime, firmware and hardware state are not rerun.
 - Code is shown at its recorded edit times. A p5 Run cue restarts the preview from the current recorded code; a seek reconstructs code/signals and restarts the preview on release. Arbitrary p5 animation/random state is not frame-exact.
 - The mock hardware path supports named numeric signals and newline serial text. Binary Firmata streams, incomplete lines, USB timing and device-specific protocols are not reproduced.
@@ -45,3 +45,29 @@ One `performance.now()` clock records host clips and offsets the drawing recorde
 ## AMS change required
 
 `~/dev/artistmodelstudio/vite.embed.config.js`: remove `recorder` and `takePlayer` from the lean build's stub aliases. The handoff's take messages were present, but the lean embed returned a proxy function for `recorder.take`, causing `record-stop` to fail with a structured-clone error. Enabling the actual modules makes the existing bridge/client calls work. No bridge or client protocol fork is needed. The vendor VERSION records the source commit; browser checks exercise start/stop and drawing replay in the lean build.
+
+## Portable HTML and browser MP4
+
+Use **HTML ↓** to download one self-contained, playable lesson file. It embeds the take, its recorded p5 frames, the presentation player, and the AMS drawing renderer. Open it directly from disk; playback, seeking, speed selection and JSON download work without p5comp or a network connection. Playback shows the recorded code, circuit construction, captions and p5 output; it does not execute the learner's sketches.
+
+Use **MP4 ↓** for a 1280×720, 15 fps H.264 video. Frames are rendered from the same player used by HTML, then encoded by **FFmpeg WASM in a browser worker**. There is no server upload or native FFmpeg dependency. The single-thread core is bundled with the app and loaded only for MP4 export (about 32 MB). Progress and Cancel are shown in the timeline. Rendering/encoding speed and memory use depend on lesson length and the browser; the exported duration does not depend on real-time screen capture. Captions are burned in; these exports have no audio track.
+
+In review, takes with captured frames show those frames in sync with the playhead; **Preview sketch** is still available to rerun the source explicitly.
+
+New takes capture p5 canvas frames while recording (up to 5 fps, unchanged frames omitted) using the existing mirror bridge. A `frame` clip contains `{ channel: 'p5', src: 'data:image/png;base64,…' }`. These clips preserve actual sketch output even when the live sketch is stopped. Existing takes without preview frames still export their code, circuits, captions and AMS drawings. External drawing images must be embedded/CORS-accessible to permit video pixel capture.
+
+The HTML source uses stable raw player/core functions so it also works from a minified production build. AMS drawing algorithms are bundled from the owning AMS sources by `npm run vendor:ams-take` (`AMS_DIR` overrides `~/dev/artistmodelstudio`); they are not copied into the host adapter. `npm run vendor:ams` rebuilds this export runtime too. `@ffmpeg/core` is GPL-2.0-or-later; its license and source links are in the installed package and the exported app's third-party documentation.
+
+
+## Included LED lesson and recording recipe
+
+The captioned **LED from scratch** lesson is recorded through the real browser workbench in an isolated workspace, not assembled from the existing HelloLED example. Its baseline has no circuit parts and empty `sketch.ino`/`sketch.js`. Six circuit edits add and wire the Uno, 330 Ω resistor and LED. Eleven source edits build both programs. The final sketch is compiled by the browser AVR compiler and produces alternating actual simulator UART `0`/`1` lines. Twenty-eight p5 frames preserve the resulting circle states. The packaged presentation is about 67 seconds; preview startup waiting is cut and captions hold until the next caption. Edit details are retained in `meta.lesson.edit`.
+
+- `public/lessons/led-from-scratch.ams-take.json`: editable take.
+- `public/lessons/led-from-scratch.html`: self-contained playback, exported by the UI.
+- `public/lessons/led-from-scratch.mp4`: H.264, 1280×720, 15 fps, exported by browser FFmpeg.
+- `public/examples/led-from-scratch.json`: final project with the take, available in File → Examples → Getting started.
+- `scripts/record-led-lesson.mjs`: repeatable browser authoring recipe (`recordLEDLesson(page)` with an owned ego-browser Page).
+- `node scripts/package-led-lesson.mjs <recording-result.json>` packages the recipe's `{ project, take }` result and verifies the blank baseline, final sources/circuit, serial states and preview frames.
+
+The recording uses the simulator and has not been uploaded to physical hardware.

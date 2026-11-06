@@ -189,7 +189,7 @@ const arduinoEditor = createEditor({
 });
 const p5Editor = createEditor({
   parent: $("p5Editor"),
-  value: savedP5[api] || commsExample(api, {parser: firmataParserSource, client: firmataClientSource}),
+  value: savedP5[api] ?? commsExample(api, {parser: firmataParserSource, client: firmataClientSource}),
   language: "javascript",
   onChange: () => {
     persist();
@@ -1499,7 +1499,7 @@ function openProject(d) {
     $("comms").value = api;
     setCode(
       p5Editor,
-      savedP5[api] || commsExample(api, {parser: firmataParserSource, client: firmataClientSource}),
+      savedP5[api] ?? commsExample(api, {parser: firmataParserSource, client: firmataClientSource}),
     );
   }
   artifact = d.artifact || null;

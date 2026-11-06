@@ -12,14 +12,15 @@
     "test": "node --test",
     "mcp": "node server/mcp.js",
     "verify:examples": "node scripts/verify-examples.mjs",
-    "vendor:ams": "sh -c 'cd \"${AMS_DIR:-$HOME/dev/artistmodelstudio}\" && if [ -n \"$AMS_FULL\" ]; then npm run build:embed:full && scripts/sync-embed.sh \"$OLDPWD/public/vendor/ams-editor\" full; else npm run build:embed && scripts/sync-embed.sh \"$OLDPWD/public/vendor/ams-editor\"; fi'",
-    "vendor:poliplan": "sh -c 'cd \"${AMS_DIR:-$HOME/dev/artistmodelstudio}\" && if [ -n \"$AMS_FULL\" ]; then npm run build:embed:full && scripts/sync-embed.sh \"$OLDPWD/public/vendor/ams-editor\" full; else npm run build:embed && scripts/sync-embed.sh \"$OLDPWD/public/vendor/ams-editor\"; fi'",
+    "vendor:ams": "sh -c 'cd \"${AMS_DIR:-$HOME/dev/artistmodelstudio}\" && if [ -n \"$AMS_FULL\" ]; then npm run build:embed:full && scripts/sync-embed.sh \"$OLDPWD/public/vendor/ams-editor\" full; else npm run build:embed && scripts/sync-embed.sh \"$OLDPWD/public/vendor/ams-editor\"; fi' && npm run vendor:ams-take",
+    "vendor:poliplan": "npm run vendor:ams",
     "verify:drawing": "node scripts/verify-drawing.mjs",
     "setup:arduino": "node scripts/setup-arduino.mjs",
     "verify:arduino": "node scripts/verify-arduino.mjs",
     "build:compiler-assets": "node scripts/build-browser-compiler-assets.mjs",
     "verify:browser-compiler": "node scripts/verify-browser-compiler.mjs",
-    "verify:compiler-assets": "node scripts/verify-compiler-assets.mjs"
+    "verify:compiler-assets": "node scripts/verify-compiler-assets.mjs",
+    "vendor:ams-take": "node scripts/build-take-renderer.mjs"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.18.6",
@@ -33,6 +34,8 @@
     "@codemirror/state": "^6.5.2",
     "@codemirror/theme-one-dark": "^6.1.3",
     "@codemirror/view": "^6.36.5",
+    "@ffmpeg/core": "^0.12.10",
+    "@ffmpeg/ffmpeg": "^0.12.15",
     "@gohai/p5.webserial": "^1.1.2",
     "@modelcontextprotocol/sdk": "^1.32.1",
     "@wasm-fmt/clang-format": "^23.1.1",
@@ -55,6 +58,7 @@
   "devDependencies": {
     "acorn": "^8.19.0",
     "concurrently": "^9.1.2",
+    "esbuild": "^0.25.12",
     "vite": "^6.2.6"
   }
 }

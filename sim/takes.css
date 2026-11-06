@@ -215,3 +215,5 @@
 .take-panel .take-tools [data-recording] {
   color: #dc3b40;
 }
+.take-recorded-frame { display:block; width:100%; height:calc(100% - 40px); object-fit:contain; }
+.take-recorded-frame[hidden], .take-review iframe[hidden] { display:none; }

@@ -1011,6 +1011,7 @@ export class Workbench {
           this.action(async () => {
             const project = await fetchJSON(basePath(entry.project), `Example “${entry.name}”`);
             ctx.openProject(project);
+            if (entry.lesson) { this.bottomTab("timeline"); await this.timeline.openReview(); }
           });
         this.exampleFolder(entry.folder || "Other").append(button);
       }

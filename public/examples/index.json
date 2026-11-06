@@ -1,5 +1,11 @@
 [
   {
+    "name": "LED from scratch · recorded lesson",
+    "project": "examples/led-from-scratch.json",
+    "folder": "Getting started",
+    "lesson": true
+  },
+  {
     "name": "HelloLED",
     "project": "examples/one-led.json",
     "folder": "Getting started"
