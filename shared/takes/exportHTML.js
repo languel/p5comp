@@ -1,6 +1,6 @@
 import coreSource from "./take.js?raw";
 import playerSource from "./lessonPlayer.js?raw";
-import { validateTake } from "./take.js";
+import { validateTake, flatten } from "./take.js";
 const esc = (value) =>
   String(value).replace(
     /[&<>"']/g,
@@ -12,14 +12,21 @@ const esc = (value) =>
 const scriptSafe = (value) => value.replace(/<\/script/gi, "<\\/script");
 export function takeToHTML(take, { drawingScript = "" } = {}) {
   validateTake(take);
+  const page = flatten(take).find(
+    (c) => c.track === "frame" && c.channel === "page",
+  );
+  const width = page ? Math.min(1920, page.width || 1920) : 1280;
+  const height = page
+    ? Math.round((width * (page.height || 1080)) / (page.width || 1920))
+    : 720;
   const source =
     coreSource.replace(/^export\s+/gm, "") +
     "\n" +
     playerSource.replace(/^import[^;]*;\s*/gm, "").replace(/^export\s+/gm, "");
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(take.title)}</title><meta name="generator" content="p5comp lesson timeline">
-<style>html,body{margin:0;height:100%;background:#1c1c1e;color:#d8d8da;font:14px system-ui}body{display:flex;flex-direction:column}main{flex:1;min-height:0;display:grid;place-items:center}canvas{max-width:100%;max-height:100%;aspect-ratio:16/9;object-fit:contain}nav{display:flex;align-items:center;gap:10px;padding:10px;background:#242426}button,select{background:#303033;color:inherit;border:1px solid #3d3d40;border-radius:5px;padding:6px;font:inherit}input{flex:1;min-width:40px}output{min-width:100px}#status{padding:4px 10px;color:#a1a1a5;font-size:12px}</style></head><body>
-<main><canvas id="lesson" width="1280" height="720" aria-label="Recorded lesson"></canvas></main><div id="status">Recorded playback · no hardware connection</div>
+<style>html,body{margin:0;height:100%;background:#1c1c1e;color:#d8d8da;font:14px system-ui}body{display:flex;flex-direction:column}main{flex:1;min-height:0;display:grid;place-items:center}canvas{max-width:100%;max-height:100%;aspect-ratio:${width}/${height};object-fit:contain}nav{display:flex;align-items:center;gap:10px;padding:10px;background:#242426}button,select{background:#303033;color:inherit;border:1px solid #3d3d40;border-radius:5px;padding:6px;font:inherit}input{flex:1;min-width:40px}output{min-width:100px}#status{padding:4px 10px;color:#a1a1a5;font-size:12px}</style></head><body>
+<main><canvas id="lesson" width="${width}" height="${height}" aria-label="Recorded lesson"></canvas></main><div id="status">Recorded playback · no hardware connection</div>
 <nav aria-label="Playback"><button id="play" aria-label="Play lesson">▶</button><input id="seek" aria-label="Lesson position" type="range" min="0" step="1" value="0"><output id="clock"></output><select id="speed" aria-label="Playback speed"><option value="0.5">½×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select><button id="download" aria-label="Download take JSON">JSON ↓</button></nav>
 <script>${scriptSafe(drawingScript)}</script><script>
 ${scriptSafe(source)}

@@ -215,5 +215,135 @@
 .take-panel .take-tools [data-recording] {
   color: #dc3b40;
 }
-.take-recorded-frame { display:block; width:100%; height:calc(100% - 40px); object-fit:contain; }
-.take-recorded-frame[hidden], .take-review iframe[hidden] { display:none; }
+.take-recorded-frame {
+  display: block;
+  width: 100%;
+  height: calc(100% - 40px);
+  object-fit: contain;
+}
+.take-recorded-frame[hidden],
+.take-review iframe[hidden] {
+  display: none;
+}
+.take-drawing[hidden] {
+  display: none;
+}
+.take-visual-no-drawing .take-circuit {
+  flex: 1;
+  height: auto;
+}
+.take-transport {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 8px 0;
+  color: var(--ui-text);
+}
+.take-transport button {
+  min-width: 28px;
+  min-height: 26px;
+  border: 1px solid var(--ui-line);
+  border-radius: 4px;
+}
+.take-transport input[type="range"] {
+  flex: 1;
+  min-width: 120px;
+  accent-color: var(--ui-focus);
+}
+.take-transport output {
+  font:
+    11px ui-monospace,
+    monospace;
+  min-width: 112px;
+  font-variant-numeric: tabular-nums;
+}
+.take-lanes {
+  position: relative;
+  --take-progress: 0%;
+}
+.take-lanes::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(68px + (100% - 68px) * var(--take-fraction, 0));
+  border-left: 2px solid var(--ui-focus);
+  z-index: 2;
+}
+.take-strip [data-kind="comp"] {
+  background: var(--ui-accent-fill);
+  color: var(--ui-text);
+  overflow: hidden;
+  white-space: nowrap;
+  text-align: left;
+  padding-left: 4px;
+  cursor: grab;
+  min-width: 8px;
+}
+.take-strip [data-kind="comp"]::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  right: 2px;
+  width: 4px;
+  border-right: 2px solid var(--ui-quiet);
+  cursor: ew-resize;
+}
+.take-strip .selected {
+  outline: 2px solid var(--ui-focus);
+  outline-offset: -1px;
+}
+.take-section-edit {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+  font: 12px system-ui;
+}
+.take-section-edit input:first-child {
+  min-width: 120px;
+  flex: 1;
+}
+.take-section-edit input[type="number"] {
+  width: 80px;
+}
+.take-section-edit[hidden],
+.take-page-overlay[hidden] {
+  display: none;
+}
+.take-page-overlay {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 95;
+  overflow: hidden;
+  pointer-events: auto;
+  display: grid;
+  place-items: center;
+}
+.take-page-overlay img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.take-page-overlay img[hidden] {
+  display: none;
+}
+body.take-replaying .bar,
+body.take-replaying .workspace,
+body.take-replaying .wb-right {
+  pointer-events: none;
+  user-select: none;
+}
+.take-p5-replay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  z-index: 20;
+  background: var(--ui-panel);
+}
+.take-panel > input[hidden] { display:none; }

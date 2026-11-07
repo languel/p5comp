@@ -23,6 +23,7 @@ import {
   setEditorPreferences,
 } from "../shared/editor/editorPreferences.js";
 import { ProjectionWindows } from "./ProjectionWindows.js";
+import { portableProject, localProject } from "../shared/takes/frameStore.js";
 import { TakeTimeline } from "./TakeTimeline.js";
 import { DrawingBoard } from "./DrawingBoard.js";
 import { createEditor } from "../shared/editor/createEditor.js";
@@ -729,10 +730,10 @@ export class Workbench {
           workbench: { name: "Untitled" },
         }),
       );
-    $("saveProject").onclick = () =>
+    $("saveProject").onclick = async () =>
       download(
         this.name + ".p5comp.json",
-        JSON.stringify(ctx.project(), null, 2),
+        JSON.stringify(await portableProject(ctx.project()), null, 2),
       );
     $("saveZIP").onclick = () =>
       this.action(async () => {
@@ -748,7 +749,7 @@ export class Workbench {
             throw new Error("Bundled library could not load for ZIP.");
           libraries[file] = await response.text();
         }
-        const project = structuredClone(ctx.project());
+        const project = await portableProject(ctx.project());
         const html = project.workbench.files["index.html"];
         if (html && !/src=["'](?:\.\/)?p5\.webserial\.js/.test(html))
           project.workbench.files["index.html"] = html.replace(
@@ -772,7 +773,7 @@ export class Workbench {
     this.folder.onchange = () =>
       this.action(async () =>
         ctx.openProject(
-          await projectFromFolder(this.folder.files, ctx.lesson()),
+          await localProject(await projectFromFolder(this.folder.files, ctx.lesson())),
         ),
       );
     $("saveFolder").onclick = () => this.action(() => this.writeFolder());
@@ -1010,7 +1011,7 @@ export class Workbench {
         button.onclick = () =>
           this.action(async () => {
             const project = await fetchJSON(basePath(entry.project), `Example “${entry.name}”`);
-            ctx.openProject(project);
+            ctx.openProject(await localProject(project));
             if (entry.lesson) { this.bottomTab("timeline"); await this.timeline.openReview(); }
           });
         this.exampleFolder(entry.folder || "Other").append(button);
@@ -1368,8 +1369,7 @@ export class Workbench {
     };
   }
   restore(d) {
-    this.takes = d.takes || {};
-    this.timeline?.refresh();
+    if (!this.timeline?.reviewing) { this.takes = d.takes || {}; this.timeline?.refresh(); }
     this.setBottomHeight?.(d.bottomHeight);
     this.selectedReferenceId = null;
     this.selectedNoteId = null;
@@ -1897,7 +1897,7 @@ export class Workbench {
       );
     const dir = await window.showDirectoryPicker({ mode: "readwrite" });
     const files = {
-      "p5comp.json": JSON.stringify(this.ctx.project(), null, 2),
+      "p5comp.json": JSON.stringify(await portableProject(this.ctx.project()), null, 2),
       "diagram.json": JSON.stringify(this.ctx.project().diagram, null, 2),
       [this.arduinoName]: this.ctx.arduinoEditor.state.doc.toString(),
       [this.p5Name]: this.ctx.p5Editor.state.doc.toString(),

@@ -12,7 +12,8 @@ both sketches incrementally. Arduino sends `1` and `0`; p5 reads each serial
 line and uses it to color a circle. The final run uses the actual browser compiler
 and AVR simulator. It does not connect to USB.
 
-Press Play in the review window, or seek through the build. The final project is
+Press Play in the bottom timeline, or drag its playhead through the build.
+Use **Return to live page** (↩) to return to your editable project. The final project is
 available for trying the code yourself. In the **Lesson timeline** bottom tab,
 use **HTML ↓** for a self-contained playable lesson or **MP4 ↓** for browser-side
 FFmpeg export. The included take also has downloadable HTML and MP4 siblings
@@ -27,7 +28,7 @@ Open **File → Examples → Getting started → Guided lesson · signals to fee
 or **Help → Getting started → Load guided replay**. The recording controls open
 in Settings. Click **Next step** to advance through actions and explanations.
 Pause between steps to explore the circuit and p5 canvas. Reopen the recording
-controls with the circle icon beside Settings.
+controls in Settings under Agents & process.
 
 **Replay all** demonstrates the sequence; enable **Keep original timing** to
 leave short viewing gaps. Step-by-step mode is recommended for teaching. The

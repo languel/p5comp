@@ -1,3 +1,4 @@
+import { localProject } from "../shared/takes/frameStore.js";
 import {compileSketch, compilerMode} from "../shared/compile/client.js";
 import {AVRUploader} from "../shared/serial/AVRUploader.js";
 import {boardForId} from "../shared/boards/boards.js";
@@ -87,7 +88,7 @@ function upgradeManagedComms(source, api) {
     ? embedComms(themed, api, {parser: firmataParserSource, client: firmataClientSource})
     : themed;
 }
-const initialProject=await startupProject(cachedProjectText);
+const initialProject=await localProject(await startupProject(cachedProjectText));
 let savedCanvas = initialProject.canvas || {},
   workbench = null,
   savedWorkbench = initialProject.workbench || {};
@@ -222,6 +223,7 @@ bridge.addEventListener("runtimeError", (e) => {
 });
 
 function persist() {
+  if (workbench?.timeline?.reviewing) return;
   workbench?.timeline?.observe();
   savedP5[api] = sourceValue(p5Editor);
   try {
@@ -243,6 +245,19 @@ function project() {
     arduino: sourceValue(arduinoEditor),
     artifact,
   };
+}
+function applyTakeState(state, baseline) {
+  const p = structuredClone(baseline), page = state.page || {};
+  const ino = p.workbench?.arduinoName || "sketch.ino", js = p.workbench?.p5Name || "sketch.js";
+  p.arduino = state.files[ino] || "";
+  p.p5 = { ...p.p5, [p.api || "webserial"]: state.files[js] || "" };
+  p.diagram = structuredClone(state.diagram); p.controls = structuredClone(state.controls || {});
+  p.workbench = { ...p.workbench, ...page, files: Object.fromEntries(Object.entries(state.files).filter(([name]) => name !== ino && name !== js)), takes: workbench.takes };
+  if (page.canvas) p.canvas = page.canvas;
+  openProject(p);
+  if (page.inspector) workbench.tab(page.inspector);
+  if (page.inspectorHidden) workbench.editorPanel.hidden = true;
+  for (const [kind,name] of [["arduino",page.arduinoFile],["p5",page.p5File]]) if(name && (name === (kind === "arduino" ? ino : js) || workbench.extra.has(name))) workbench.file(kind,name);
 }
 function setCode(editor, text) {
   editor.dispatch({
@@ -278,6 +293,7 @@ function runP5() {
 }
 
 function receive(bytes) {
+  if (workbench?.timeline?.reviewing) return;
   if (bytes.length) serialActivity.pulse(serialBoard(), "TX");
   if (api !== "none") bridge.serialBytes(bytes);
   serialBuffer += new TextDecoder().decode(Uint8Array.from(bytes));
@@ -294,6 +310,7 @@ function receive(bytes) {
   }
 }
 async function writeBytes(bytes) {
+  if (workbench?.timeline?.reviewing) return;
   try {
     if (mode === "usb") {
       await serial.write(bytes);
@@ -1485,6 +1502,7 @@ function openProject(d) {
   const candidate = d.diagram || d;
   validateDiagram(candidate);
   stop();
+  bridge.stop();
   diagram = candidate;
   controls = d.controls || {};
   if (typeof d.arduino === "string") setCode(arduinoEditor, d.arduino);
@@ -1536,8 +1554,8 @@ $("projectFile").onchange = async () => {
   const f = $("projectFile").files[0];
   if (!f) return;
   try {
-    if (f.size > 15000000) throw new Error("Project limit is 15 MB.");
-    openProject(JSON.parse(await f.text()));
+    if (f.size > 512000000) throw new Error("Project limit is 512 MB.");
+    openProject(await localProject(JSON.parse(await f.text())));
   } catch (e) {
     notice(e.message);
   } finally {
@@ -1792,6 +1810,8 @@ workbench = new Workbench({
   key,
   project,
   openProject,
+  applyTakeState,
+  saveTakeProject: p => { try { localStorage.setItem(key, JSON.stringify(p)); } catch { notice("Browser storage is full. Export the recording or project to a file."); } },
   persist,
   notice,
   canvas,

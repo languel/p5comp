@@ -8,7 +8,7 @@ const findSVG = (n) =>
   n?.tagName?.toLowerCase() === "svg"
     ? n
     : [...((n?.shadowRoot || n)?.children || [])].map(findSVG).find(Boolean);
-function flatten(svg) {
+export function flattenSVG(svg) {
   const clone = svg.cloneNode(true),
     src = [svg, ...svg.querySelectorAll("*")],
     dst = [clone, ...clone.querySelectorAll("*")];
@@ -139,7 +139,7 @@ export function circuitSVG(diagram, references, background, sources = {}) {
     const body = document.querySelector(`[data-id="${p.id}"] .part-body`),
       original = findSVG(body);
     if (!original) continue;
-    const image = flatten(original),
+    const image = flattenSVG(original),
       w = body.offsetWidth,
       h = body.offsetHeight;
     image.setAttribute("width", w);
@@ -167,7 +167,7 @@ export function circuitSVG(diagram, references, background, sources = {}) {
       e.classList.contains("wire-line") ||
       e.matches("[data-pin].connected")
     ) {
-      const copy = flatten(e);
+      const copy = flattenSVG(e);
       copy.removeAttribute("class");
       copy.removeAttribute("tabindex");
       scene.append(copy);

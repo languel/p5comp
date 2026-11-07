@@ -12,7 +12,9 @@ Four signals, and Field / feedback. Load it from File → Examples → Getting s
 is `public/lessons/getting-started.p5comp-process.json`. Save your project before
 loading: replay restores the recording's starting workspace.
 
-Open **Record / replay actions** (circle glyph beside Settings), then:
+For new page recordings, use the [Lesson timeline](takes.md). The older semantic
+process tools remain under **Settings → Agents & process** for automation and
+existing guided replays; their separate toolbar button is hidden. To use them:
 
 1. Give the recording a title and press **Record actions**.
 2. Build/edit the circuit, change code, adjust inputs, and run/stop the simulation.

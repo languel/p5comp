@@ -9,6 +9,10 @@ import { parseSignals } from "../shared/serial/signals.js";
 import { P5Bridge } from "../shared/p5/P5Bridge.js";
 import { basePath } from "../shared/basePath.js";
 import { renderTakeCircuit } from "./takeCircuit.js";
+import { ensureSections } from "../shared/takes/edit.js";
+import { PageCapture } from "./PageCapture.js";
+import { TimelineEditor } from "./TimelineEditor.js";
+import { portableTake, localTake } from "../shared/takes/frameStore.js";
 import "./takes.css";
 const el = (tag, text, parent) => {
   const e = document.createElement(tag);
@@ -36,22 +40,28 @@ export class TakeTimeline {
     this.header = el("div", "", this.panel);
     this.header.className = "take-tools";
     this.title = el("input", "", this.header);
-    this.title.placeholder = "Lesson title";
+    this.title.placeholder = "Recording title";
     this.title.setAttribute("aria-label", "Take title");
-    this.record = button(this.header, "●", "Record lesson", () =>
+    this.record = button(this.header, "●", "Record page", () =>
       this.guard(() => (this.recorder.take ? this.stop() : this.start())),
     );
     this.select = el("select", "", this.header);
     this.select.setAttribute("aria-label", "Saved takes");
     this.select.onchange = () => {
-      this.take = this.wb.takes[this.select.value];
+      const name = this.select.value;
+      this.editor?.exit();
+      this.select.value = name;
+      this.take = this.wb.takes[name];
       this.t = 0;
+      this.editor?.load();
       this.render();
     };
-    this.review = button(this.header, "▶", "Review take", () =>
-      this.guard(() => this.openReview()),
+    this.review = button(this.header, "≡", "Inspect recording", () =>
+      this.guard(() => this.openInspector()),
     );
-    button(this.header, "↓", "Export take JSON", () => this.export());
+    button(this.header, "↓", "Export take JSON", () =>
+      this.guard(() => this.export()),
+    );
     this.htmlExport = button(
       this.header,
       "HTML ↓",
@@ -88,9 +98,9 @@ export class TakeTimeline {
           throw new Error("Stop recording before importing a take.");
         const file = this.file.files[0];
         if (!file) return;
-        if (file.size > 20000000)
-          throw new Error("Take files must be under 20 MB.");
-        this.save(validateTake(JSON.parse(await file.text())));
+        if (file.size > 512000000)
+          throw new Error("Take files must be under 512 MB.");
+        await this.save(validateTake(JSON.parse(await file.text())));
         this.file.value = "";
       });
     button(this.header, "↑", "Import take JSON", () => this.file.click());
@@ -98,6 +108,11 @@ export class TakeTimeline {
     this.captionInput.placeholder =
       "Caption / narration text — Enter to add while recording";
     this.captionInput.setAttribute("aria-label", "Lesson caption");
+    this.captionInput.hidden = true;
+    button(this.header, "CC", "Show caption input", () => {
+      this.captionInput.hidden = !this.captionInput.hidden;
+      if (!this.captionInput.hidden) this.captionInput.focus();
+    });
     this.captionInput.onkeydown = (e) => {
       if (
         e.key === "Enter" &&
@@ -117,10 +132,21 @@ export class TakeTimeline {
     this.lanes.className = "take-lanes";
     this.status = el(
       "p",
-      "Record a lesson, then review or export its take.",
+      "Record the page above this tab, then play, edit sections, or export.",
       this.panel,
     );
     this.status.setAttribute("role", "status");
+    this.capture = new PageCapture(wb);
+    this.editor = new TimelineEditor(this);
+    this.captureTimer = setInterval(() => {
+      if (
+        this.recorder.take &&
+        !this.capture.busy &&
+        !this.stopping &&
+        !this.captureWarning
+      )
+        this.guard(() => this.capturePage());
+    }, 500);
     // A single sampling loop catches simulated controls that do not persist on every movement.
     this.timer = setInterval(() => {
       if (!this.recorder.take) return;
@@ -183,6 +209,24 @@ export class TakeTimeline {
       },
       diagram: structuredClone(p.diagram),
       signals: {},
+      controls: structuredClone(p.controls || {}),
+      page: {
+        name: this.wb.name,
+        layout: this.wb.layout,
+        activeView: this.wb.activeView,
+        settings: structuredClone(this.wb.settings),
+        references: structuredClone(this.wb.references),
+        canvas: this.wb.ctx.canvas.getState(),
+        inspector: this.wb.editorPanel.querySelector(
+          '[data-tab][aria-selected="true"]',
+        )?.dataset.tab,
+        inspectorHidden: this.wb.editorPanel.hidden,
+        arduinoFile: this.wb.arduinoBar.querySelector('[aria-selected="true"]')
+          ?.dataset.file,
+        p5File: this.wb.p5Bar.querySelector('[aria-selected="true"]')?.dataset
+          .file,
+        drawing: this.wb.drawing.snapshot(),
+      },
     };
   }
   observe() {
@@ -204,8 +248,32 @@ export class TakeTimeline {
     for (const [name, value] of Object.entries(parseSignals(text)))
       this.recorder.signal(name, value);
   }
+  async capturePage() {
+    const take = this.recorder.take;
+    if (!take) return;
+    const start = Math.max(0, this.recorder.now() - this.recorder.t0);
+    let image;
+    try {
+      image = await this.capture.capture();
+    } catch (error) {
+      this.captureWarning = `Page pixels could not be captured: ${error.message}. Editable state is still being recorded.`;
+      this.status.textContent = this.captureWarning;
+      return;
+    }
+    if (image && this.recorder.take === take)
+      this.recorder.push({
+        track: "frame",
+        channel: "page",
+        ...image,
+        start,
+        dur: 1,
+      });
+  }
   async start() {
     if (this.busy) return;
+    this.editor?.exit();
+    this.t = 0;
+    this.captureWarning = null;
     this.busy = true;
     this.record.disabled = true;
     try {
@@ -236,13 +304,20 @@ export class TakeTimeline {
       this.lastFrameAt = 0;
       this.lastFrameSource = null;
       this.wb.ctx.bridge.mirror(true);
+      this.recorder.take.meta.capture = {
+        mode: "page",
+        drawerExcluded: true,
+        sampled: true,
+      };
+      await this.capturePage();
       this.record.textContent = "■";
       this.record.title = "Stop and save take";
       this.record.setAttribute("aria-label", "Stop and save take");
       this.record.dataset.recording = "true";
       this.render();
       this.status.textContent =
-        "Recording code, drawing, controls, serial and actions. Enter captions below.";
+        this.captureWarning ||
+        "Recording the page and editable state. The timeline drawer is excluded.";
     } finally {
       this.busy = false;
       this.record.disabled = false;
@@ -251,22 +326,36 @@ export class TakeTimeline {
   async stop() {
     if (this.busy) return;
     this.busy = true;
+    this.stopping = true;
     this.record.disabled = true;
     try {
       this.observe();
+      if (this.capture.busy) {
+        while (this.capture.busy)
+          await new Promise((resolve) => setTimeout(resolve, 30));
+      }
+      await this.capturePage();
+      const elapsed = this.recorder.now() - this.recorder.t0;
       const { take: drawing } = await this.wb.drawing.editor.recordStop();
-      this.save(this.recorder.stop(drawing, this.drawOffset));
+      const pass = this.recorder.stop(drawing, this.drawOffset, {
+        compressIdle: false,
+      });
+      pass.duration = Math.max(pass.duration, elapsed);
+      await this.save(this.editor.finishPass(pass));
       if (!this.mirrorWasOn) this.wb.ctx.bridge.mirror(false);
       this.record.textContent = "●";
-      this.record.title = "Record lesson";
-      this.record.setAttribute("aria-label", "Record lesson");
+      this.record.title = "Record page";
+      this.record.setAttribute("aria-label", "Record page");
       delete this.record.dataset.recording;
     } finally {
       this.busy = false;
       this.record.disabled = false;
+      this.stopping = false;
     }
   }
-  save(take) {
+  async save(take) {
+    take = await localTake(take);
+    if (take.meta?.capture?.mode === "page") take = ensureSections(take);
     this.wb.takes ||= {};
     const name = `${String(take.title || "lesson")
       .replace(/[^a-z0-9_-]+/gi, "-")
@@ -274,6 +363,7 @@ export class TakeTimeline {
     this.wb.takes[name] = take;
     this.take = take;
     this.refresh(name);
+    this.editor.load();
     this.wb.ctx.persist();
     this.status.textContent = `Saved ${take.clips.length} clips · ${time(take.duration || 0)}. Included in project saves and ZIPs.`;
   }
@@ -296,9 +386,10 @@ export class TakeTimeline {
     this.file.disabled = !!this.recorder.take;
     this.select.disabled = !!this.recorder.take;
     this.lanes.replaceChildren();
+    this.editor?.update();
     const take = this.recorder.take || this.take;
     if (!take) return;
-    const clips = flatten(take),
+    const clips = take.meta?.sectionEdit ? take.clips : flatten(take),
       duration = Math.max(
         1,
         take.duration || 0,
@@ -323,15 +414,29 @@ export class TakeTimeline {
         mark.style.left = `${(100 * c.start) / duration}%`;
         mark.style.width = `${Math.max(0.4, (100 * c.dur) / duration)}%`;
         mark.dataset.kind = kind;
+        if (kind === "comp" && take.meta?.sectionEdit) {
+          mark.textContent = c.label || "Section";
+          mark.onclick = (e) => e.preventDefault();
+          this.editor.bindSection(mark, c, duration);
+        }
       }
     }
   }
-  export() {
+  async export() {
     if (!this.take) return;
     const url = URL.createObjectURL(
-      new Blob([JSON.stringify(this.take, null, 2)], {
-        type: "application/json",
-      }),
+      new Blob(
+        [
+          JSON.stringify(
+            await portableTake(this.take, { compact: true }),
+            null,
+            2,
+          ),
+        ],
+        {
+          type: "application/json",
+        },
+      ),
     );
     const a = el("a");
     a.href = url;
@@ -341,11 +446,15 @@ export class TakeTimeline {
   }
   async exportPortable(format) {
     if (!this.take || this.recorder.take || this.exportController) return;
-    const take = structuredClone(this.take);
+    let take;
     const controller = (this.exportController = new AbortController());
     this.cancelExport.hidden = false;
     this.render();
     try {
+      take = await portableTake(
+        await this.editor.prepareExport(this.take, controller.signal),
+        { compact: true },
+      );
       const drawingResponse = await fetch(
         basePath("vendor/ams-editor/take-renderer.js"),
         { signal: controller.signal },
@@ -407,6 +516,9 @@ export class TakeTimeline {
     }
   }
   async openReview() {
+    return this.editor.seek(this.t);
+  }
+  async openInspector() {
     if (!this.take || this.recorder.take || this.dialog) return;
     const take = validateTake(this.take),
       flat = flatten(take),
@@ -476,8 +588,13 @@ export class TakeTimeline {
     visual.className = "take-visual";
     const circuit = el("div", "", visual);
     circuit.className = "take-circuit";
+    const hasDrawing =
+      Boolean(take.baseline?.elements?.length) ||
+      flat.some((c) => !c.muted && c.track === "draw");
     const draw = el("div", "", visual);
     draw.className = "take-drawing";
+    draw.hidden = !hasDrawing;
+    visual.classList.toggle("take-visual-no-drawing", !hasDrawing);
     const signals = el("output", "", visual);
     signals.className = "take-signals";
     const output = el("section", "", grid);
@@ -701,38 +818,39 @@ export class TakeTimeline {
     };
     dialog.showModal();
     render();
-    // Reuse AMS's renderer, rather than maintaining a fork of its document/drawing player.
-    try {
-      const js = await (
-        await fetch(basePath("vendor/ams-editor/ams-editor.js"))
-      ).text();
-      const url = URL.createObjectURL(
-        new Blob([js], { type: "text/javascript" }),
-      );
-      let createEditor;
+    // Only mount the drawing renderer when the take actually contains a drawing.
+    if (hasDrawing)
       try {
-        ({ createEditor } = await import(/* @vite-ignore */ url));
-      } finally {
-        URL.revokeObjectURL(url);
+        const js = await (
+          await fetch(basePath("vendor/ams-editor/ams-editor.js"))
+        ).text();
+        const url = URL.createObjectURL(
+          new Blob([js], { type: "text/javascript" }),
+        );
+        let createEditor;
+        try {
+          ({ createEditor } = await import(/* @vite-ignore */ url));
+        } finally {
+          URL.revokeObjectURL(url);
+        }
+        if (closed) return;
+        drawingEditor = await createEditor(draw, {
+          src: basePath("vendor/ams-editor/embed.html"),
+          ns: `take-${crypto.randomUUID()}`,
+          clock: "host",
+          transport: false,
+          ui: { tools: false, view: false, zoom: false, panels: false },
+        });
+        if (closed) {
+          drawingEditor.destroy();
+          return;
+        }
+        await drawingEditor.loadTake(take);
+        await drawingEditor.fit();
+        queueDrawing(this.t);
+      } catch (e) {
+        cue.textContent = `Drawing preview unavailable: ${e.message}`;
       }
-      if (closed) return;
-      drawingEditor = await createEditor(draw, {
-        src: basePath("vendor/ams-editor/embed.html"),
-        ns: `take-${crypto.randomUUID()}`,
-        clock: "host",
-        transport: false,
-        ui: { tools: false, view: false, zoom: false, panels: false },
-      });
-      if (closed) {
-        drawingEditor.destroy();
-        return;
-      }
-      await drawingEditor.loadTake(take);
-      await drawingEditor.fit();
-      queueDrawing(this.t);
-    } catch (e) {
-      cue.textContent = `Drawing preview unavailable: ${e.message}`;
-    }
     const tick = (now) => {
       if (closed) return;
       if (this.playing) {

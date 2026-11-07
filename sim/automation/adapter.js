@@ -1,4 +1,5 @@
 import { projectArchive } from "../projectArchive.js";
+import { portableProject } from "../../shared/takes/frameStore.js";
 import { circuitSVG, svgPNG } from "../exportCircuit.js";
 import {
   editorPreferences,
@@ -84,7 +85,7 @@ export function createAgentAdapter(ctx) {
         return value;
       }
       if (op === "export") {
-        const p = project(),
+        const p = await portableProject(project()),
           name = p.workbench.name || "p5comp";
         const base64 = (bytes) => {
           let s = "";

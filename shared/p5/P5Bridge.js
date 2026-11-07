@@ -209,8 +209,16 @@ export class P5Bridge extends EventTarget {
     ++this.generation;
     clearTimeout(this.startupTimer);
     this.loaded = false;
+    if (this.frame.cloneNode) {
+      const next = this.frame.cloneNode(false);
+      next.removeAttribute("srcdoc");
+      next.removeAttribute("src");
+      this.frame.replaceWith(next);
+      this.frame = next;
+    }
     this.frame.removeAttribute("srcdoc");
     this.frame.src = "about:blank";
+    this.dispatchEvent(new Event("previewClear"));
     this.#status("p5 stopped");
   }
   setParameter(name, value) {

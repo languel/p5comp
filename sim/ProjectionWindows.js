@@ -10,6 +10,16 @@ export class ProjectionWindows {
     ctx.bridge.addEventListener("mirrorError", (e) =>
       ctx.notice(e.detail.message),
     );
+    ctx.bridge.addEventListener("previewClear", () => {
+      const win = this.windows.get("p5");
+      if (!win || win.closed) return;
+      const image = win.document.querySelector("img");
+      image.removeAttribute("src");
+      image.style.display = "none";
+      win.document.querySelector("p").hidden = false;
+      const toolbar = win.document.querySelector("nav");
+      if (toolbar) toolbar.hidden = true;
+    });
     this.dirty = true;
     this.observer = new MutationObserver(() => (this.dirty = true));
     this.roots = new WeakSet();

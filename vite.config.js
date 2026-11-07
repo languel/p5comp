@@ -27,7 +27,7 @@ export default defineConfig({
       },
     },
   ],
-  optimizeDeps: { include: ["@ffmpeg/ffmpeg", "@ffmpeg/ffmpeg/worker"] },
+  optimizeDeps: { include: ["@ffmpeg/ffmpeg", "@ffmpeg/ffmpeg/worker", "html-to-image"] },
   server: {
     proxy: {
       "/api": "http://127.0.0.1:3001",

@@ -50,9 +50,32 @@ export function diffState(before, after) {
       diff[key] = after.diagram[key] ?? null;
   if (Object.keys(diff).length)
     clips.push({ track: "circuit", diff: clone(diff) });
+  const page = {};
+  for (const key of new Set([
+    ...Object.keys(before.page || {}),
+    ...Object.keys(after.page || {}),
+  ]))
+    if (
+      JSON.stringify(before.page?.[key]) !== JSON.stringify(after.page?.[key])
+    )
+      page[key] = after.page?.[key] ?? null;
+  const controlsChanged =
+    JSON.stringify(before.controls || {}) !==
+    JSON.stringify(after.controls || {});
+  if (Object.keys(page).length || controlsChanged)
+    clips.push({
+      track: "page",
+      diff: clone(page),
+      ...(controlsChanged ? { controls: clone(after.controls || {}) } : {}),
+    });
   return clips;
 }
 export function apply(state, clip) {
+  if (clip.track === "state") return clone(clip.state);
+  if (clip.track === "page") {
+    state.page = { ...state.page, ...clone(clip.diff || {}) };
+    if (clip.controls) state.controls = clone(clip.controls);
+  }
   if (clip.track === "code") {
     if (clip.removed) delete state.files[clip.file];
     else
@@ -120,9 +143,9 @@ export function stateAt(take, t) {
     diagram: { parts: [], connections: [] },
     signals: {},
   };
-  const state = clone(initial);
+  let state = clone(initial);
   for (const clip of flatten(take))
-    if (!clip.muted && clip.start <= t) apply(state, clip);
+    if (!clip.muted && clip.start <= t) state = apply(state, clip);
   return state;
 }
 export function validateTake(take) {
@@ -131,6 +154,8 @@ export function validateTake(take) {
     take.type !== "ams-take" ||
     take.version !== 1 ||
     !Array.isArray(take.clips) ||
+    (take.duration != null &&
+      (!Number.isFinite(take.duration) || take.duration < 0)) ||
     take.clips.length > 100000
   )
     throw new Error("Choose an ams-take version 1 JSON file.");
@@ -178,6 +203,24 @@ export function validateTake(take) {
           ))
       )
         throw new Error("Invalid circuit diff.");
+      if (
+        c.track === "state" &&
+        (!c.state ||
+          !c.state.files ||
+          typeof c.state.files !== "object" ||
+          Object.values(c.state.files).some((v) => typeof v !== "string") ||
+          Object.keys(c.state.files).some((name) => !safeFile(name)) ||
+          !Array.isArray(c.state.diagram?.parts) ||
+          !Array.isArray(c.state.diagram?.connections))
+      )
+        throw new Error("Invalid page state anchor.");
+      if (
+        c.track === "frame" &&
+        ["page", "p5"].includes(c.channel) &&
+        (typeof c.src !== "string" ||
+          !/^(data:image\/(png|jpeg|webp);base64,|p5comp-frame:)/.test(c.src))
+      )
+        throw new Error("Invalid captured page frame.");
       if (c.comp) {
         if (!Array.isArray(c.comp.clips))
           throw new Error("Invalid composition.");
@@ -258,7 +301,7 @@ export class TakeRecorder {
     this.samples.set(name, { at: now, value });
     this.push({ track: "signal", name, value });
   }
-  stop(drawing, offset = 0) {
+  stop(drawing, offset = 0, { compressIdle = true } = {}) {
     const take = this.take;
     if (!take) return null;
     if (drawing) {
@@ -278,6 +321,8 @@ export class TakeRecorder {
       muted: false,
     }));
     this.take = null;
-    return compress(take);
+    if (compressIdle) return compress(take);
+    take.duration = Math.max(1, ...take.clips.map((c) => c.start + c.dur));
+    return take;
   }
 }

@@ -1,63 +1,59 @@
-# Capture a lesson and play it back
+# Record, edit and export a lesson
 
-Select the **Lesson timeline** tab alongside Simulation, Serial and Console in the bottom tools bar in the unified p5comp workbench (`/sim/`). Give the lesson a title and press **● Record lesson**. Edit Arduino or p5 code, draw, change the circuit, run or upload a sketch, and use serial hardware or the simulator as usual. Type a caption and press Enter to add it while recording. Press **■ Stop and save take** to save the lesson with the project.
+Open **Lesson timeline** in the bottom tools bar. Give the take a title and press **● Record page**. Build the circuit, edit Arduino and p5 code, switch views and run the simulator as usual. Press **■ Stop and save take** when finished. **CC** reveals the optional caption input; press Enter to add a caption while recording.
 
-The lanes show the recorded clip kinds. Click a clip or **▶ Review take** to review it in a separate, view-only window. Play/pause, seek, choose a source file, and change speed (½–2×). Captions appear above the code, recorded circuit schematic, AMS drawing replay, and p5 output. Action targets pulse as their clips pass. Playing starts an isolated p5 sketch preview; its recorded named sensor values and received serial lines drive the sketch without an Arduino. Restart preview explicitly if necessary. The preview's output callbacks have no connection to USB or the simulator.
+The recorder captures the workbench above the bottom drawer. The timeline and its controls are excluded. Page snapshots are sampled up to twice per second, including circuit SVGs, source editors, visible drawing canvases and the mirrored p5 output. Code, circuit, page settings, controls, drawing changes and serial/signals are also recorded as editable state. Recording preserves pauses until you explicitly edit them.
 
-Closing review returns to the project. Seeking reconstructs the recorded code and circuit; it never edits or restores project files. There is no automatic firmware upload, USB connection, or circuit simulation during review. Stop a recording before opening a different project. Reloading while recording prompts because that take has not yet been saved.
+## Play and return to editing
 
-Try **↑ Import take JSON** with [`examples/takes/sensor-playback.ams-take.json`](../examples/takes/sensor-playback.ams-take.json) for a small synthetic sensor lesson: Play expands a circle from recorded `pot` values without hardware.
+Press **▶ Play page recording** or drag the **Timeline playhead**. A vertical line and time counter show your position. Playback displays the captured page in place, above the timeline; it does not open an empty AMS board. Choose ½–2× speed. Use **↩ Return to live page** or Escape to restore your project, editor undo history and circuit undo history. Playback stops the live runtimes and does not execute firmware uploads or hardware actions.
 
-## Saved files
+Older p5comp takes without page images reconstruct the code/circuit and available view state in the workbench. They cannot recover page details that were never recorded. **≡ Inspect recording** opens the detailed source/circuit/drawing inspector; its drawing panel appears only if drawing content exists. Imported AMS-only takes use that inspector.
 
-- Browser autosave and project JSON: `workbench.takes[filename]` holds complete take JSON. Save the project to a file for a durable copy.
-- Project ZIP: also includes `takes/<name>.ams-take.json` as standalone files.
-- **↓ Export take JSON** downloads the selected take; **↑ Import take JSON** opens a version 1 AMS take. Imported AMS-only drawings also play in the drawing preview.
-- Each take includes the initial source files, circuit, p5 assets/settings and AMS drawing baseline. Prior takes and compiled firmware are excluded from this baseline to avoid recursive growth.
+## Edit sections and record another pass
 
-## Format and adapters
+- **✂ Split section at playhead** divides the selected time into independently movable sections. Each section stores its starting state, so moving it does not depend on the preceding section's code edits.
+- Select a section to change its name, trim its in/out times, move it earlier/later, duplicate or delete it. Drag the section to reorder it; drag its right edge to change its playback duration. The remaining sections close up automatically.
+- **Steps** creates before/after sections for code, circuit, drawing and view changes. It replaces waiting with short holds. Use timeline Undo to return to the timed recording.
+- **●+ Overdub from playhead** restores the editable state at that point and starts a new recording pass. Make your changes, then Stop. The new pass replaces the remainder of the selected section, or its elapsed interval if no section is selected. A new take titled “· overdub” preserves the untouched beginning and end; the original take remains available.
+- **↶ / ↷** undo and redo timeline edits. Space plays/pauses, S splits, and arrow keys move the playhead when the lanes have keyboard focus.
 
-`shared/takes/take.js` has no DOM or AMS dependency. It exports `diffText`, `applyText`, `diffState`, `apply`, `describe`, `stateAt`, `flatten`, `compress`, `validateTake`, and `TakeRecorder`. `sim/TakeTimeline.js` supplies snapshot, UI, serial capture and preview rendering. The drawing recorder and renderer remain in the embedded Poliplan; they are not copied or forked.
+## Save and export
 
-Every file is `{ type: 'ams-take', version: 1, title, created, duration, baseline, tracks, clips, source: 'p5comp', meta }`. Times are milliseconds. `baseline` is an AMS drawing document so the same file can open in AMS. `meta.p5comp.state` contains initial `{ files, diagram, signals }`; `meta.p5comp.project` contains p5 runtime configuration and assets. Unknown kinds are ignored by playback.
+Page images live in IndexedDB, while small references stay in browser autosave. Save a project or export the take for a durable, portable copy before clearing browser storage.
 
-| Kind | Payload and behaviour |
+- **↓ Export take JSON** includes the source/state clips and a deduplicated image table. **↑ Import take JSON** brings those images into the receiving browser. The take remains editable.
+- Project JSON, ZIP and folder exports also include the image assets with `workbench.takes`. ZIP additionally includes standalone take files.
+- **HTML ↓** creates one self-contained playable file. Open it from disk without p5comp or a network connection. It shows the recorded page with playback controls outside the image; the lesson track is absent from the captured page.
+- **MP4 ↓** renders that same page at 15 fps and up to 1920 px wide, preserving its aspect ratio, then encodes H.264 using single-thread **FFmpeg WASM in a browser worker**. Progress and Cancel appear in the timeline. The bundled core loads on demand (about 32 MB); there is no server upload or native FFmpeg dependency.
+
+For older host takes, HTML/MP4 export first reconstructs workbench snapshots from the available source, circuit and p5 output. Pure AMS takes keep the drawing presentation renderer. The HTML player embeds stable raw core/player sources so minified production builds work offline. `npm run vendor:ams-take` bundles the drawing renderer from the owning AMS sources (`AMS_DIR` overrides `~/dev/artistmodelstudio`). `@ffmpeg/core` is GPL-2.0-or-later; its source and license links are in the package and third-party documentation.
+
+## Format
+
+The version 1 `ams-take` format retains its AMS drawing baseline. `meta.p5comp.state` holds the initial host files, diagram, signals, controls and page settings; `meta.p5comp.project` holds runtime configuration/assets. `shared/takes/take.js` implements state diffs, composition flattening and seeking. `shared/takes/edit.js` implements section cuts, trims, steps and replacement passes.
+
+| Clip kind | Content |
 | --- | --- |
-| `title` | `{ text }` lesson title card |
-| `say` | `{ text }` captions; serial lines also have `meta.dir: 'rx' | 'tx'` |
-| `action` | `{ name, label, ui: { kind: 'button', target } }` stable action target; review pulses its label, never executes hardware actions |
-| `draw` | AMS document diffs and stroke timing, obtained through `recordStart/recordStop` |
-| `code` | `{ file, diff: { from, delete, lines } }`, zero-based line range replacement; `{ file, removed: true }` deletes a file |
-| `signal` | `{ name, value }`, finite named values sampled at most 20 Hz per name; unchanged values omitted; simulated circuit inputs use `control_<part id>` |
-| `circuit` | `{ diff }`, changed top-level diagram fields (parts, connections, etc.); unchanged fields omitted |
-
-One `performance.now()` clock records host clips and offsets the drawing recorder's start. At Stop, both are merged before gaps over 2 seconds are compressed. Clip start and end anchors share that mapping. Tracks/compositions and muted lanes are respected on import. The pure adapter tests cover seeking backwards, empty-file creation/deletion, text diffs, sampling, clock alignment, composition rates and malformed input.
+| `code` | File text diff or file deletion |
+| `circuit` | Changed top-level diagram fields |
+| `page` | View, inspector, settings and control changes |
+| `state` | Complete host state anchor at a section boundary |
+| `frame` | `page` JPEG or mirrored `p5` image, inline or referenced through `meta.frameAssets` |
+| `comp` | Section containing clips, with its own playback rate |
+| `draw` | AMS drawing diff/stroke timing from its existing recorder |
+| `signal` | Named numeric value, sampled up to 20 Hz per name |
+| `say`, `title`, `action` | Caption, title or recorded action label; actions never execute hardware during playback |
 
 ## Limits
 
-- This is a capture/review transport with clip lanes, not a full clip rearrangement editor. Narration is text; microphone audio is not captured.
-- Review shows a schematic of recorded circuit parts and named connections, not the live animated electronics view. Circuit runtime, firmware and hardware state are not rerun.
-- Code is shown at its recorded edit times. A p5 Run cue restarts the preview from the current recorded code; a seek reconstructs code/signals and restarts the preview on release. Arbitrary p5 animation/random state is not frame-exact.
-- The mock hardware path supports named numeric signals and newline serial text. Binary Firmata streams, incomplete lines, USB timing and device-specific protocols are not reproduced.
-- Serial text is kept per line; long/high-bandwidth captures can be large. Stop and export before browser storage fills. No trimming or take deletion UI yet.
-- Capture belongs to the unified workbench; the standalone mini IDE is unchanged.
+Page capture is a sampled visual record, not a smooth desktop screen recording. MP4 holds these snapshots between samples; it does not invent missing animation frames. No microphone/audio track is recorded. DOM/SVG capture can differ slightly from browser rendering, and cross-origin/tainted media cannot always be captured. The p5 mirror samples up to 5 fps independently.
+
+Sections can be rearranged and replaced, but this is not a polyphonic audio/video compositor. Code/circuit state and view settings restore for overdubbing; arbitrary running JavaScript memory and simulator CPU state do not. Simulated or USB hardware timing is not rerun. Recording belongs to the unified workbench, not the standalone mini IDE. Stop before changing projects; export long recordings regularly because browser storage and encoding memory are finite.
 
 ## AMS change required
 
 `~/dev/artistmodelstudio/vite.embed.config.js`: remove `recorder` and `takePlayer` from the lean build's stub aliases. The handoff's take messages were present, but the lean embed returned a proxy function for `recorder.take`, causing `record-stop` to fail with a structured-clone error. Enabling the actual modules makes the existing bridge/client calls work. No bridge or client protocol fork is needed. The vendor VERSION records the source commit; browser checks exercise start/stop and drawing replay in the lean build.
-
-## Portable HTML and browser MP4
-
-Use **HTML ↓** to download one self-contained, playable lesson file. It embeds the take, its recorded p5 frames, the presentation player, and the AMS drawing renderer. Open it directly from disk; playback, seeking, speed selection and JSON download work without p5comp or a network connection. Playback shows the recorded code, circuit construction, captions and p5 output; it does not execute the learner's sketches.
-
-Use **MP4 ↓** for a 1280×720, 15 fps H.264 video. Frames are rendered from the same player used by HTML, then encoded by **FFmpeg WASM in a browser worker**. There is no server upload or native FFmpeg dependency. The single-thread core is bundled with the app and loaded only for MP4 export (about 32 MB). Progress and Cancel are shown in the timeline. Rendering/encoding speed and memory use depend on lesson length and the browser; the exported duration does not depend on real-time screen capture. Captions are burned in; these exports have no audio track.
-
-In review, takes with captured frames show those frames in sync with the playhead; **Preview sketch** is still available to rerun the source explicitly.
-
-New takes capture p5 canvas frames while recording (up to 5 fps, unchanged frames omitted) using the existing mirror bridge. A `frame` clip contains `{ channel: 'p5', src: 'data:image/png;base64,…' }`. These clips preserve actual sketch output even when the live sketch is stopped. Existing takes without preview frames still export their code, circuits, captions and AMS drawings. External drawing images must be embedded/CORS-accessible to permit video pixel capture.
-
-The HTML source uses stable raw player/core functions so it also works from a minified production build. AMS drawing algorithms are bundled from the owning AMS sources by `npm run vendor:ams-take` (`AMS_DIR` overrides `~/dev/artistmodelstudio`); they are not copied into the host adapter. `npm run vendor:ams` rebuilds this export runtime too. `@ffmpeg/core` is GPL-2.0-or-later; its license and source links are in the installed package and the exported app's third-party documentation.
-
 
 ## Included LED lesson and recording recipe
 

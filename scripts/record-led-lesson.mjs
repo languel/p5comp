@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 /** Reproducible authoring recipe. Invoked inside ego-browser with its owned Page. */
 export async function recordLEDLesson(page) {
   const key = "physical-p5.circuit-project.v1:lesson-from-scratch-recording";
@@ -32,13 +33,19 @@ export async function recordLEDLesson(page) {
     'loc=css:input[aria-label="Take title"]',
     "Getting started · build an LED from scratch",
   );
-  await page.click('loc=css:button[aria-label="Record lesson"]');
+  await page.click('loc=css:button[aria-label="Record page"]');
   await page.waitForSelector(
     'loc=css:button[aria-label="Stop and save take"]',
     { timeout: 30000 },
   );
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const caption = async (text, hold = 2600) => {
+    if (
+      await page.evaluate(
+        () => document.querySelector('[aria-label="Lesson caption"]').hidden,
+      )
+    )
+      await page.click('loc=css:button[aria-label="Show caption input"]');
     await page.click('loc=css:button[aria-label="Lesson timeline"]');
     await page.fill('loc=css:input[aria-label="Lesson caption"]', text);
     await page.press('loc=css:input[aria-label="Lesson caption"]', "Enter");
@@ -201,5 +208,12 @@ export async function recordLEDLesson(page) {
       console: physicalP5.readConsole().slice(-8),
     };
   }, key);
+  const downloading = page.waitForEvent("download", { timeout: 30000 });
+  await page.click('loc=css:button[aria-label="Export take JSON"]');
+  const download = await downloading;
+  result.take = JSON.parse(await readFile(await download.path(), "utf8"));
+  result.project.workbench.takes = {
+    "led-from-scratch.ams-take.json": result.take,
+  };
   return result;
 }

@@ -194,6 +194,8 @@ export function installAgentSurface(adapter) {
   });
   const badge = document.createElement("button");
   badge.id = "agentProcess";
+  // Lesson timeline is the primary recorder; legacy process tools remain in Settings.
+  badge.hidden = true;
   badge.className = "ui-icon-button";
   badge.append(icon("record"));
   badge.title = "Record / replay actions · agent API";

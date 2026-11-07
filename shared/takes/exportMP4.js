@@ -2,23 +2,23 @@ import { FFmpeg } from "@ffmpeg/ffmpeg";
 import workerURL from "./ffmpeg.worker.js?worker&url";
 import coreURL from "@ffmpeg/core?url";
 import wasmURL from "@ffmpeg/core/wasm?url";
+import { flatten } from "./take.js";
 import { createLessonPlayer } from "./lessonPlayer.js";
 
 /** Render offline, then encode with single-thread FFmpeg WASM in a browser worker. */
 export async function takeToMP4(
   take,
-  {
-    onProgress = () => {},
-    signal,
-    fps = 15,
-    width = 1280,
-    drawingRenderer,
-  } = {},
+  { onProgress = () => {}, signal, fps = 15, width, drawingRenderer } = {},
 ) {
   const ffmpeg = new FFmpeg(),
     canvas = document.createElement("canvas");
+  const page = flatten(take).find(
+    (c) => c.track === "frame" && c.channel === "page",
+  );
+  width ||= page ? 1920 : 1280;
   canvas.width = width;
-  canvas.height = Math.round((width * 9) / 16 / 2) * 2;
+  canvas.height =
+    Math.round((width * (page ? page.height / page.width : 9 / 16)) / 2) * 2;
   const player = createLessonPlayer(canvas, take, drawingRenderer);
   const abort = () => ffmpeg.terminate();
   signal?.addEventListener("abort", abort, { once: true });

@@ -1,7 +1,7 @@
 // Package a browser-recorded take. Only startup waiting and caption holds are edited.
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import assert from "node:assert/strict";
-import { stateAt, validateTake } from "../shared/takes/take.js";
+import { stateAt, validateTake, flatten } from "../shared/takes/take.js";
 const result = JSON.parse(
   await readFile(
     process.argv[2] || "/tmp/p5comp-led-recording-result.json",
@@ -13,7 +13,9 @@ const take = structuredClone(result.take),
 assert.equal(take.meta.p5comp.state.files["sketch.ino"], "");
 assert.equal(take.meta.p5comp.state.files["sketch.js"], "");
 assert.equal(take.meta.p5comp.state.diagram.parts.length, 0);
-const frames = take.clips.filter((c) => c.track === "frame");
+take.clips = flatten(take);
+if (take.meta) delete take.meta.sectionEdit;
+const frames = take.clips.filter((c) => c.track === "frame" && c.channel === "p5");
 assert.ok(frames.length >= 4, "The lesson must contain real preview frames.");
 const packets = new Set(
   take.clips.filter((c) => c.meta?.dir === "rx").map((c) => c.text),

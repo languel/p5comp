@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { createLessonPlayer } from "./lessonPlayer.js";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
+import { flatten } from "./take.js";
 const take = () => ({
   type: "ams-take",
   version: 1,
@@ -90,8 +91,9 @@ test("standalone HTML uses stable raw function names and safely embeds source st
     "coreSource",
     "playerSource",
     "validateTake",
+    "flatten",
     source + ";return takeToHTML;",
-  )(coreSource, playerSource, () => {});
+  )(coreSource, playerSource, () => {}, flatten);
   const lesson = take();
   lesson.title = '</script><img onerror="bad">';
   lesson.meta.p5comp.state.files["sketch.js"] = 'const message = "</script>";';

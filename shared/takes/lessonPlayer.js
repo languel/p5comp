@@ -15,7 +15,9 @@ export function createLessonPlayer(canvas, take, drawingRenderer = null) {
     rate = 1,
     last = 0,
     raf;
-  const frameClips = clips.filter((c) => c.track === "frame" && !c.muted);
+  const frameClips = clips
+    .filter((c) => c.track === "frame" && !c.muted)
+    .map((c) => ({ ...c, src: take.meta?.frameAssets?.[c.src] || c.src }));
   const ready = Promise.all(
     [...new Set(frameClips.map((c) => c.src))].map(
       (src) =>
@@ -192,6 +194,24 @@ export function createLessonPlayer(canvas, take, drawingRenderer = null) {
     ctx.setTransform(W / 1280, 0, 0, H / 720, 0, 0);
     ctx.fillStyle = "#1c1c1e";
     ctx.fillRect(0, 0, 1280, 720);
+    const pageFrame =
+      frameClips.filter((c) => c.channel === "page" && c.start <= t).at(-1) ||
+      frameClips.find((c) => c.channel === "page");
+    if (pageFrame) {
+      const image = images.get(pageFrame.src);
+      if (image) {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        const scale = Math.min(W / image.width, H / image.height);
+        ctx.drawImage(
+          image,
+          (W - image.width * scale) / 2,
+          (H - image.height * scale) / 2,
+          image.width * scale,
+          image.height * scale,
+        );
+      }
+      return canvas;
+    }
     text(take.title || "p5comp lesson", 22, 34, 23);
     text("p5comp · recorded lesson", 1015, 31, 13, "#a1a1a5");
     const state = stateAt(take, t),
