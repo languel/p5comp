@@ -1,0 +1,288 @@
+{
+  "version": 2,
+  "workbench": {
+    "name": "Light sensor · Button · LED",
+    "files": {
+      "index.html": "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"utf-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <title>p5 sketch</title>\n    <script src=\"p5.js\"></script>\n    <script src=\"p5.webserial.js\"></script>\n    <style>\n      html,\n      body {\n        margin: 0;\n        padding: 0;\n      }\n      canvas {\n        display: block;\n      }\n    </style>\n  </head>\n  <body>\n    <main id=\"canvas\"></main>\n    <script src=\"sketch.js\"></script>\n  </body>\n</html>\n"
+    },
+    "assets": {},
+    "arduinoName": "sketch.ino",
+    "p5Name": "sketch.js",
+    "references": [],
+    "components": [],
+    "settings": {},
+    "dock": "split",
+    "layout": "horizontal",
+    "activeView": "p5",
+    "splitRatio": 0.5590827589418778,
+    "bottomHeight": null,
+    "takes": {}
+  },
+  "canvas": {
+    "camera": {
+      "x": 99.96621427925862,
+      "y": 126.83351323858511,
+      "zoom": 0.7509842497248155
+    },
+    "snap": true,
+    "orthogonal": true,
+    "color": "#121415",
+    "labels": true,
+    "gridMultiplier": 1,
+    "gridReference": "breadboard",
+    "gridBetween": false
+  },
+  "diagram": {
+    "attachments": [],
+    "connections": [
+      [
+        "uno:5V",
+        "ldr:1",
+        "#db4646",
+        [
+          {
+            "x": 200,
+            "y": 395
+          },
+          {
+            "x": 430,
+            "y": 395
+          },
+          {
+            "x": 430,
+            "y": 115
+          },
+          {
+            "x": 425,
+            "y": 115
+          }
+        ]
+      ],
+      [
+        "ldr:2",
+        "divider:1",
+        "#457dd4",
+        [
+          {
+            "x": 434.5,
+            "y": 115
+          },
+          {
+            "x": 498,
+            "y": 115
+          },
+          {
+            "x": 498,
+            "y": 130.65
+          }
+        ]
+      ],
+      [
+        "divider:1",
+        "uno:A0",
+        "#457dd4",
+        [
+          {
+            "x": 498,
+            "y": 130.65
+          },
+          {
+            "x": 498,
+            "y": 399
+          },
+          {
+            "x": 248,
+            "y": 399
+          }
+        ]
+      ],
+      [
+        "divider:2",
+        "uno:GND.2",
+        "#121415",
+        [
+          {
+            "x": 581,
+            "y": 130.65
+          },
+          {
+            "x": 581,
+            "y": 403
+          },
+          {
+            "x": 192,
+            "y": 403
+          },
+          {
+            "x": 192,
+            "y": 387
+          },
+          {
+            "x": 209.5,
+            "y": 387
+          }
+        ]
+      ],
+      [
+        "uno:7",
+        "button:1.l",
+        "#e8ad38",
+        [
+          {
+            "x": 229,
+            "y": 150
+          },
+          {
+            "x": 378,
+            "y": 150
+          },
+          {
+            "x": 378,
+            "y": 262.2
+          }
+        ]
+      ],
+      [
+        "button:2.l",
+        "uno:GND.2",
+        "#121415",
+        [
+          {
+            "x": 378,
+            "y": 281
+          },
+          {
+            "x": 378,
+            "y": 387
+          },
+          {
+            "x": 209.5,
+            "y": 387
+          }
+        ]
+      ],
+      [
+        "uno:13",
+        "limit:1",
+        "#e8ad38",
+        [
+          {
+            "x": 165,
+            "y": 153
+          },
+          {
+            "x": 172,
+            "y": 153
+          }
+        ]
+      ],
+      [
+        "limit:2",
+        "led:A",
+        "#e8ad38",
+        [
+          {
+            "x": 172,
+            "y": 70
+          },
+          {
+            "x": 162.5,
+            "y": 72.85638058330917
+          }
+        ]
+      ],
+      [
+        "led:C",
+        "uno:GND.1",
+        "#121415",
+        [
+          {
+            "x": 152.5,
+            "y": 72.85638058330917
+          },
+          {
+            "x": 155.5,
+            "y": 72.85638058330917
+          }
+        ]
+      ]
+    ],
+    "parts": [
+      {
+        "attrs": {},
+        "id": "uno",
+        "label": "Arduino Uno",
+        "left": 40,
+        "top": 170,
+        "type": "wokwi-arduino-uno"
+      },
+      {
+        "attrs": {
+          "gamma": 0.7,
+          "rl10": 50,
+          "value": 100
+        },
+        "id": "ldr",
+        "label": "Photoresistor",
+        "left": 415,
+        "top": 65,
+        "type": "p5comp-photoresistor"
+      },
+      {
+        "attrs": {
+          "value": "10000"
+        },
+        "id": "divider",
+        "label": "10 kΩ divider",
+        "left": 510,
+        "top": 125,
+        "type": "wokwi-resistor"
+      },
+      {
+        "attrs": {},
+        "id": "button",
+        "label": "Test button",
+        "left": 390,
+        "top": 260,
+        "type": "wokwi-pushbutton-6mm"
+      },
+      {
+        "attrs": {
+          "value": "220"
+        },
+        "id": "limit",
+        "label": "220 Ω",
+        "left": 142.35,
+        "top": 106,
+        "type": "wokwi-resistor",
+        "rotate": 270
+      },
+      {
+        "attrs": {
+          "color": "yellow"
+        },
+        "id": "led",
+        "label": "Yellow LED",
+        "left": 137.5,
+        "top": 8.856380583309168,
+        "type": "wokwi-led"
+      }
+    ],
+    "version": 1
+  },
+  "controls": {
+    "ldr": 1000,
+    "button": false
+  },
+  "api": "webserial",
+  "p5": {
+    "webserial": "// @watch light\n// @watch night\nlet light = 512;\nlet night = 0;\nlet lastButton = false;\nlet brightness = 0.5;\nlet dayMix = 0;\n\nfunction setup() {\n  createCanvas(600, 380);\n  noStroke();\n}\n\nfunction acceptLine(line) {\n  const reading = String(line).trim().match(/^light=(\\d+) button=([01]) led=[01]$/);\n  if (!reading) return;\n  light = constrain(Number(reading[1]), 0, 1023);\n  const pressed = reading[2] === '1';\n  if (pressed && !lastButton) night = 1 - night;\n  lastButton = pressed;\n}\n\nfunction draw() {\n  arduinoComms.poll();\n  brightness = lerp(brightness, light / 1023, 0.09);\n  dayMix = lerp(dayMix, night, 0.08);\n  const shade = (day, dark) => lerpColor(color(day), color(dark), dayMix);\n  const skyTop = shade('#62b9ec', '#111735');\n  const skyBottom = shade('#f6dfae', '#444366');\n  for (let y = 0; y < height; y += 2) {\n    fill(lerpColor(skyTop, skyBottom, y / height));\n    rect(0, y, width, 2);\n  }\n\n  const stars = [[42,44],[98,91],[164,39],[257,66],[330,38],[380,112],[473,38],[554,83],[527,146]];\n  fill(255, 240, 199, dayMix * 220);\n  for (const [x,y] of stars) circle(x, y, x % 3 + 2);\n\n  // The smoothed photocell reading moves the sun or moon along the same arc.\n  const skyX = lerp(55, width - 55, brightness);\n  const skyY = 175 - 115 * sin(PI * brightness);\n  fill(shade('#ffd063', '#f3eddc'));\n  circle(skyX, skyY, 76);\n  const crescent = lerpColor(skyTop, skyBottom, (skyY - 12) / height);\n  crescent.setAlpha(dayMix * 255);\n  fill(crescent);\n  circle(skyX + 19, skyY - 12, 64);\n\n  fill(shade('#87a573', '#394563'));\n  ellipse(440, 390, 580, 265);\n  fill(shade('#587c49', '#25374a'));\n  ellipse(180, 420, 650, 370);\n\n  stroke(shade('#684630', '#292332'));\n  strokeCap(ROUND);\n  strokeWeight(17);\n  line(220, 269, 215, 152);\n  strokeWeight(9);\n  line(217, 207, 182, 171);\n  line(216, 193, 251, 158);\n  noStroke();\n  fill(shade('#346451', '#294859'));\n  ellipse(214, 140, 121, 102);\n  ellipse(174, 158, 79, 69);\n  ellipse(253, 156, 81, 72);\n  fill(shade('#60936a', '#385b68'));\n  ellipse(193, 129, 68, 55);\n  ellipse(237, 128, 71, 61);\n  fill(shade('#8ab17d', '#50737a'));\n  ellipse(209, 109, 52, 35);\n\n  fill(4, 11, 24, 145 * (1 - brightness));\n  rect(0, 0, width, height);\n  fill(7, 16, 28, 175);\n  rect(16, 334, 254, 30, 6);\n  fill('#fff6dd');\n  textSize(13);\n  text((night ? 'NIGHT' : 'DAY') + '   ·   LIGHT ' + light + ' / 1023', 27, 354);\n}\n\n// p5comp communications: begin\n// p5comp communications: version 2\n////////////////////////////////////////////////////////////////////////\n// Arduino ↔ p5: webserial. This code is part of your sketch.\n// Match Serial.begin() in your Arduino sketch.\nconst SERIAL_BAUD_RATE = 9600;\nconst SERIAL_AUTO_CONNECT = false; // Only a previously permitted, unambiguous device.\nconst SERIAL_CONTROLS = \"always\"; // 'always', 'hover', or 'hidden' once connected.\nconst SERIAL_SHORTCUT = \"s\"; // Alt+Shift+S reveals/hides controls.\n\n// Load a local p5.webserial.js first, then jsDelivr. No index.html edit needed.\nconst P5_WEBSERIAL_LOCAL = \"./p5.webserial.js\";\nconst P5_WEBSERIAL_CDN =\n  \"https://cdn.jsdelivr.net/npm/@gohai/p5.webserial@1.1.2/libraries/p5.webserial.js\";\nfunction loadArduinoSerialLibrary(url) {\n  return new Promise((resolve, reject) => {\n    const script = document.createElement(\"script\");\n    const timeout = setTimeout(() => {\n      script.remove();\n      reject(new Error(\"Timed out loading \" + url));\n    }, 8000);\n    script.src = url;\n    script.onload = () => {\n      clearTimeout(timeout);\n      if (typeof p5.prototype.WebSerial === \"function\") resolve();\n      else {\n        script.remove();\n        reject(new Error(\"Invalid p5.webserial library: \" + url));\n      }\n    };\n    script.onerror = () => {\n      clearTimeout(timeout);\n      script.remove();\n      reject(new Error(\"Could not load \" + url));\n    };\n    document.head.append(script);\n  });\n}\nconst ArduinoSerialPort = p5.prototype.WebSerial;\nconst arduinoComms = (window.arduinoComms = {\n  lastLine: \"\",\n  connected: false,\n  requireSerial() {\n    if (!navigator.serial)\n      throw new Error(\n        \"USB serial is unavailable in this browser. Use Chrome or Edge; Safari is not supported.\",\n      );\n  },\n  onLine(serialLine) {\n    this.lastLine = serialLine;\n    if (typeof acceptLine === \"function\") acceptLine(serialLine);\n  },\n  async connect(onLine, options = {}) {\n    if (this.connected) return;\n    if (onLine) this.onLine = onLine;\n    this.requireSerial();\n    const host = window.p5compHostSerial || typeof window.serialConnected === \"boolean\";\n    // Ask while the click still has browser permission to open the chooser.\n    const selectedPort =\n      options.port || (host ? null : await navigator.serial.requestPort());\n    if (!ArduinoSerialPort && typeof p5.prototype.WebSerial !== \"function\") {\n      await loadArduinoSerialLibrary(P5_WEBSERIAL_LOCAL).catch(() =>\n        loadArduinoSerialLibrary(P5_WEBSERIAL_CDN),\n      );\n    }\n    this.port = new (ArduinoSerialPort || p5.prototype.WebSerial)(\n      this.sketch || window,\n    );\n    await this.port.selectPort(\n      ...(selectedPort ? [selectedPort, SERIAL_BAUD_RATE] : [SERIAL_BAUD_RATE]),\n    );\n    await new Promise((resolve, reject) => {\n      let finished = false;\n      this.readTask = this.port.start().finally(() => {\n        finished = true;\n      });\n      const check = () => {\n        if (this.port.opened()) return resolve();\n        if (finished)\n          return reject(\n            new Error(\n              \"Could not open Arduino serial port. Close other serial monitors and retry.\",\n            ),\n          );\n        setTimeout(check, 20);\n      };\n      check();\n    });\n    this.connected = true;\n  },\n  poll() {\n    if (!this.port?.opened()) return;\n    for (let i = 0; i < 50; i++) {\n      const serialLine = this.port.readUntil(\"\\n\");\n      if (!serialLine) break;\n      this.onLine(serialLine);\n    }\n  },\n  sendLine(serialLine) {\n    if (this.port?.opened()) return this.port.println(serialLine);\n  },\n  async disconnect() {\n    await this.port?.close();\n    this.connected = false;\n  },\n});\n\n(function () {\n  let removeControls = () => {};\n  function afterSetup() {\n    arduinoComms.sketch = this;\n    if (window.p5compHostSerial || typeof window.serialConnected === \"boolean\") {\n      if (window.serialConnected) arduinoComms.connect().catch(console.error);\n      return;\n    }\n    const controls = document.createElement(\"div\");\n    controls.style.cssText =\n      \"position:fixed;right:0;bottom:0;z-index:1000;display:flex;align-items:center;gap:8px;padding:12px;min-width:180px;min-height:40px;max-width:90vw;font:13px sans-serif\";\n    const button = document.createElement(\"button\");\n    button.style.cssText = \"padding:8px 12px;cursor:pointer\";\n    const status = document.createElement(\"span\");\n    status.setAttribute(\"role\", \"status\");\n    arduinoComms.connectButton = button;\n    arduinoComms.connectControls = controls;\n    const supported = Boolean(navigator.serial);\n    let hovered = false,\n      focused = false,\n      revealed = null;\n    function update() {\n      const visible =\n        !arduinoComms.connected ||\n        focused ||\n        status.textContent ||\n        (revealed ??\n          (SERIAL_CONTROLS === \"always\" || (SERIAL_CONTROLS === \"hover\" && hovered)));\n      controls.hidden = !visible && SERIAL_CONTROLS === \"hidden\";\n      controls.style.opacity = visible ? \"1\" : \"0\";\n      // In hover mode the transparent bottom-right area stays reachable.\n      controls.style.pointerEvents = controls.hidden ? \"none\" : \"auto\";\n      if (!button.disabled)\n        button.textContent = arduinoComms.connected\n          ? \"Disconnect Arduino\"\n          : \"Connect Arduino\";\n    }\n    arduinoComms.updateControls = update;\n    controls.onmouseenter = () => {\n      hovered = true;\n      update();\n    };\n    controls.onmouseleave = () => {\n      hovered = false;\n      update();\n    };\n    controls.onfocusin = () => {\n      focused = true;\n      update();\n    };\n    controls.onfocusout = (event) => {\n      focused = controls.contains(event.relatedTarget);\n      update();\n    };\n    const shortcut = (event) => {\n      if (\n        !event.altKey ||\n        !event.shiftKey ||\n        event.ctrlKey ||\n        event.metaKey ||\n        event.code !== \"Key\" + SERIAL_SHORTCUT.toUpperCase() ||\n        event.repeat\n      )\n        return;\n      if (event.target.closest?.(\"input,textarea,[contenteditable=true]\")) return;\n      event.preventDefault();\n      revealed = controls.hidden || controls.style.opacity === \"0\";\n      update();\n    };\n    document.addEventListener(\"keydown\", shortcut);\n    removeControls = () => {\n      document.removeEventListener(\"keydown\", shortcut);\n      controls.remove();\n    };\n    if (!supported) {\n      button.disabled = true;\n      button.textContent = \"USB serial unavailable\";\n      status.textContent =\n        \"Use a browser with Web Serial, such as Chrome or Edge. Safari is not supported.\";\n    }\n    async function connectOrDisconnect(options) {\n      button.disabled = true;\n      status.textContent = \"\";\n      try {\n        if (arduinoComms.connected) await arduinoComms.disconnect();\n        else await arduinoComms.connect(undefined, options);\n      } catch (error) {\n        if (error.name === \"NotFoundError\")\n          status.textContent = \"No port selected. Click Connect to try again.\";\n        else {\n          console.error(error);\n          status.textContent =\n            error.name === \"NetworkError\"\n              ? \"Port unavailable. Disconnect p5comp and other serial monitors, then retry.\"\n              : error.message;\n        }\n      } finally {\n        button.disabled = !supported;\n        // Clicking does not force the control to stay visible once connected.\n        focused = button.matches?.(\":focus-visible\") || false;\n        revealed = null;\n        update();\n      }\n    }\n    button.onclick = () => connectOrDisconnect();\n    controls.append(button, status);\n    document.body.append(controls);\n    update();\n    if (supported && SERIAL_AUTO_CONNECT) {\n      button.disabled = true;\n      navigator.serial\n        .getPorts()\n        .then((ports) => {\n          if (ports.length === 1) return connectOrDisconnect({ port: ports[0] });\n          status.textContent = ports.length\n            ? \"Choose which Arduino to connect.\"\n            : \"Click Connect to permit an Arduino first.\";\n        })\n        .catch((error) => {\n          status.textContent = error.message;\n        })\n        .finally(() => {\n          button.disabled = false;\n          update();\n        });\n    }\n  }\n  function beforeDraw() {\n    arduinoComms.poll();\n    arduinoComms.updateControls?.();\n  }\n  function removed() {\n    removeControls();\n    arduinoComms.disconnect().catch(console.error);\n  }\n  if (typeof p5.registerAddon === \"function\") {\n    p5.registerAddon(function (_p5, _prototype, lifecycles) {\n      lifecycles.postsetup = afterSetup;\n      lifecycles.predraw = beforeDraw;\n      lifecycles.remove = removed;\n    });\n  } else {\n    p5.prototype.registerMethod(\"afterSetup\", afterSetup);\n    p5.prototype.registerMethod(\"pre\", beforeDraw);\n    p5.prototype.registerMethod(\"remove\", removed);\n  }\n})();\n\n////////////////////////////////////////////////////////////////////////\n// p5comp communications: end\n"
+  },
+  "arduino": "// A0 reads the junction of the photoresistor and 10 kΩ resistor.\n// D7 uses the internal pull-up. Pressing the button connects it to GND.\nconst int LIGHT_PIN = A0;\nconst int BUTTON_PIN = 7;\nconst int LED_PIN = 13;\nconst int DARK_THRESHOLD = 350;\n\nvoid setup() {\n  pinMode(BUTTON_PIN, INPUT_PULLUP);\n  pinMode(LED_PIN, OUTPUT);\n  Serial.begin(9600);\n}\n\nvoid loop() {\n  int light = analogRead(LIGHT_PIN);\n  bool pressed = digitalRead(BUTTON_PIN) == LOW;\n  bool ledOn = pressed || light < DARK_THRESHOLD;\n  digitalWrite(LED_PIN, ledOn ? HIGH : LOW);\n\n  Serial.print(\"light=\");\n  Serial.print(light);\n  Serial.print(\" button=\");\n  Serial.print(pressed ? 1 : 0);\n  Serial.print(\" led=\");\n  Serial.println(ledOn ? 1 : 0);\n  delay(200);\n}\n",
+  "artifact": {
+    "source": "// A0 reads the junction of the photoresistor and 10 kΩ resistor.\n// D7 uses the internal pull-up. Pressing the button connects it to GND.\nconst int LIGHT_PIN = A0;\nconst int BUTTON_PIN = 7;\nconst int LED_PIN = 13;\nconst int DARK_THRESHOLD = 350;\n\nvoid setup() {\n  pinMode(BUTTON_PIN, INPUT_PULLUP);\n  pinMode(LED_PIN, OUTPUT);\n  Serial.begin(9600);\n}\n\nvoid loop() {\n  int light = analogRead(LIGHT_PIN);\n  bool pressed = digitalRead(BUTTON_PIN) == LOW;\n  bool ledOn = pressed || light < DARK_THRESHOLD;\n  digitalWrite(LED_PIN, ledOn ? HIGH : LOW);\n\n  Serial.print(\"light=\");\n  Serial.print(light);\n  Serial.print(\" button=\");\n  Serial.print(pressed ? 1 : 0);\n  Serial.print(\" led=\");\n  Serial.println(ledOn ? 1 : 0);\n  delay(200);\n}\n",
+    "buildKey": "// A0 reads the junction of the photoresistor and 10 kΩ resistor.\n// D7 uses the internal pull-up. Pressing the button connects it to GND.\nconst int LIGHT_PIN = A0;\nconst int BUTTON_PIN = 7;\nconst int LED_PIN = 13;\nconst int DARK_THRESHOLD = 350;\n\nvoid setup() {\n  pinMode(BUTTON_PIN, INPUT_PULLUP);\n  pinMode(LED_PIN, OUTPUT);\n  Serial.begin(9600);\n}\n\nvoid loop() {\n  int light = analogRead(LIGHT_PIN);\n  bool pressed = digitalRead(BUTTON_PIN) == LOW;\n  bool ledOn = pressed || light < DARK_THRESHOLD;\n  digitalWrite(LED_PIN, ledOn ? HIGH : LOW);\n\n  Serial.print(\"light=\");\n  Serial.print(light);\n  Serial.print(\" button=\");\n  Serial.print(pressed ? 1 : 0);\n  Serial.print(\" led=\");\n  Serial.println(ledOn ? 1 : 0);\n  delay(200);\n}\n{}",
+    "hex": ":100000000C9462000C948A000C948A000C948A0070\r\n:100010000C948A000C948A000C948A000C948A0038\r\n:100020000C948A000C948A000C948A000C948A0028\r\n:100030000C948A000C948A000C948A000C948A0018\r\n:100040000C94C7030C948A000C942C020C945E024E\r\n:100050000C948A000C948A000C948A000C948A00F8\r\n:100060000C948A000C948A00000000080002010031\r\n:100070000003040700000000000000000102040863\r\n:100080001020408001020408102001020408102002\r\n:10009000040404040404040402020202020203032E\r\n:1000A00003030303000000002300260029000000D2\r\n:1000B0000000250028002B0000000000240027007D\r\n:1000C0002A008E0211241FBECFEFD8E0DEBFCDBFC5\r\n:1000D00011E0A0E0B1E0EEE5FBE002C005900D927A\r\n:1000E000AC32B107D9F721E0ACE2B1E001C01D921A\r\n:1000F000A23DB207E1F710E0C2E6D0E004C02197CC\r\n:10010000FE010E94A705C136D107C9F70E94B803B6\r\n:100110000C9482050C94000062E087E00E94EE04DB\r\n:1001200061E08DE00E94EE0426E040E855E260E0E8\r\n:1001300070E08CE291E00C94CA01EF92FF920F9371\r\n:100140001F93CF938EE00E94AA047C0187E00E9457\r\n:1001500058058C01892B39F0C0E060E08EE5E81687\r\n:1001600081E0F80614F4C1E061E08DE00E942A0508\r\n:1001700061E071E08CE291E00E94F7024AE050E019\r\n:10018000B7018CE291E00E949E0368E071E08CE28E\r\n:1001900091E00E94F70261E070E0012B11F070E045\r\n:1001A00060E04AE050E08CE291E00E949E0361E151\r\n:1001B00071E08CE291E00E94F7026C2F70E04AE05F\r\n:1001C00050E08CE291E00E94A50368EC70E080E0D2\r\n:1001D00090E0CF911F910F91FF90EF900C94360417\r\n:1001E000FC01918D228D892F90E0805C9F4F821BB6\r\n:1001F00091098F7399270895FC01918D828D98172D\r\n:1002000031F0828DE80FF11D858D90E008958FEF1C\r\n:100210009FEF0895FC01918D828D981761F0A28D5A\r\n:10022000AE0FBF2FB11D5D968C91928D9F5F9F7316\r\n:10023000928F90E008958FEF9FEF0895FC01538D0A\r\n:10024000448D252F30E0842F90E0821B930B5417B0\r\n:1002500010F0CF9608950197089584E892E0892BD5\r\n:1002600049F080E090E0892B29F00E9484028111FE\r\n:100270000C9400000895FC01A48DA80FB92FB11DA6\r\n:10028000A35ABF4F2C91848D90E001968F739927CC\r\n:10029000848FA689B7892C93A089B1898C918370AA\r\n:1002A00080648C93938D848D981306C00288F389A3\r\n:1002B000E02D80818F7D80830895CF93DF93EC01C3\r\n:1002C000888D8823B9F0AA89BB89E889F9898C913E\r\n:1002D00085FD03C0808186FD0DC00FB607FCF7CFFA\r\n:1002E0008C9185FFF2CF808185FFEDCFCE010E94FA\r\n:1002F0003B01E9CFDF91CF910895EF92FF920F93E9\r\n:100300001F93CF93DF93EC0181E0888F9B8D8C8DC1\r\n:1003100098131AC0E889F989808185FF15C09FB7B5\r\n:10032000F894EE89FF896083E889F9898081837078\r\n:10033000806480839FBF81E090E0DF91CF911F9127\r\n:100340000F91FF90EF900895F62E0B8D10E00F5F48\r\n:100350001F4F0F731127E02E8C8D8E110CC00FB61E\r\n:1003600007FCFACFE889F989808185FFF5CFCE01B6\r\n:100370000E943B01F1CFEB8DEC0FFD2FF11DE35AF5\r\n:10038000FF4FF0829FB7F8940B8FEA89FB89808139\r\n:100390008062CFCFCF92DF92EF92FF921F93CF93E5\r\n:1003A000DF93EC016A017B01122FE889F98982E071\r\n:1003B0008083C11481EED806E104F104A1F060E06D\r\n:1003C00079E08DE390E0A70196010E948505215018\r\n:1003D00031094109510956954795379527952115BA\r\n:1003E00080E1380798F0E889F989108260E874E8BC\r\n:1003F0008EE190E0A70196010E9485052150310908\r\n:10040000410951095695479537952795EC85FD8506\r\n:100410003083EE85FF852083188EEC89FD8910835B\r\n:10042000EA89FB89808180618083EA89FB898081F8\r\n:1004300088608083EA89FB89808180688083EA897B\r\n:10044000FB8980818F7D8083DF91CF911F91FF9009\r\n:10045000EF90DF90CF9008951F920F920FB60F92FA\r\n:1004600011242F938F939F93EF93FF93E0913C017F\r\n:10047000F0913D018081E0914201F091430182FDC4\r\n:100480001BC09081809145018F5F8F732091460141\r\n:10049000821741F0E0914501F0E0E45DFE4F958F59\r\n:1004A00080934501FF91EF919F918F912F910F9034\r\n:1004B0000FBE0F901F9018958081F4CF1F920F925E\r\n:1004C0000FB60F9211242F933F934F935F936F9327\r\n:1004D0007F938F939F93AF93BF93EF93FF938CE2A0\r\n:1004E00091E00E943B01FF91EF91BF91AF919F91ED\r\n:1004F0008F917F916F915F914F913F912F910F90CD\r\n:100500000FBE0F901F9018958CE291E00E94F000B2\r\n:1005100021E0892B09F420E0822F0895ECE2F1E03C\r\n:100520001382128288EE93E0A0E0B0E0848395838A\r\n:10053000A683B7838EE191E09183808385EC90E080\r\n:100540009587848784EC90E09787868780EC90E09D\r\n:10055000918B808B81EC90E0938B828B82EC90E08E\r\n:10056000958B848B86EC90E0978B868B118E128E08\r\n:10057000138E148E0895AF92BF92CF92DF92EF92B6\r\n:10058000FF920F931F93CF93DF936C017B018B013D\r\n:10059000040F151FEB015E01AE18BF08C017D1078D\r\n:1005A00059F06991D601ED91FC910190F081E02D17\r\n:1005B000C6010995892B79F7C501DF91CF911F916C\r\n:1005C0000F91FF90EF90DF90CF90BF90AF90089584\r\n:1005D000FB0101900020E9F73197AF01461B570B53\r\n:1005E000DC01ED91FC910280F381E02D099461150D\r\n:1005F000710511F00C94E80290E080E00895DC01B0\r\n:10060000ED91FC910190F081E02D099467E171E09A\r\n:100610000C94E8028F929F92AF92BF92EF92FF925A\r\n:100620000F931F93CF93DF93CDB7DEB7A1970FB68C\r\n:10063000F894DEBF0FBECDBF7C01FA01CB0119A239\r\n:10064000223008F42AE08E010F5D1F4F822E912C7C\r\n:10065000B12CA12CBF01A50194010E948505F901CF\r\n:10066000CA016A300CF5605DD8016E938D01232BB1\r\n:10067000242B252B79F790E080E0109721F0BD0125\r\n:10068000C7010E94E802A1960FB6F894DEBF0FBE24\r\n:10069000CDBFDF91CF911F910F91FF90EF90BF9051\r\n:1006A000AF909F908F900895695CDECFCF92DF92DC\r\n:1006B000EF92FF920F931F93CF93DF932115310594\r\n:1006C00081F4DC01ED91FC910190F081E02D642F2B\r\n:1006D000DF91CF911F910F91FF90EF90DF90CF901E\r\n:1006E00009942A30310501F52AE077FF1DC06A011F\r\n:1006F0007B01EC016DE20E94FF028C01442755272B\r\n:10070000BA014C195D096E097F092AE0CE010E94E9\r\n:100710000A03800F911FDF91CF911F910F91FF90DE\r\n:10072000EF90DF90CF900895DF91CF911F910F91BF\r\n:10073000FF90EF90DF90CF900C940A039A01AB01E9\r\n:10074000770F660B770B0C9456030F931F93CF9381\r\n:10075000DF93EC010E949E038C01CE010E940603F0\r\n:10076000800F911FDF91CF911F910F9108950895F0\r\n:100770000E946F040E94B7030E948C00CDE2D1E07A\r\n:100780000E949D002097E1F30E942D01F9CF1F9256\r\n:100790000F920FB60F9211242F933F938F939F9335\r\n:1007A000AF93BF938091CA019091CB01A091CC01EE\r\n:1007B000B091CD013091C90123E0230F2D3758F5B9\r\n:1007C0000196A11DB11D2093C9018093CA01909388\r\n:1007D000CB01A093CC01B093CD018091CE0190913B\r\n:1007E000CF01A091D001B091D1010196A11DB11D01\r\n:1007F0008093CE019093CF01A093D001B093D1010B\r\n:10080000BF91AF919F918F913F912F910F900FBE0C\r\n:100810000F901F90189526E8230F0296A11DB11D79\r\n:10082000D2CF3FB7F8948091CE019091CF01A091A3\r\n:10083000D001B091D10126B5A89B05C02F3F19F07A\r\n:100840000196A11DB11D3FBFBA2FA92F982F882750\r\n:10085000BC01CD01620F711D811D911D42E0660F2B\r\n:10086000771F881F991F4A95D1F708958F929F92FD\r\n:10087000AF92BF92CF92DF92EF92FF926B017C0119\r\n:100880000E9411044B015C01C114D104E104F10484\r\n:10089000E9F00E9481050E941104681979098A090A\r\n:1008A0009B09683E73408105910570F321E0C21AEF\r\n:1008B000D108E108F10888EE880E83E0981EA11C9B\r\n:1008C000B11CC114D104E104F10429F7FF90EF90A9\r\n:1008D000DF90CF90BF90AF909F908F9008957894C5\r\n:1008E00084B5826084BD84B5816084BD85B5826035\r\n:1008F00085BD85B5816085BDEEE6F0E080818160D3\r\n:100900008083E1E8F0E010828081826080838081D2\r\n:1009100081608083E0E8F0E0808181608083E1EBAA\r\n:10092000F0E0808184608083E0EBF0E08081816092\r\n:100930008083EAE7F0E08081846080838081826048\r\n:100940008083808181608083808180688083109231\r\n:10095000C10008958E3008F08E502091000190E47F\r\n:10096000299F900111248770822B80937C008091B5\r\n:100970007A00806480937A0080917A0086FDFCCFB3\r\n:1009800080917800909179000895833081F028F467\r\n:10099000813099F08230A9F008958730A9F088302D\r\n:1009A000C9F08430B1F4809180008F7D03C08091C4\r\n:1009B00080008F7780938000089584B58F7784BD01\r\n:1009C000089584B58F7DFBCF8091B0008F778093A1\r\n:1009D000B00008958091B0008F7DF9CFCF93DF9361\r\n:1009E00090E0FC01E458FF4F249180579F4FFC0199\r\n:1009F00084918823C9F090E0880F991FFC01E85486\r\n:100A0000FF4FA591B491FC01E255FF4FC591D491E0\r\n:100A100061110DC09FB7F8948C91209582238C931F\r\n:100A20008881282328839FBFDF91CF91089562306A\r\n:100A300051F49FB7F8943C91822F809583238C9337\r\n:100A4000E8812E2BEFCF8FB7F894EC912E2B2C93BF\r\n:100A50008FBFEACF1F93CF93DF93282F30E0F901A8\r\n:100A6000E859FF4F8491F901E458FF4FD491F901FF\r\n:100A7000E057FF4FC491CC23A9F0162F81110E949B\r\n:100A8000C504EC2FF0E0EE0FFF1FE255FF4FA591DC\r\n:100A9000B4918FB7F894EC91111108C0D095DE2372\r\n:100AA000DC938FBFDF91CF911F910895DE2BF8CF9C\r\n:100AB000CF93DF93282F30E0F901E859FF4F84915D\r\n:100AC000F901E458FF4FD491F901E057FF4FC49169\r\n:100AD000CC23A1F081110E94C504EC2FF0E0EE0FB1\r\n:100AE000FF1FEC55FF4FA591B491EC91ED2381E0F0\r\n:100AF00090E009F480E0DF91CF91089580E090E0EC\r\n:100B0000FACF0895F8940C94AD05A1E21A2EAA1B11\r\n:100B1000BB1BFD010DC0AA1FBB1FEE1FFF1FA217AD\r\n:100B2000B307E407F50720F0A21BB30BE40BF50BAA\r\n:100B3000661F771F881F991F1A9469F76095709533\r\n:100B4000809590959B01AC01BD01CF010895EE0FFA\r\n:0E0B5000FF1F0590F491E02D0994F894FFCF5B\r\n:100B5E00016C696768743D0020627574746F6E3D38\r\n:100B6E0000206C65643D000D0A00000000007D0150\r\n:0C0B7E00BB021E015D01F0000A01FC003A\r\n:00000001FF\r\n",
+    "compiler": "p5comp-avr-1"
+  }
+}

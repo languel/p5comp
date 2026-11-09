@@ -11,6 +11,11 @@
     "folder": "Getting started"
   },
   {
+    "name": "Light sensor · Button · LED",
+    "project": "examples/light-sensor-button-led.json",
+    "folder": "Getting started"
+  },
+  {
     "name": "Four signals · input and output",
     "project": "examples/four-signals.json",
     "folder": "Getting started"
