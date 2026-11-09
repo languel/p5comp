@@ -39,7 +39,7 @@ test("every shipped p5 serial example declares live communication signals", () =
       new Function(source); // Annotations remain legal, inert comments outside p5comp.
     }
   }
-  assert.equal(count, 8);
+  assert.equal(count, 9);
 });
 test("four-signal and instrument demos expose received samples instead of animation estimates", () => {
   for (const name of ["four-signals", "pwm-instruments", "plotter"]) {
