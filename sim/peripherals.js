@@ -1,4 +1,27 @@
 // Protocol decoders use emulated CPU cycles, never browser wall time.
+const isContinuousServo = (p) =>
+  p.type === "wokwi-servo" &&
+  Boolean(p.attrs?.continuous || p.attrs?.servoModel === "FS90R");
+
+function integrateContinuousServo(p, m, cycles) {
+  const prev = m.servoCycle ?? cycles;
+  const elapsed = Math.max(0, cycles - prev);
+  m.servoCycle = cycles;
+  if (!p.powered || cycles - m.updated > 1600000 || m.pulse < 400 || m.pulse > 2600) {
+    m.rpm = 0;
+    return;
+  }
+  const deltaUs = m.pulse - 1500;
+  const deadband = 25;
+  const maxRPM = Number(p.attrs?.maxRPM) > 0 ? Number(p.attrs.maxRPM) : 110;
+  const drive =
+    Math.abs(deltaUs) <= deadband
+      ? 0
+      : Math.max(-1, Math.min(1, (deltaUs - Math.sign(deltaUs) * deadband) / (500 - deadband)));
+  m.rpm = drive * maxRPM;
+  m.angle = ((m.angle + (m.rpm * 6 * elapsed) / 16e6) % 360 + 360) % 360;
+}
+
 export class PeripheralModels {
   constructor(parts = []) {
     this.parts = parts;
@@ -9,6 +32,8 @@ export class PeripheralModels {
           last: false,
           rise: null,
           angle: 0,
+          rpm: 0,
+          servoCycle: null,
           pulse: 0,
           frequency: 0,
           lastRise: null,
@@ -36,8 +61,9 @@ export class PeripheralModels {
           m.updated = cycles;
         }
         if (!level && m.last && m.rise != null) {
+          if (isContinuousServo(p)) integrateContinuousServo(p, m, cycles);
           m.pulse = (cycles - m.rise) / 16;
-          if (m.pulse >= 400 && m.pulse <= 2600)
+          if (!isContinuousServo(p) && m.pulse >= 400 && m.pulse <= 2600)
             m.angle = Math.max(
               0,
               Math.min(180, ((m.pulse - 544) / (2400 - 544)) * 180),
@@ -86,15 +112,18 @@ export class PeripheralModels {
     return Object.fromEntries(
       this.parts.map((p) => {
         const m = this.memory.get(p.id);
-        if (p.type === "wokwi-servo")
+        if (p.type === "wokwi-servo") {
+          if (isContinuousServo(p)) integrateContinuousServo(p, m, cycles);
           return [
             p.id,
             {
               angle: p.powered ? m.angle : 0,
+              ...(isContinuousServo(p) ? { rpm: p.powered ? m.rpm : 0, continuous: true } : {}),
               pulse: m.pulse,
               powered: p.powered,
             },
           ];
+        }
         if (p.type === "wokwi-buzzer")
           return [
             p.id,

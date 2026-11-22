@@ -1,4 +1,5 @@
 import { validateDiagram } from "./circuit.js";
+import { validatePhysicsScene } from "./physics/model.js";
 export function validateProject(project) {
   if (!project || typeof project !== "object" || Array.isArray(project))
     throw new Error("Project must be a JSON object.");
@@ -22,5 +23,6 @@ export function validateProject(project) {
       Object.values(w.files).some((s) => typeof s !== "string"))
   )
     throw new Error("Project files must contain text sources.");
+  if (w?.physics != null) validatePhysicsScene(w.physics);
   return project;
 }

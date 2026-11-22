@@ -26,6 +26,8 @@ import { ProjectionWindows } from "./ProjectionWindows.js";
 import { portableProject, localProject } from "../shared/takes/frameStore.js";
 import { TakeTimeline } from "./TakeTimeline.js";
 import { DrawingBoard } from "./DrawingBoard.js";
+import { PhysicsLayer } from "./physics/PhysicsLayer.js";
+import { mountAssistantPanel } from "./assistant/AssistantPanel.js";
 import { createEditor } from "../shared/editor/createEditor.js";
 import { circuitSVG, svgPNG } from "./exportCircuit.js";
 import { jsPDF } from "jspdf";
@@ -247,7 +249,7 @@ export class Workbench {
     this.editorPanel = node(
       "aside",
       "wb-right",
-      '<nav class="wb-tabs" role="tablist" aria-label="Inspector"><button role="tab" data-tab="arduino" title="Arduino code" aria-label="Arduino code">∞</button><button role="tab" data-tab="p5" title="p5.js code" aria-label="p5.js code">p5</button><button role="tab" data-tab="properties" title="Properties" aria-label="Properties">☷</button><button role="tab" data-tab="help" title="Help" aria-label="Help">?</button><button role="tab" data-tab="settings" title="Settings" aria-label="Settings">⚙</button><button id="closeInspector" title="Hide inspector">×</button></nav><section data-pane="arduino"></section><section data-pane="p5"></section><section data-pane="properties"><div class="section-bar"><span id="propertyTitle">Selection</span><button id="applyProperties" title="Apply properties (⌘/Ctrl Enter)" aria-label="Apply properties">▷</button></div><div id="partAttributes"></div><output id="partState"></output><div id="propertyEditor"></div><div id="referenceProperties"></div></section><section data-pane="help"><div id="helpHome"><p>Select an element and press ? for documentation.</p><p>⌘/Ctrl Enter: run · Shift-click wire: bend · Space-drag: pan</p></div></section>',
+      '<nav class="wb-tabs" role="tablist" aria-label="Inspector"><button role="tab" data-tab="arduino" title="Arduino code" aria-label="Arduino code">∞</button><button role="tab" data-tab="p5" title="p5.js code" aria-label="p5.js code">p5</button><button role="tab" data-tab="assistant" title="Assistant (AI circuit & code builder)" aria-label="Assistant">✦</button><button role="tab" data-tab="properties" title="Properties" aria-label="Properties">☷</button><button role="tab" data-tab="help" title="Help" aria-label="Help">?</button><button role="tab" data-tab="settings" title="Settings" aria-label="Settings">⚙</button><button id="closeInspector" title="Hide inspector">×</button></nav><section data-pane="arduino"></section><section data-pane="p5"></section><section data-pane="assistant"></section><section data-pane="properties"><div class="section-bar"><span id="propertyTitle">Selection</span><button id="applyProperties" title="Apply properties (⌘/Ctrl Enter)" aria-label="Apply properties">▷</button></div><div id="partAttributes"></div><output id="partState"></output><div id="propertyEditor"></div><div id="referenceProperties"></div></section><section data-pane="help"><div id="helpHome"><p>Select an element and press ? for documentation.</p><p>⌘/Ctrl Enter: run · Shift-click wire: bend · Space-drag: pan</p></div></section>',
     );
     const editors = document.querySelectorAll("#code .editors > section");
     this.editorPanel.querySelector('[data-pane="arduino"]').append(editors[0]);
@@ -636,6 +638,13 @@ export class Workbench {
       tools: document.querySelector(".canvas-tools"),
       persist: () => ctx.persist(),
       mountServo: ids => mountServoDrawing(this, ctx.selected()?.id, ids),
+      onPhysicsAction: (kind, doc, ids) => this.physics?.handlePoliplanAction(kind, doc, ids),
+      onDocChange: (doc) => this.physics?.syncFromPoliplan(doc),
+      onActiveChange: (on) => this.physics?.onDrawToggle(on),
+      onSelectionChange: (ids) => this.physics?.onPoliplanSelection(ids),
+      onToolChange: (toolId) => this.physics?.onPoliplanTool(toolId),
+      onHostPointer: (type, init) => this.physics?.handleHostPointer(type, init),
+      getHostToolbar: () => this.physics?.poliplanToolbarConfig(),
       assetNames: (wanted) => {   // drawing.png, then drawing-2.png, …
         const [, stem, ext] = /^(.*)\.(\w+)$/.exec(wanted);
         let name = wanted;
@@ -649,6 +658,42 @@ export class Workbench {
         this.scheduleP5();
       },
     });
+    this.physics = new PhysicsLayer({
+      workspace,
+      stage: $("stage"),
+      world: $("world"),
+      tools: document.querySelector(".canvas-tools"),
+      canvas: ctx.canvas,
+      drawing: this.drawing,
+      getDiagram: () => ctx.diagram?.() || { parts: [] },
+      getPartElements: () => ctx.partElements?.() || null,
+      getSelectedPart: () => ctx.selected?.() || null,
+      getDrawingDoc: () => this.drawing?.snapshot() || null,
+      onRewindActuators: () => ctx.rewindActuators?.(),
+      onTimeChange: (t) => this.setSimTime(t),
+      persist: () => ctx.persist(),
+    });
+    // Global Rewind button + simulation timer directly next to the top-bar Play (#run) button.
+    const rewindBtn = node(
+      "button",
+      "",
+      '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.3-5.6L4 8.7"/><path d="M4 4v4.7h4.7"/></svg>',
+    );
+    rewindBtn.id = "rewind";
+    rewindBtn.type = "button";
+    rewindBtn.title = "Rewind simulation, actuators & physics to 0.00 s";
+    rewindBtn.setAttribute("aria-label", "Rewind simulation to 0.00 s");
+    rewindBtn.onclick = () => ctx.rewindSimulation?.();
+    const simTimer = node("output", "sim-timer", "0.00 s");
+    simTimer.id = "simTimer";
+    simTimer.title = "Simulation time";
+    simTimer.setAttribute("aria-label", "Simulation time");
+    this.simTimerEl = simTimer;
+    $("run")?.after(rewindBtn, simTimer);
+    mountAssistantPanel(
+      this.editorPanel.querySelector('[data-pane="assistant"]'),
+      this,
+    );
     this.timeline = new TakeTimeline(this);
     const setSplit = (ratio) => {
       this.splitRatio = Math.max(0.15, Math.min(0.85, ratio));
@@ -1205,6 +1250,11 @@ export class Workbench {
   uploadState(connected) {
     if ($("compileUpload")) $("compileUpload").disabled = false;
   }
+  setSimTime(t = 0) {
+    if (this.simTimerEl) {
+      this.simTimerEl.textContent = `${Math.max(0, Number(t) || 0).toFixed(2)} s`;
+    }
+  }
   syncTransport(arduinoRunning = this.arduinoRunning || false) {
     this.arduinoRunning = arduinoRunning;
     for(const [kind,on] of [["circuit",arduinoRunning],["p5",!!this.p5Running]]) {
@@ -1365,6 +1415,7 @@ export class Workbench {
       splitRatio: this.splitRatio,
       bottomHeight: this.bottomHeight,
       drawing: this.drawing?.snapshot() || undefined,
+      physics: this.physics?.snapshot() || undefined,
       takes: this.takes || {},
     };
   }
@@ -1396,6 +1447,7 @@ export class Workbench {
     this.renderReferences();
     this.selectPart();
     this.drawing?.load(d.drawing);
+    this.physics?.load(d.physics);
     this.mainView(
       d.activeView || "circuit",
       ["tabs", "horizontal", "vertical"].includes(d.layout) ? d.layout : "tabs",

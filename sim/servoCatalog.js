@@ -36,13 +36,39 @@ export const SERVO_MODELS = {
     hornColor: "#b5b7bc",
   },
 };
+export const CONTINUOUS_SERVO_MODELS = {
+  FS90R: {
+    name: "FS90R",
+    variant: "FS90R · 360° continuous rotation",
+    continuous: true,
+    maxRPM: 110,
+    url: "https://www.feetechrc.com/product/analog-servo/micro-1-3kg-cm-360-degree-continuous-rotation-servo-fs90r.html",
+    specs: [
+      ["Version", "Feetech FS90R Continuous Rotation"],
+      ["Mass", "9 g"],
+      ["Body (L × W × H)", "23.2 × 12.5 × 22 mm"],
+      ["Mode", "360° continuous (1500 µs stop · 1000–2000 µs speed/dir)"],
+      ["Published voltage", "4.8 V"],
+      ["Stall torque at 4.8 V", "1.3 kgf·cm"],
+      ["No-load speed at 4.8 V", "110 RPM"],
+    ],
+    description:
+      "FS90R · 360° continuous rotation micro servo · 1500 µs stop · 1000–2000 µs speed & direction · 110 RPM at 4.8 V",
+    hornColor: "#e6b84c",
+  },
+};
+const ALL_SERVO_MODELS = { ...SERVO_MODELS, ...CONTINUOUS_SERVO_MODELS };
 export const servoModel = (part) =>
   part?.type === "wokwi-servo"
-    ? SERVO_MODELS[part.attrs?.servoModel]
+    ? ALL_SERVO_MODELS[part.attrs?.servoModel]
     : undefined;
-export const servoVariants = Object.values(SERVO_MODELS).map((m) => ({
+export const servoVariants = Object.values(ALL_SERVO_MODELS).map((m) => ({
   name: m.variant,
-  attrs: { servoModel: m.name, hornColor: m.hornColor },
+  attrs: {
+    servoModel: m.name,
+    hornColor: m.hornColor,
+    ...(m.continuous ? { continuous: true, maxRPM: m.maxRPM } : {}),
+  },
   pins: ["GND", "V+", "PWM"],
   modelDescription: m.description,
 }));

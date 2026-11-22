@@ -394,8 +394,25 @@ async function getFirmware() {
 document.addEventListener("p5comp:pwm-refresh", (e) =>
   worker?.postMessage({ type: "refresh", hz: e.detail }),
 );
-function startWorker(hex) {
+function resetActuatorElements() {
+  for (const [id, element] of partElements) {
+    const tag = element.tagName;
+    if (tag === "WOKWI-SERVO") {
+      const part = diagram.parts.find((p) => p.id === id);
+      element.angle = Number(part?.attrs?.angle ?? 0) || 0;
+    } else if (tag === "P5COMP-DC-MOTOR" || tag === "P5COMP-GEAR-MOTOR") {
+      element.angle = 0;
+      element.rpm = 0;
+    } else if (tag === "WOKWI-STEPPER-MOTOR" || tag === "WOKWI-BIAXIAL-STEPPER") {
+      element.angle = 0;
+    }
+  }
   servoAttachments.clearTrails();
+  servoAttachments.update();
+}
+function startWorker(hex) {
+  resetActuatorElements();
+  workbench?.physics?.onArduinoStart();
   worker?.terminate();
   worker = new Worker(new URL("./worker.js", import.meta.url), {
     type: "module",
@@ -405,6 +422,7 @@ function startWorker(hex) {
     if (d.type === "state") {
       agentLatestState = d;
       servoAttachments.update(d.parts, true);
+      workbench?.physics?.setActuatorStates(d.parts);
       circuitAudio?.consume(d.analogFrames||[],diagram.parts);
       for(const [id,element] of partElements)if(element.tagName==="P5COMP-OSCILLOSCOPE")element.ingest(d.analogFrames||[],id);
       $("clock").textContent = d.seconds.toFixed(2) + " s";
@@ -537,6 +555,7 @@ function startWorker(hex) {
   });
   running = true;
   paused = false;
+  startSimClock(true);
   $("pause").disabled = false;
   $("pause").textContent = "Pause";
   status(topology?.board === null ? "Running · analog circuit" : "Running · simulated Arduino");
@@ -547,6 +566,49 @@ function startWorker(hex) {
   const activeBoard=document.querySelector("wokwi-arduino-uno,wokwi-arduino-nano,wokwi-arduino-mega");
   if(activeBoard)activeBoard.ledPower=true;
 }
+let simClockElapsed = 0;
+let simClockAnchor = 0;
+let simClockRaf = 0;
+function tickSimClock(now) {
+  simClockRaf = 0;
+  if (!running || paused) return;
+  const elapsed = simClockElapsed + Math.max(0, (now - simClockAnchor) / 1000);
+  if (!workbench?.physics?.running) workbench?.setSimTime(elapsed);
+  simClockRaf = requestAnimationFrame(tickSimClock);
+}
+function startSimClock(reset = false) {
+  if (reset) {
+    simClockElapsed = 0;
+    workbench?.setSimTime(0);
+  }
+  simClockAnchor = performance.now();
+  if (!simClockRaf) simClockRaf = requestAnimationFrame(tickSimClock);
+}
+function pauseSimClock() {
+  if (simClockRaf) {
+    cancelAnimationFrame(simClockRaf);
+    simClockRaf = 0;
+  }
+  if (simClockAnchor) {
+    simClockElapsed += Math.max(0, (performance.now() - simClockAnchor) / 1000);
+    simClockAnchor = 0;
+  }
+}
+function resetSimClock() {
+  pauseSimClock();
+  simClockElapsed = 0;
+  workbench?.setSimTime(0);
+}
+function rewindSimulation() {
+  if (running) {
+    stop();
+    bridge.stop();
+  }
+  resetActuatorElements();
+  resetSimClock();
+  workbench?.physics?.reset(true, { rewindActuators: false });
+}
+
 async function runArduino() {
   workbench?.timeline?.action("runArduino", "Run Arduino");
   if (compiling) return;
@@ -592,6 +654,8 @@ function stop() {
   worker = null;
   running = false;
   paused = false;
+  pauseSimClock();
+  workbench?.physics?.onArduinoStop();
   $("pause").disabled = true;
   serialActivity.clear();
   status("Stopped · simulated Arduino");
@@ -677,6 +741,8 @@ const canvas = new CircuitCanvas({
       else persist();
       renderWires();
       workbench?.selectPart();
+      workbench?.physics?.syncActuatorPositions();
+      workbench?.physics?.render();
     }
   },
   onSelectWire: selectWire,
@@ -1368,6 +1434,9 @@ $("pause").onclick = () => {
   if (!agentMuteActions)
     agentSurface?.action("runtime", { action: paused ? "pause" : "resume" });
   worker?.postMessage({ type: "pause", paused });
+  if (paused) pauseSimClock();
+  else startSimClock(false);
+  workbench?.physics?.onArduinoPause(paused);
   $("pause").textContent = paused ? "Resume simulation" : "Pause";
   $("pause").setAttribute("aria-label", $("pause").textContent);
   $("pause").disabled = false;
@@ -1823,6 +1892,12 @@ workbench = new Workbench({
   setControl,
   setCode,
   stop,
+  rewindSimulation,
+  rewindActuators: () => {
+    if (running) stop();
+    resetActuatorElements();
+    resetSimClock();
+  },
   runP5,
   runArduino,
   commsExample: (api) =>
@@ -1838,6 +1913,8 @@ workbench = new Workbench({
     canvas.render();
   },
   selected: () => diagram.parts.find((p) => p.id === selectedPart),
+  diagram: () => diagram,
+  partElements: () => partElements,
   element: () => partElements.get(selectedPart),
   clearServoTrails: () => servoAttachments.clearTrails(),
   updatePart: (next, targetId = selectedPart) => {

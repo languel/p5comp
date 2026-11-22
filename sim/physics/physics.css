@@ -1,0 +1,537 @@
+/* Second Layer: Algodoo-inspired Physics & Mechanisms Layer */
+
+/* Unified Draw & Physics Layer: when Physics tools take pointer control, Poliplan marks stay visible */
+.draw-layer.phys-yield {
+  pointer-events: none !important;
+}
+
+.draw-layer.phys-yield iframe {
+  pointer-events: none !important;
+}
+
+#drawLayer {
+  position: relative;
+}
+
+#drawLayer.has-physics::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ui-accent, #3b7a6c);
+}
+
+#drawLayer[aria-pressed="true"].has-physics::after {
+  background: currentColor;
+}
+
+/* When Physics Layer is active, gently dim the Electronics layer and route pointers to Physics */
+#stage.physics-layer-active #parts,
+#stage.physics-layer-active #wires,
+#stage.physics-layer-active .servo-attachments {
+  opacity: 0.52;
+  pointer-events: none;
+  transition: opacity 0.14s ease;
+}
+
+#stage.physics-layer-active #parts *,
+#stage.physics-layer-active #wires * {
+  pointer-events: none !important;
+}
+
+svg.physics-layer-svg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  overflow: visible;
+  z-index: 6;
+  pointer-events: none;
+}
+
+#stage.physics-layer-active svg.physics-layer-svg {
+  pointer-events: auto;
+}
+
+/* Unified Select: when Draw & Physics mode is open, Poliplan's V tool can click/drag physics bodies & joints directly */
+#stage.draw-physics-open svg.physics-layer-svg .phys-body,
+#stage.draw-physics-open svg.physics-layer-svg .phys-joint {
+  pointer-events: auto;
+  cursor: move;
+}
+
+svg.physics-layer-svg.hidden-layer {
+  display: none;
+}
+
+.phys-overlay-capture {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: none;
+  cursor: crosshair;
+}
+
+#stage.physics-layer-active .phys-overlay-capture {
+  display: block;
+}
+
+#stage.physics-layer-active.phys-tool-select .phys-overlay-capture {
+  z-index: 4;
+  cursor: default;
+}
+
+/* Poliplan-pattern Physics Brushes Island (matches Poliplan's .wb-island / .wb-tool / .wb-menu) */
+.phys-toolbar {
+  --phys-panel: #222222;
+  --phys-panel-2: #2a2a2a;
+  --phys-line: #353535;
+  --phys-text: #dadada;
+  --phys-muted: #8c8c8c;
+  --phys-hover: rgba(255, 255, 255, 0.055);
+  --phys-on: rgba(255, 255, 255, 0.12);
+  --phys-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  height: 38px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  border: 1px solid var(--phys-line);
+  background: var(--phys-panel);
+  color: var(--phys-text);
+  box-shadow: var(--phys-shadow);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+:root[data-theme="light"] .phys-toolbar {
+  --phys-panel: #f7f7f6;
+  --phys-panel-2: #efefed;
+  --phys-line: #dadad7;
+  --phys-text: #262626;
+  --phys-muted: #7c7c7c;
+  --phys-hover: rgba(0, 0, 0, 0.045);
+  --phys-on: rgba(0, 0, 0, 0.08);
+  --phys-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+}
+
+.phys-toolbar[hidden] {
+  display: none;
+}
+
+.phys-toolbar .phys-sep {
+  width: 1px;
+  height: 18px;
+  flex-shrink: 0;
+  background: var(--phys-line);
+  margin: 0 3px;
+}
+
+.phys-toolbar .phys-tool-stack {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.phys-toolbar .phys-tool {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--phys-text);
+  cursor: pointer;
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.phys-toolbar .phys-tool:hover {
+  background: var(--phys-hover);
+}
+
+.phys-toolbar .phys-tool:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.phys-toolbar .phys-tool[aria-pressed="true"],
+.phys-toolbar .phys-tool.on {
+  background: var(--phys-on);
+  color: var(--phys-text);
+}
+
+.phys-toolbar .phys-tool svg {
+  width: 15px;
+  height: 15px;
+  display: block;
+}
+
+.phys-toolbar .phys-tool kbd {
+  position: absolute;
+  right: 2px;
+  bottom: 1px;
+  font: 8px/1 "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+  color: var(--phys-muted);
+  pointer-events: none;
+}
+
+.phys-toolbar .phys-caret {
+  position: absolute;
+  right: 2px;
+  top: 2px;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-top: 4px solid currentColor;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* Poliplan-style dropdown menu (.wb-menu match) */
+.phys-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 40;
+  min-width: 188px;
+  background: var(--phys-panel);
+  border: 1px solid var(--phys-line);
+  border-radius: 6px;
+  box-shadow: var(--phys-shadow);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  color: var(--phys-text);
+}
+
+.phys-menu.align-right {
+  left: auto;
+  right: 0;
+}
+
+.phys-menu[hidden] {
+  display: none;
+}
+
+.phys-menu .phys-menu-label {
+  color: var(--phys-muted);
+  padding: 3px 8px 2px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.phys-menu hr {
+  border: 0;
+  border-top: 1px solid var(--phys-line);
+  margin: 3px 2px;
+}
+
+.phys-menu button {
+  text-align: left;
+  background: none;
+  border: 0;
+  height: 25px;
+  line-height: 25px;
+  padding: 0 8px;
+  margin: 0;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--phys-text);
+  font: inherit;
+  font-size: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.phys-menu button:hover {
+  background: var(--phys-hover);
+}
+
+.phys-menu button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.phys-menu button[aria-checked="true"],
+.phys-menu button.active {
+  background: var(--phys-on);
+}
+
+.phys-menu .phys-menu-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  opacity: 0.85;
+  flex: none;
+}
+
+.phys-menu .phys-menu-text {
+  flex: 1;
+  text-align: left;
+}
+
+.phys-menu .phys-menu-check {
+  width: 12px;
+  text-align: center;
+  color: var(--phys-muted);
+  font-size: 11px;
+  flex: none;
+}
+
+.phys-menu kbd {
+  color: var(--phys-muted);
+  font: 10px "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+}
+
+.phys-menu .phys-menu-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 3px 8px;
+  font-size: 12px;
+}
+
+.phys-menu .phys-menu-row select {
+  background: var(--phys-panel-2);
+  color: var(--phys-text);
+  border: 1px solid var(--phys-line);
+  border-radius: 4px;
+  height: 22px;
+  padding: 0 6px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+/* Floating Inspector for selected body / joint */
+.phys-inspector {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 20;
+  width: 248px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--ui-line, rgba(128, 136, 134, 0.35));
+  background: var(--ui-panel, rgba(36, 38, 40, 0.96));
+  color: var(--ui-text, #e8ecea);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.24);
+  backdrop-filter: blur(8px);
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.phys-inspector[hidden] {
+  display: none;
+}
+
+.phys-inspector header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  font-size: 12px;
+  border-bottom: 1px solid var(--ui-line, rgba(128, 136, 134, 0.3));
+  padding-bottom: 5px;
+}
+
+.phys-inspector .phys-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.phys-inspector label {
+  color: var(--ui-muted, #9aa3a0);
+  font-size: 11px;
+}
+
+.phys-inspector input[type="number"],
+.phys-inspector input[type="text"],
+.phys-inspector select {
+  width: 128px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--ui-line, rgba(128, 136, 134, 0.4));
+  background: var(--ui-bg, transparent);
+  color: inherit;
+  font-size: 11px;
+}
+
+.phys-inspector input[type="color"] {
+  width: 36px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--ui-line, rgba(128, 136, 134, 0.4));
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.phys-inspector .phys-danger {
+  margin-top: 4px;
+  padding: 4px 8px;
+  border: 1px solid #c45b4a;
+  color: #c45b4a;
+  background: transparent;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.phys-inspector .phys-danger:hover {
+  background: #c45b4a;
+  color: #fff;
+}
+
+.phys-layer-toggles {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.phys-layer-toggles button {
+  min-width: 24px;
+  height: 22px;
+  padding: 0 5px;
+  border-radius: 4px;
+  border: 1px solid var(--ui-line, rgba(128, 136, 134, 0.45));
+  background: transparent;
+  color: var(--ui-muted, #9aa3a0);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.phys-layer-toggles button[aria-pressed="true"] {
+  background: var(--ui-accent, #3b7a6c);
+  border-color: var(--ui-accent, #3b7a6c);
+  color: #fff;
+}
+
+.phys-layer-toggles button[aria-pressed="mixed"] {
+  background: rgba(59, 122, 108, 0.35);
+  border-color: var(--ui-accent, #3b7a6c);
+  color: var(--ui-text, #e8ecea);
+}
+
+/* Status flash toast */
+.phys-toast {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: rgba(24, 28, 30, 0.88);
+  color: #f4f6f5;
+  font-size: 11px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.16s ease;
+}
+
+.phys-toast.show {
+  opacity: 1;
+}
+
+/* SVG styling inside the Physics Layer */
+.phys-body {
+  cursor: grab;
+}
+
+.phys-body.selected {
+  filter: drop-shadow(0 0 4px rgba(59, 122, 108, 0.75));
+}
+
+.phys-joint {
+  cursor: grab;
+}
+
+.phys-actuator-hub {
+  cursor: pointer;
+}
+
+/* Inline Physics & Mechanisms Quick Guide */
+.phys-guide {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 20;
+  width: 300px;
+  max-height: 70%;
+  overflow-y: auto;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--ui-line, rgba(128, 136, 134, 0.35));
+  background: var(--ui-panel, rgba(36, 38, 40, 0.96));
+  color: var(--ui-text, #e8ecea);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.24);
+  backdrop-filter: blur(8px);
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.phys-guide[hidden] {
+  display: none;
+}
+
+.phys-guide header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  font-size: 12px;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--ui-line, rgba(128, 136, 134, 0.3));
+}
+
+.phys-guide header button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.phys-guide ul {
+  margin: 4px 0 0;
+  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.phys-guide kbd {
+  padding: 1px 4px;
+  border-radius: 3px;
+  border: 1px solid var(--ui-line, rgba(128, 136, 134, 0.4));
+  font-size: 10px;
+}

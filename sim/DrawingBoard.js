@@ -12,6 +12,10 @@ const EDITOR_URL = basePath("vendor/ams-editor/");
 // One big transparent board under everything: marks need a home, and nothing of it is drawn.
 const BOARD = { id: "main", title: "drawing", width: 2400, height: 1600, ground: "transparent", hideBorder: true, hideLabel: true };
 const ACTIONS = [
+  { id: "phys-dynamic", label: "Physics: attach dynamic body", hint: "Attach dynamic rigid-body physics directly to the selected Poliplan mark(s)" },
+  { id: "phys-static", label: "Physics: attach static ground / ramp", hint: "Attach static ramp/wall collider directly to the selected Poliplan mark(s)" },
+  { id: "phys-curve", label: "Physics: attach curve track constraint", hint: "Use the selected Poliplan curve as a guide track constraining an overlapping body (or a new carriage pin)" },
+  { id: "phys-detach", label: "Physics: remove physics", hint: "Remove attached physics properties or track constraints from the selected Poliplan mark(s)" },
   { id: "servo", label: "Mount selection on selected servo", hint: "Attach an SVG copy of the selected artwork to the servo shaft; select a circuit servo first" },
   { id: "png", label: "Save selection as PNG to assets", hint: "The selected marks (the whole drawing when nothing is selected) as a transparent PNG project asset the p5 sketch can load" },
   { id: "svg", label: "Save selection as SVG to assets", hint: "The same as an SVG project asset" },
@@ -19,8 +23,8 @@ const ACTIONS = [
 const hasMarks = (doc) => Boolean(doc?.elements?.length);
 
 export class DrawingBoard {
-  constructor({ workspace, stage, canvas, tools, persist, addAsset, assetNames, mountServo }) {
-    Object.assign(this, { workspace, stage, canvas, persist, addAsset, assetNames, mountServo });
+  constructor({ workspace, stage, canvas, tools, persist, addAsset, assetNames, mountServo, onPhysicsAction, onDocChange, onActiveChange, onSelectionChange, onToolChange, onHostPointer, getHostToolbar }) {
+    Object.assign(this, { workspace, stage, canvas, persist, addAsset, assetNames, mountServo, onPhysicsAction, onDocChange, onActiveChange, onSelectionChange, onToolChange, onHostPointer, getHostToolbar });
     stage.addEventListener('p5comp:selection-box', event => {
       if (!this.active || this.tab || !this.editor) return;
       this.editor.selectBox?.(event.detail).catch(error=>console.warn('Drawing selection:',error));
@@ -43,8 +47,8 @@ export class DrawingBoard {
     this.toggle = document.createElement("button");
     this.toggle.id = "drawLayer";
     this.toggle.setAttribute("aria-pressed", "false");
-    this.toggle.title = "Draw on the circuit (D): pen, brushes, shapes and colors in a layer over it";
-    this.toggle.setAttribute("aria-label", "Draw on the circuit");
+    this.toggle.title = "Draw & Physics layer (D / P): Poliplan drawing + physics & mechanisms over the circuit";
+    this.toggle.setAttribute("aria-label", "Draw and Physics layer");
     this.toggle.textContent = "✎";
     this.toggle.onclick = () => this.setActive(!this.active);
     tools.append(this.toggle);
@@ -130,7 +134,7 @@ export class DrawingBoard {
     Object.assign(this.layer.style, { left: `${r.left - ws.left}px`, top: `${r.top - ws.top}px`, width: `${r.width}px`, height: `${r.height}px` });
   }
 
-  setActive(on) {
+  setActive(on, { silent = false } = {}) {
     this.active = on;
     this.toggle.setAttribute("aria-pressed", String(on));
     this.place();
@@ -139,6 +143,18 @@ export class DrawingBoard {
       this.applyUI();
       this.editor?.getDocument().then((r) => this.remember(r)).catch(() => {});
     }
+    if (!silent) this.onActiveChange?.(on);
+  }
+
+  /** Push updated host toolbar sections (e.g. Physics brushes & live checkmarks) into Poliplan's toolbar. */
+  setHostToolbar(sections) {
+    this._hostToolbar = sections;
+    this.editor?.setHostToolbar?.(sections).catch(() => {});
+  }
+
+  /** Switch Poliplan's active tool (including 'select' or 'host:phys-*'). */
+  setTool(tool) {
+    this.editor?.setTool?.(tool).catch(() => {});
   }
 
   /** What the editor shows, one request after another so they cannot overtake each other. */
@@ -172,12 +188,17 @@ export class DrawingBoard {
           passthrough: true,
           ui: { tools: this.active || this.tab },
           actions: ACTIONS,
+          hostToolbar: this._hostToolbar || this.getHostToolbar?.() || undefined,
           camera: this.camera(),
         });
         this.editor = editor;
         this.applyUI();
         editor.on("change", () => this.changed());
-        editor.on("selection", m => {this.drawingSelection=m.ids || [];});
+        editor.on("selection", (m) => {
+          this.drawingSelection = m.ids || [];
+          this.onSelectionChange?.(this.drawingSelection);
+        });
+        editor.on("tool", (m) => this.onToolChange?.(m.id));
         editor.on("action", (m) => this.save(m.id, m.ids));
         editor.on("pointer", (m) => this.passPointer(m));
         editor.on("key", (m) => this.passKey(m));   // keys the editor does not use (Alt+Z in the layer)
@@ -210,6 +231,8 @@ export class DrawingBoard {
     if (!types.includes(m.event)) return;
     const r = this.editor.frame.getBoundingClientRect();
     const x = r.left + m.x, y = r.top + m.y;
+    const init = { ...m, clientX: x, clientY: y, bubbles: true, composed: true, cancelable: true };
+    if (this.onHostPointer?.(m.event, init)) return;
     if (m.event === "pointerdown" || !this.passTarget?.isConnected) {
       const hidden = this.layer.hidden;
       this.layer.hidden = true;
@@ -225,7 +248,6 @@ export class DrawingBoard {
       while (host?.getRootNode()?.host) host = host.getRootNode().host;
       this.passTarget = this.stage.contains(host) ? target : this.stage;
     }
-    const init = { ...m, clientX: x, clientY: y, bubbles: true, composed: true, cancelable: true };
     const EventClass = m.event.startsWith("pointer") ? PointerEvent : MouseEvent;
     this.passTarget.dispatchEvent(new EventClass(m.event, init));
   }
@@ -262,6 +284,7 @@ export class DrawingBoard {
 
   remember({ document }) {
     this.doc = document;
+    this.onDocChange?.(document);
     this.persist();
   }
 
@@ -272,10 +295,20 @@ export class DrawingBoard {
     if (text) this.sayTimer = setTimeout(() => (this.status.textContent = ""), ms);
   }
 
-  /** A right-click choice: the selected marks (or the whole drawing) become a PNG or SVG project asset. */
+  /** A right-click choice: physics attachment, servo mount, or PNG/SVG asset export. */
   async save(kind, ids) {
     try {
       if (kind === "servo") { await this.mountServo(ids); return; }
+      if (kind.startsWith("phys-")) {
+        const needsDoc = ["phys-dynamic", "phys-static", "phys-curve"].includes(kind);
+        if (needsDoc) {
+          const res = await this.editor.getDocument();
+          this.doc = res.document;
+        }
+        const msg = await this.onPhysicsAction?.(kind, this.doc, ids);
+        if (msg) this.say(msg);
+        return;
+      }
       const r = await this.editor.export(ids?.length ? { format: kind, ids, scale: 1 } : { board: BOARD.id, format: kind, scale: 1, transparent: true });
       const out = r.blob || new Blob([r.text], { type: "image/svg+xml" });   // (the whole drawing's SVG comes back as text)
       const name = this.assetNames(`drawing.${kind}`);

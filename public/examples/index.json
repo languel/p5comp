@@ -184,5 +184,25 @@
     "name": "Servo garden · twelve moving petals",
     "project": "examples/servo-garden.json",
     "folder": "Motors"
+  },
+  {
+    "name": "Continuous servo crank & slider · FS90R",
+    "project": "examples/servo-crank-slider.json",
+    "folder": "Mechanisms"
+  },
+  {
+    "name": "Gear motor four-bar linkage · coupler curve",
+    "project": "examples/gear-motor-four-bar.json",
+    "folder": "Mechanisms"
+  },
+  {
+    "name": "Servo scotch yoke · sinusoidal motion",
+    "project": "examples/servo-scotch-yoke.json",
+    "folder": "Mechanisms"
+  },
+  {
+    "name": "Gear motor spur gears · 12T:18T mesh",
+    "project": "examples/gear-motor-spur-gears.json",
+    "folder": "Mechanisms"
   }
 ]
