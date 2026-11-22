@@ -17,6 +17,14 @@ import {
   selectInBox,
   selectInLasso,
   snapPhysicsPoint,
+  connectedAssembly,
+  movePivotPreservingLinks,
+  directHandlesForBody,
+  applyDirectHandleDrag,
+  selectionBounds,
+  applyTransformScale,
+  applyTransformRotate,
+  linkEndpointsWorld,
 } from "../sim/physics/model.js";
 import { actuatorPivot, listActuators, servoHornTip } from "../sim/physics/actuators.js";
 import {
@@ -444,4 +452,58 @@ test("physics scene validation rejects malformed bodies/joints and lists actuato
     actuators.map((a) => a.id),
     ["s1", "m1"],
   );
+});
+
+test("connection-preserving drag (V) and Direct-Edit handles (Shift+V) adjust constructions cleanly", () => {
+  const scene = {
+    bodies: [
+      { id: "l1", shape: "link", x: 150, y: 100, angle: 0, length: 100, width: 12 }, // ends (100,100) -> (200,100)
+      { id: "l2", shape: "link", x: 250, y: 100, angle: 0, length: 100, width: 12 }, // ends (200,100) -> (300,100)
+      { id: "g1", shape: "gear", x: 500, y: 200, angle: 0, teeth: 12, module: 6 },
+      { id: "bx", shape: "box", x: 650, y: 200, angle: 0, w: 40, h: 20 },
+    ],
+    joints: [
+      { id: "j1", kind: "hinge", a: "l1", b: "l2", anchor: [200, 100] },
+    ],
+  };
+
+  // 1. connectedAssembly collects l1 + l2 + j1, leaving g1 & bx untouched
+  const asm = connectedAssembly(scene, ["l1"]);
+  assert.deepEqual([...asm.bodyIds].sort(), ["l1", "l2"]);
+  assert.deepEqual([...asm.jointIds], ["j1"]);
+
+  // 2. Moving elbow pivot j1 to (200, 160) stretches & angles both link bars while keeping far bores at (100,100) & (300,100)
+  movePivotPreservingLinks(scene, scene.joints[0], 200, 160);
+  const [l1A, l1B] = linkEndpointsWorld(scene.bodies[0]);
+  const [l2A, l2B] = linkEndpointsWorld(scene.bodies[1]);
+  assert.ok(Math.hypot(l1A[0] - 100, l1A[1] - 100) < 0.1, "l1 far bore stays fixed");
+  assert.ok(Math.hypot(l1B[0] - 200, l1B[1] - 160) < 0.1, "l1 pinned bore follows pivot");
+  assert.ok(Math.hypot(l2A[0] - 200, l2A[1] - 160) < 0.1, "l2 pinned bore follows pivot");
+  assert.ok(Math.hypot(l2B[0] - 300, l2B[1] - 100) < 0.1, "l2 far bore stays fixed");
+
+  // 3. Shift+V Direct Edit: resize gear pitch radius -> updates teeth cleanly
+  const gearHandles = directHandlesForBody(scene.bodies[2]);
+  assert.equal(gearHandles.length, 1);
+  assert.equal(gearHandles[0].kind, "gearRadius");
+  applyDirectHandleDrag(scene, scene.bodies[2], gearHandles[0], 500 + 60, 200);
+  assert.equal(scene.bodies[2].teeth, 20); // r=60, mod=6 -> 2*60/6 = 20T
+
+  // 4. Shift+V Direct Edit: resize box corner
+  const boxHandles = directHandlesForBody(scene.bodies[3]);
+  assert.equal(boxHandles.length, 4);
+  applyDirectHandleDrag(scene, scene.bodies[3], boxHandles[1], 650 + 40, 200 - 25);
+  assert.equal(scene.bodies[3].w, 80);
+  assert.equal(scene.bodies[3].h, 50);
+
+  // 5. Poliplan-style Transform Box (V): scale & rotate a connected linkage group cleanly
+  const bounds = selectionBounds(scene, ["l1", "l2"], ["j1"]);
+  assert.ok(bounds && bounds.w > 180);
+  const origB = structuredClone([scene.bodies[0], scene.bodies[1]]);
+  const origJ = structuredClone([scene.joints[0]]);
+  applyTransformScale(origB, origJ, [scene.bodies[0], scene.bodies[1]], [scene.joints[0]], bounds.cx, bounds.cy, 1.5);
+  assert.ok(scene.bodies[0].length > origB[0].length * 1.45);
+  const origB2 = structuredClone([scene.bodies[0], scene.bodies[1]]);
+  const origJ2 = structuredClone([scene.joints[0]]);
+  applyTransformRotate(origB2, origJ2, [scene.bodies[0], scene.bodies[1]], [scene.joints[0]], bounds.cx, bounds.cy, Math.PI / 2);
+  assert.ok(Math.abs(scene.bodies[0].angle - (origB2[0].angle + 90)) < 0.01);
 });

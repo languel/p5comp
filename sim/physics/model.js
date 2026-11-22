@@ -578,6 +578,353 @@ export function poliplanDocToPhysicsBodies(doc, existingBodies = []) {
   return created;
 }
 
+// ---- Connection-preserving & Direct-Edit (Shift+V) construction helpers -----------------------
+
+/** Return the two world-space bore endpoints `[pA, pB]` of a link bar body. */
+export function linkEndpointsWorld(b) {
+  const half = (b.length || 80) / 2;
+  const rad = ((b.angle || 0) * Math.PI) / 180;
+  const c = Math.cos(rad);
+  const s = Math.sin(rad);
+  return [
+    [b.x - c * half, b.y - s * half],
+    [b.x + c * half, b.y + s * half],
+  ];
+}
+
+/**
+ * BFS from `seedBodyIds` across all joints to find the connected mechanical assembly.
+ * Returns `{ bodyIds: Set<string>, jointIds: Set<string> }` so moving any part in
+ * connection-preserving mode (`V`) carries the intact mechanism together.
+ */
+export function connectedAssembly(scene, seedBodyIds) {
+  const bodyIds = new Set(seedBodyIds);
+  const jointIds = new Set();
+  const joints = scene?.joints || [];
+  let grew = true;
+  while (grew) {
+    grew = false;
+    for (const j of joints) {
+      const touchesA = j.a && bodyIds.has(j.a);
+      const touchesB = j.b && bodyIds.has(j.b);
+      if (!touchesA && !touchesB) continue;
+      if (!jointIds.has(j.id)) {
+        jointIds.add(j.id);
+        grew = true;
+      }
+      if (j.a && !bodyIds.has(j.a)) {
+        bodyIds.add(j.a);
+        grew = true;
+      }
+      if (j.b && !bodyIds.has(j.b)) {
+        bodyIds.add(j.b);
+        grew = true;
+      }
+    }
+  }
+  return { bodyIds, jointIds };
+}
+
+/**
+ * Move a joint pivot (`joint.anchor`) to `(nx, ny)` while keeping any connected
+ * `link` bars pinned to it: the bore sitting at the old anchor follows `(nx, ny)`
+ * and the opposite bore stays fixed in world space, updating `x`, `y`, `angle`, and `length`.
+ */
+export function movePivotPreservingLinks(scene, joint, nx, ny, snapTol = 14) {
+  if (!joint || !Array.isArray(joint.anchor)) return;
+  const [ox, oy] = joint.anchor;
+  joint.anchor = [nx, ny];
+  const dx = nx - ox;
+  const dy = ny - oy;
+  if (Math.hypot(dx, dy) < 1e-6) return;
+
+  const attachedIds = [joint.a, joint.b].filter(Boolean);
+  for (const id of attachedIds) {
+    const b = (scene.bodies || []).find((x) => x.id === id);
+    if (!b) continue;
+    if (b.shape === "link") {
+      const [pA, pB] = linkEndpointsWorld(b);
+      const dA = Math.hypot(pA[0] - ox, pA[1] - oy);
+      const dB = Math.hypot(pB[0] - ox, pB[1] - oy);
+      if (dA <= snapTol && dA <= dB) {
+        const len = Math.max(12, Math.hypot(pB[0] - nx, pB[1] - ny));
+        b.x = (nx + pB[0]) / 2;
+        b.y = (ny + pB[1]) / 2;
+        b.length = len;
+        b.angle = (Math.atan2(pB[1] - ny, pB[0] - nx) * 180) / Math.PI;
+      } else if (dB <= snapTol) {
+        const len = Math.max(12, Math.hypot(nx - pA[0], ny - pA[1]));
+        b.x = (pA[0] + nx) / 2;
+        b.y = (pA[1] + ny) / 2;
+        b.length = len;
+        b.angle = (Math.atan2(ny - pA[1], nx - pA[0]) * 180) / Math.PI;
+      }
+    }
+  }
+}
+
+/**
+ * Return Direct-Edit (`Shift+V`) handles in world coordinates for a physics body:
+ * - link: both end bores (`endA`, `endB`)
+ * - gear: pitch-circle rim handle (`gearRadius`) to resize teeth cleanly
+ * - circle: rim handle (`circleRadius`)
+ * - box: 4 corner handles (`boxCorner`)
+ * - chain / polygon: vertex handles (`vertex`)
+ */
+export function directHandlesForBody(b) {
+  if (!b) return [];
+  const rad = ((b.angle || 0) * Math.PI) / 180;
+  const c = Math.cos(rad);
+  const s = Math.sin(rad);
+  const toW = (lx, ly) => [b.x + lx * c - ly * s, b.y + lx * s + ly * c];
+
+  if (b.shape === "link") {
+    const [pA, pB] = linkEndpointsWorld(b);
+    return [
+      { kind: "linkEnd", end: "a", bodyId: b.id, x: pA[0], y: pA[1], label: "End A" },
+      { kind: "linkEnd", end: "b", bodyId: b.id, x: pB[0], y: pB[1], label: "End B" },
+    ];
+  }
+  if (b.shape === "gear") {
+    const geo = gearGeometry(b.teeth, b.module);
+    const [hx, hy] = toW(geo.pitchR, 0);
+    return [
+      { kind: "gearRadius", bodyId: b.id, x: hx, y: hy, label: `${geo.teeth}T` },
+    ];
+  }
+  if (b.shape === "circle") {
+    const r = b.r || 18;
+    const [hx, hy] = toW(r, 0);
+    return [
+      { kind: "circleRadius", bodyId: b.id, x: hx, y: hy, label: `r=${Math.round(r)}` },
+    ];
+  }
+  if (b.shape === "box") {
+    const hx = (b.w || 40) / 2;
+    const hy = (b.h || 24) / 2;
+    return [
+      [-hx, -hy],
+      [hx, -hy],
+      [hx, hy],
+      [-hx, hy],
+    ].map(([lx, ly], i) => {
+      const [x, y] = toW(lx, ly);
+      return { kind: "boxCorner", index: i, bodyId: b.id, x, y };
+    });
+  }
+  if ((b.shape === "chain" || b.shape === "polygon") && Array.isArray(b.pts)) {
+    return b.pts.map(([lx, ly], i) => {
+      const [x, y] = toW(lx, ly);
+      return { kind: "vertex", index: i, bodyId: b.id, x, y };
+    });
+  }
+  return [];
+}
+
+/**
+ * Apply a Direct-Edit (`Shift+V`) handle drag to `body` at world point `(wx, wy)`.
+ * For `linkEnd`, optionally carries any hinge/joint anchored on that bore (`carryJoints`).
+ */
+export function applyDirectHandleDrag(scene, body, handle, wx, wy, { carryJoints = true } = {}) {
+  if (!body || !handle) return;
+  if (handle.kind === "linkEnd" && body.shape === "link") {
+    const [pA, pB] = linkEndpointsWorld(body);
+    const oldEnd = handle.end === "a" ? pA : pB;
+    const fixed = handle.end === "a" ? pB : pA;
+    const len = Math.max(12, Math.hypot(wx - fixed[0], wy - fixed[1]));
+    const nx = handle.end === "a" ? wx : fixed[0];
+    const ny = handle.end === "a" ? wy : fixed[1];
+    const fx = handle.end === "a" ? fixed[0] : wx;
+    const fy = handle.end === "a" ? fixed[1] : wy;
+    body.x = (nx + fx) / 2;
+    body.y = (ny + fy) / 2;
+    body.length = len;
+    body.angle = (Math.atan2(fy - ny, fx - nx) * 180) / Math.PI;
+    if (carryJoints && scene?.joints) {
+      for (const j of scene.joints) {
+        if (j.actuatorId || !Array.isArray(j.anchor)) continue;
+        if ((j.a === body.id || j.b === body.id) && Math.hypot(j.anchor[0] - oldEnd[0], j.anchor[1] - oldEnd[1]) <= 12) {
+          movePivotPreservingLinks(scene, j, wx, wy);
+        }
+      }
+    }
+    return;
+  }
+  if (handle.kind === "gearRadius" && body.shape === "gear") {
+    const r = Math.max(14, Math.hypot(wx - body.x, wy - body.y));
+    const mod = body.module || 6;
+    body.teeth = Math.max(6, Math.min(64, Math.round((2 * r) / mod)));
+    return;
+  }
+  if (handle.kind === "circleRadius" && body.shape === "circle") {
+    body.r = Math.max(6, Math.round(Math.hypot(wx - body.x, wy - body.y)));
+    return;
+  }
+  if (handle.kind === "boxCorner" && body.shape === "box") {
+    const rad = (-(body.angle || 0) * Math.PI) / 180;
+    const dx = wx - body.x;
+    const dy = wy - body.y;
+    const lx = dx * Math.cos(rad) - dy * Math.sin(rad);
+    const ly = dx * Math.sin(rad) + dy * Math.cos(rad);
+    body.w = Math.max(12, Math.round(Math.abs(lx) * 2));
+    body.h = Math.max(12, Math.round(Math.abs(ly) * 2));
+    return;
+  }
+  if (handle.kind === "vertex" && Array.isArray(body.pts) && body.pts[handle.index]) {
+    const rad = (-(body.angle || 0) * Math.PI) / 180;
+    const dx = wx - body.x;
+    const dy = wy - body.y;
+    const lx = dx * Math.cos(rad) - dy * Math.sin(rad);
+    const ly = dx * Math.sin(rad) + dy * Math.cos(rad);
+    body.pts[handle.index] = [lx, ly];
+  }
+}
+
+/**
+ * Compute world-space bounding box `{ minX, minY, maxX, maxY, cx, cy, w, h }`
+ * for a set of selected physics bodies (and optional joints) to render a
+ * Poliplan-style transform box (scale + rotate).
+ */
+export function selectionBounds(scene, bodyIds, jointIds = []) {
+  const bSet = new Set(bodyIds || []);
+  const jSet = new Set(jointIds || []);
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  const expand = (x, y, pad = 0) => {
+    if (x - pad < minX) minX = x - pad;
+    if (y - pad < minY) minY = y - pad;
+    if (x + pad > maxX) maxX = x + pad;
+    if (y + pad > maxY) maxY = y + pad;
+  };
+
+  for (const b of scene?.bodies || []) {
+    if (!bSet.has(b.id)) continue;
+    const rad = ((b.angle || 0) * Math.PI) / 180;
+    const c = Math.cos(rad);
+    const s = Math.sin(rad);
+    const rot = (lx, ly) => [b.x + lx * c - ly * s, b.y + lx * s + ly * c];
+    if (b.shape === "circle") {
+      expand(b.x, b.y, b.r || 18);
+    } else if (b.shape === "gear") {
+      const geo = gearGeometry(b.teeth, b.module);
+      expand(b.x, b.y, geo.outerR);
+    } else if (b.shape === "box") {
+      const hx = (b.w || 40) / 2;
+      const hy = (b.h || 24) / 2;
+      for (const [lx, ly] of [[-hx, -hy], [hx, -hy], [hx, hy], [-hx, hy]]) {
+        const [wx, wy] = rot(lx, ly);
+        expand(wx, wy);
+      }
+    } else if (b.shape === "link") {
+      const [pA, pB] = linkEndpointsWorld(b);
+      const r = (b.width || 14) / 2;
+      expand(pA[0], pA[1], r);
+      expand(pB[0], pB[1], r);
+    } else if ((b.shape === "chain" || b.shape === "polygon") && Array.isArray(b.pts)) {
+      const pad = b.shape === "chain" ? (b.thickness || 8) / 2 : 0;
+      for (const [lx, ly] of b.pts) {
+        const [wx, wy] = rot(lx, ly);
+        expand(wx, wy, pad);
+      }
+    } else {
+      expand(b.x, b.y, 12);
+    }
+  }
+  for (const j of scene?.joints || []) {
+    if (!jSet.has(j.id)) continue;
+    if (j.anchor) expand(j.anchor[0], j.anchor[1], 6);
+    if (j.pa) expand(j.pa[0], j.pa[1], 6);
+    if (j.pb) expand(j.pb[0], j.pb[1], 6);
+  }
+  if (!Number.isFinite(minX)) return null;
+  const w = Math.max(16, maxX - minX);
+  const h = Math.max(16, maxY - minY);
+  return {
+    minX,
+    minY,
+    maxX,
+    maxY,
+    cx: (minX + maxX) / 2,
+    cy: (minY + maxY) / 2,
+    w,
+    h,
+  };
+}
+
+/**
+ * Uniformly scale a set of bodies and their associated joints around `(cx, cy)`
+ * from their snapshot originals (`origBodies`, `origJoints`).
+ */
+export function applyTransformScale(origBodies, origJoints, bodies, joints, cx, cy, scale) {
+  const s = Math.max(0.15, Math.min(8, scale));
+  for (let i = 0; i < bodies.length; i++) {
+    const o = origBodies[i];
+    const b = bodies[i];
+    b.x = cx + (o.x - cx) * s;
+    b.y = cy + (o.y - cy) * s;
+    if (b.shape === "circle") {
+      b.r = Math.max(6, o.r * s);
+    } else if (b.shape === "box") {
+      b.w = Math.max(12, o.w * s);
+      b.h = Math.max(12, o.h * s);
+    } else if (b.shape === "link") {
+      b.length = Math.max(12, o.length * s);
+    } else if (b.shape === "gear") {
+      b.teeth = Math.max(6, Math.min(64, Math.round((o.teeth || 12) * s)));
+    } else if ((b.shape === "chain" || b.shape === "polygon") && Array.isArray(o.pts)) {
+      b.pts = o.pts.map(([px, py]) => [px * s, py * s]);
+    }
+  }
+  for (let i = 0; i < joints.length; i++) {
+    const o = origJoints[i];
+    const j = joints[i];
+    if (o.anchor) j.anchor = [cx + (o.anchor[0] - cx) * s, cy + (o.anchor[1] - cy) * s];
+    if (o.pa) j.pa = [cx + (o.pa[0] - cx) * s, cy + (o.pa[1] - cy) * s];
+    if (o.pb) j.pb = [cx + (o.pb[0] - cx) * s, cy + (o.pb[1] - cy) * s];
+    if (Array.isArray(o.pts)) {
+      j.pts = o.pts.map(([px, py]) => [cx + (px - cx) * s, cy + (py - cy) * s]);
+    }
+  }
+}
+
+/**
+ * Rotate a set of bodies and their associated joints around `(cx, cy)` by `deltaRad`
+ * from their snapshot originals (`origBodies`, `origJoints`).
+ */
+export function applyTransformRotate(origBodies, origJoints, bodies, joints, cx, cy, deltaRad) {
+  const c = Math.cos(deltaRad);
+  const s = Math.sin(deltaRad);
+  const degDelta = (deltaRad * 180) / Math.PI;
+  const rotPt = ([x, y]) => [
+    cx + (x - cx) * c - (y - cy) * s,
+    cy + (x - cx) * s + (y - cy) * c,
+  ];
+  for (let i = 0; i < bodies.length; i++) {
+    const o = origBodies[i];
+    const b = bodies[i];
+    const [nx, ny] = rotPt([o.x, o.y]);
+    b.x = nx;
+    b.y = ny;
+    b.angle = (o.angle || 0) + degDelta;
+  }
+  for (let i = 0; i < joints.length; i++) {
+    const o = origJoints[i];
+    const j = joints[i];
+    if (o.anchor) j.anchor = rotPt(o.anchor);
+    if (o.pa) j.pa = rotPt(o.pa);
+    if (o.pb) j.pb = rotPt(o.pb);
+    if (o.axis) {
+      const [ax, ay] = o.axis;
+      j.axis = [ax * c - ay * s, ax * s + ay * c];
+    }
+    if (Array.isArray(o.pts)) {
+      j.pts = o.pts.map(rotPt);
+    }
+  }
+}
+
 /** Validate a physics scene object for project persistence. */
 export function validatePhysicsScene(scene) {
   if (scene == null) return null;

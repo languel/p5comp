@@ -40,9 +40,11 @@ export function attachPoliplanBodies(scene, doc, ids = [], { type = "dynamic" } 
     b.sourceMarkId = mark.id;
     const markColor = mark.fill && mark.fill !== "none" && mark.fill !== "transparent"
       ? mark.fill
-      : mark.stroke && mark.stroke !== "none" && mark.stroke !== "transparent"
-        ? mark.stroke
-        : null;
+      : mark.color && mark.color !== "none" && mark.color !== "transparent"
+        ? mark.color
+        : mark.stroke && mark.stroke !== "none" && mark.stroke !== "transparent"
+          ? mark.stroke
+          : null;
     if (markColor) b.color = markColor;
     const existingIdx = scene.bodies.findIndex((x) => x.sourceMarkId === mark.id);
     if (existingIdx >= 0) {
@@ -178,11 +180,17 @@ export function syncLinkedPoliplanMarks(scene, doc) {
     }
     const rebuilt = poliplanDocToPhysicsBodies({ elements: [mark] }, [])[0];
     if (!rebuilt) continue;
+    const markColor = mark.fill && mark.fill !== "none" && mark.fill !== "transparent"
+      ? mark.fill
+      : mark.color && mark.color !== "none" && mark.color !== "transparent"
+        ? mark.color
+        : null;
     const next = {
       ...b,
       shape: rebuilt.shape,
       x: rebuilt.x,
       y: rebuilt.y,
+      ...(markColor ? { color: markColor } : {}),
       ...(rebuilt.r != null ? { r: rebuilt.r } : {}),
       ...(rebuilt.pts ? { pts: rebuilt.pts } : {}),
       ...(rebuilt.thickness != null ? { thickness: rebuilt.thickness } : {}),

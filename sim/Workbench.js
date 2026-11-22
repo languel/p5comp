@@ -669,6 +669,8 @@ export class Workbench {
       getPartElements: () => ctx.partElements?.() || null,
       getSelectedPart: () => ctx.selected?.() || null,
       getDrawingDoc: () => this.drawing?.snapshot() || null,
+      propertiesHost: this.editorPanel.querySelector('[data-pane="properties"]'),
+      onPropertiesState: (active, title) => this.syncPhysicsProperties(active, title),
       onRewindActuators: () => ctx.rewindActuators?.(),
       onTimeChange: (t) => this.setSimTime(t),
       persist: () => ctx.persist(),
@@ -681,7 +683,7 @@ export class Workbench {
     );
     rewindBtn.id = "rewind";
     rewindBtn.type = "button";
-    rewindBtn.title = "Rewind simulation, actuators & physics to 0.00 s";
+    rewindBtn.title = "Rewind simulation, actuators & physics to 0.00 s (⌘/Ctrl . when stopped)";
     rewindBtn.setAttribute("aria-label", "Rewind simulation to 0.00 s");
     rewindBtn.onclick = () => ctx.rewindSimulation?.();
     const simTimer = node("output", "sim-timer", "0.00 s");
@@ -1469,6 +1471,8 @@ export class Workbench {
     document.querySelectorAll(".scene-item.selected").forEach(el=>el.classList.remove("selected"));
     this.selectedNoteId = null;
     $("noteProperties").hidden = true;
+    if (this.physics?.inspector) this.physics.inspector.hidden = true;
+    $("applyProperties").hidden = false;
     $("propertyEditor").hidden = false;
     $("partAttributes").hidden = false;
     $("partState").hidden = false;
@@ -1483,6 +1487,26 @@ export class Workbench {
     $("propertyTitle").textContent = part?.label || part?.id || "Selection";
     this.renderAttributes(part);
     this.showPartState();
+  }
+  syncPhysicsProperties(active, title = "Selection") {
+    const show = Boolean(active);
+    if (show) {
+      $("noteProperties").hidden = true;
+      $("propertyEditor").hidden = true;
+      $("partAttributes").hidden = true;
+      $("partState").hidden = true;
+      $("referenceProperties").hidden = true;
+      $("applyProperties").hidden = true;
+      $("propertyTitle").textContent = title || "Physics";
+    } else if (!this.selectedReferenceId && !this.selectedNoteId) {
+      $("propertyEditor").hidden = false;
+      $("partAttributes").hidden = false;
+      $("partState").hidden = false;
+      $("referenceProperties").hidden = false;
+      $("applyProperties").hidden = false;
+      const part = this.ctx.selected?.();
+      $("propertyTitle").textContent = part?.label || part?.id || "Selection";
+    }
   }
   editValue(wrapper, part) {
     const element = wrapper.querySelector(".part-body")?.firstElementChild;

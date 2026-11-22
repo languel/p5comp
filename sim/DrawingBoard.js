@@ -51,7 +51,9 @@ export class DrawingBoard {
     this.toggle.setAttribute("aria-label", "Draw and Physics layer");
     this.toggle.textContent = "✎";
     this.toggle.onclick = () => this.setActive(!this.active);
-    tools.append(this.toggle);
+    const zoomOut = tools.querySelector("#zoomOut");
+    if (zoomOut) zoomOut.before(this.toggle);
+    else tools.append(this.toggle);
     new ResizeObserver(() => this.place()).observe(stage);
     new ResizeObserver(() => this.place()).observe(workspace);
     // Alt+Z: the drawing layer and its toolbar on or off (in the Draw tab the editor's own zen works).
@@ -150,6 +152,17 @@ export class DrawingBoard {
   setHostToolbar(sections) {
     this._hostToolbar = sections;
     this.editor?.setHostToolbar?.(sections).catch(() => {});
+  }
+
+  /** Push live rigid-body poses for physics-attached Poliplan marks so the marks themselves move & rotate. */
+  setHostPoses(poses) {
+    this.editor?.setHostPoses?.(poses).catch(() => {});
+  }
+
+  /** Update a Poliplan mark's fill/stroke color directly when edited from the Physics Properties inspector. */
+  updateMarkStyle(id, patch) {
+    if (!id || !patch) return;
+    this.editor?.callTool?.("ams_update", { id, patch }).catch(() => {});
   }
 
   /** Switch Poliplan's active tool (including 'select' or 'host:phys-*'). */

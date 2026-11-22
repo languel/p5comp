@@ -24,6 +24,13 @@ import {
   selectInBox,
   selectInLasso,
   snapPhysicsPoint,
+  connectedAssembly,
+  movePivotPreservingLinks,
+  directHandlesForBody,
+  applyDirectHandleDrag,
+  selectionBounds,
+  applyTransformScale,
+  applyTransformRotate,
   poliplanDocToPhysicsBodies,
   MATERIAL_PRESETS,
   MATERIAL_DEFAULTS,
@@ -105,6 +112,8 @@ export class PhysicsLayer {
     getPartElements,
     getSelectedPart,
     getDrawingDoc,
+    propertiesHost,
+    onPropertiesState,
     onRewindActuators,
     onTimeChange,
     persist,
@@ -120,6 +129,8 @@ export class PhysicsLayer {
       getPartElements,
       getSelectedPart,
       getDrawingDoc,
+      propertiesHost,
+      onPropertiesState,
       onRewindActuators,
       onTimeChange,
       persist,
@@ -132,6 +143,8 @@ export class PhysicsLayer {
     this.selectedBodies = new Set();
     this.selectedJoints = new Set();
     this.snapEnabled = true;
+    this.preserveConnections = true;
+    this.directEdit = false;
     this.hoverSnap = null;
     this.debug = false;
 
@@ -164,6 +177,7 @@ export class PhysicsLayer {
     this.gTrails = svgEl("g", { class: "phys-trails" });
     this.gBodies = svgEl("g", { class: "phys-bodies" });
     this.gJoints = svgEl("g", { class: "phys-joints" });
+    this.gHandles = svgEl("g", { class: "phys-handles" });
     this.gActuators = svgEl("g", { class: "phys-actuators" });
     this.gDebug = svgEl("g", { class: "phys-debug" });
     this.gDraft = svgEl("g", { class: "phys-draft" });
@@ -174,6 +188,7 @@ export class PhysicsLayer {
       this.gTrails,
       this.gBodies,
       this.gJoints,
+      this.gHandles,
       this.gActuators,
       this.gDebug,
       this.gDraft,
@@ -188,7 +203,10 @@ export class PhysicsLayer {
     // 4. Floating Toolbar, Inspector, Quick Guide, and Toast.
     // Toolbar mounts inside #stage (or workspace overlay) at z-index 25 so it sits cleanly below Poliplan's toolbar.
     this.toolbar = el("div", { class: "phys-toolbar", hidden: true });
-    this.inspector = el("div", { class: "phys-inspector", hidden: true });
+    this.inspector = el("div", {
+      class: propertiesHost ? "phys-inspector docked" : "phys-inspector",
+      hidden: true,
+    });
     this.guide = this.buildGuide();
     this.toastEl = el("div", { class: "phys-toast", role: "status" });
     for (const ui of [this.toolbar, this.inspector, this.guide]) {
@@ -198,7 +216,12 @@ export class PhysicsLayer {
     }
     // Mount floating toolbar in workspace so it sits above .draw-layer (z-index: 6)!
     (workspace || stage).append(this.toolbar);
-    stage.append(this.inspector, this.guide, this.toastEl);
+    if (propertiesHost) {
+      propertiesHost.append(this.inspector);
+      stage.append(this.guide, this.toastEl);
+    } else {
+      stage.append(this.inspector, this.guide, this.toastEl);
+    }
     this.syncToolbarBounds = () => {
       if (!workspace || this.toolbar.hidden) return;
       const ws = workspace.getBoundingClientRect();
@@ -334,8 +357,24 @@ export class PhysicsLayer {
     }
   }
 
-  /** Called when Poliplan's active tool changes (including 'host:phys-*' brushes). */
+  /** Called when Poliplan's active tool changes (including 'direct' and 'host:phys-*' brushes). */
   onPoliplanTool(toolId) {
+    this.directEdit = toolId === "direct";
+    if (typeof toolId === "string" && toolId.startsWith("host:phys-stamp:")) {
+      this.tool = "stamp";
+      this.stampPresetId = toolId.slice("host:phys-stamp:".length);
+      this.stampPreview = null;
+      this.active = true;
+      this.stage.classList.add("draw-physics-open");
+      this.stage.classList.remove("physics-layer-active");
+      this.svg.classList.remove("hidden-layer");
+      const preset = MECHANISM_PRESETS.find((m) => m.id === this.stampPresetId);
+      if (preset) this.toast(`Click to place ${preset.name} (snaps to servos, motors & pins · Shift+click for multiple)`);
+      this.render();
+      return;
+    }
+    this.stampPresetId = null;
+    this.stampPreview = null;
     if (typeof toolId === "string" && toolId.startsWith("host:phys-")) {
       const next = toolId.slice("host:phys-".length);
       this.tool = next;
@@ -345,6 +384,7 @@ export class PhysicsLayer {
       this.stage.classList.add("draw-physics-open");
       this.stage.classList.remove("physics-layer-active");
       this.svg.classList.remove("hidden-layer");
+      this.renderDraft();
       this.render();
       return;
     }
@@ -355,8 +395,8 @@ export class PhysicsLayer {
       this.renderDraft();
       this.renderSnapIndicator(null);
       this.stage.classList.remove("physics-layer-active");
-      this.render();
     }
+    this.render();
   }
 
   /** Receive forwarded pointer events from Poliplan's canvas while a host:phys-* brush is active. */
@@ -390,6 +430,7 @@ export class PhysicsLayer {
     if (!this.active) {
       if (closeToolbar || !this.drawing?.active) {
         this.inspector.hidden = true;
+        this.onPropertiesState?.(false);
       }
       this.guide.hidden = true;
     } else {
@@ -801,15 +842,15 @@ export class PhysicsLayer {
           label: "Mechanisms",
           kbd: "+",
           icon: ICONS.mech,
-          hint: "Mechanism presets (crank-slider, four-bar, spur gears, …)",
+          hint: "Mechanism building blocks — pick one, then click anywhere to place (snaps to servos, motors & pins)",
           items: [
-            { heading: "Mechanism Presets" },
+            { heading: "Mechanism Building Blocks" },
             ...MECHANISM_PRESETS.map((preset) => ({
               id: preset.id,
               label: preset.name,
               icon: ICONS.gear,
-              hint: preset.description || preset.name,
-              action: `phys-preset:${preset.id}`,
+              hint: preset.tagline || preset.name,
+              tool: `host:phys-stamp:${preset.id}`,
             })),
           ],
         },
@@ -831,6 +872,7 @@ export class PhysicsLayer {
             { label: "Undo physics", icon: ICONS.undo, keys: "⌘Z", disabled: !this.undoStack.length, action: "phys-sim:undo" },
             { label: "Redo physics", icon: ICONS.redo, keys: "⌘⇧Z", disabled: !this.redoStack.length, action: "phys-sim:redo" },
             "-",
+            { label: "Keep connections when moving", checked: this.preserveConnections, action: "phys-toggle:preserve" },
             { label: "Floor boundary", checked: Boolean(this.scene.world?.floor), action: "phys-toggle:floor" },
             { label: "Magnetic snap (Alt bypass)", checked: this.snapEnabled, action: "phys-toggle:snap" },
             { label: "Visible in Electronics", checked: this.visible, action: "phys-toggle:visible" },
@@ -888,6 +930,7 @@ export class PhysicsLayer {
     const total = this.selectionCount();
     if ((!this.active && !this.drawing?.active) || total === 0) {
       this.inspector.hidden = true;
+      this.onPropertiesState?.(false);
       return;
     }
     if (total > 1) {
@@ -895,11 +938,21 @@ export class PhysicsLayer {
       const parts = [];
       if (selBodies.length) parts.push(`${selBodies.length} ${selBodies.length === 1 ? "body" : "bodies"}`);
       if (this.selectedJoints.size) parts.push(`${this.selectedJoints.size} ${this.selectedJoints.size === 1 ? "joint" : "joints"}`);
+      const title = `Selected · ${parts.join(", ")}`;
       this.inspector.hidden = false;
+      this.onPropertiesState?.(true, title);
       const updateAll = (patch) => {
         if (!selBodies.length) return;
         this.pushUndo();
-        for (const b of selBodies) Object.assign(b, patch);
+        for (const b of selBodies) {
+          Object.assign(b, patch);
+          if (patch.color && b.sourceMarkId) {
+            this.drawing?.updateMarkStyle(
+              b.sourceMarkId,
+              b.shape === "chain" ? { color: patch.color } : { fill: patch.color },
+            );
+          }
+        }
         this.persistChange();
         this.renderInspector();
       };
@@ -1002,12 +1055,20 @@ export class PhysicsLayer {
       const b = this.scene.bodies.find((x) => x.id === this.selected.id);
       if (!b) {
         this.inspector.hidden = true;
+        this.onPropertiesState?.(false);
         return;
       }
       this.inspector.hidden = false;
+      this.onPropertiesState?.(true, `${b.label || b.shape} (${b.id})`);
       const update = (patch) => {
         this.pushUndo();
         Object.assign(b, patch);
+        if (patch.color && b.sourceMarkId) {
+          this.drawing?.updateMarkStyle(
+            b.sourceMarkId,
+            b.shape === "chain" ? { color: patch.color } : { fill: patch.color },
+          );
+        }
         this.persistChange();
         this.renderInspector();
       };
@@ -1159,9 +1220,11 @@ export class PhysicsLayer {
       const j = this.scene.joints.find((x) => x.id === this.selected.id);
       if (!j) {
         this.inspector.hidden = true;
+        this.onPropertiesState?.(false);
         return;
       }
       this.inspector.hidden = false;
+      this.onPropertiesState?.(true, `${j.kind[0].toUpperCase() + j.kind.slice(1)} (${j.id})`);
       const update = (patch) => {
         this.pushUndo();
         Object.assign(j, patch);
@@ -1365,6 +1428,59 @@ export class PhysicsLayer {
 
   // ---- mechanism presets & Poliplan import ---------------------------------------------------
 
+  /** Build a mechanism preset positioned at world point `pt` (coupling to snapped actuator or body when present). */
+  buildStampAt(presetId, pt, snap = null) {
+    const preset = MECHANISM_PRESETS.find((m) => m.id === presetId);
+    if (!preset) return null;
+    const act = snap?.actuator || null;
+    const origin = act ? [act.x, act.y] : [pt.x, pt.y];
+    const built = preset.build({
+      origin,
+      actuatorId: act?.id || null,
+      actuatorType: act?.type || null,
+      hornTip: act?.hornTip ? [act.hornTip.x, act.hornTip.y] : null,
+      existingBodies: this.scene.bodies,
+      existingJoints: this.scene.joints,
+    });
+    // If snapped directly to an existing link bore or joint pin (not an actuator), attach the primary drive hinge to that body.
+    if (!act && snap?.bodyId) {
+      const primary = built.joints.find((j) => j.kind === "hinge" && !j.a && !j.actuatorId);
+      if (primary) {
+        primary.a = snap.bodyId;
+        delete primary.motor;
+      }
+    }
+    return { preset, ...built, actuator: act };
+  }
+
+  /** Drop the active mechanism stamp at `(pt.x, pt.y)`. */
+  placeMechanismStamp(presetId, pt, snap = null, keepArmed = false) {
+    const res = this.buildStampAt(presetId, pt, snap);
+    if (!res) return;
+    this.pushUndo();
+    this.scene.bodies.push(...res.bodies);
+    this.scene.joints.push(...res.joints);
+    this.selectedBodies = new Set(res.bodies.map((b) => b.id));
+    this.selectedJoints.clear();
+    this.persistChange();
+    this.renderInspector();
+    this.toast(
+      res.actuator
+        ? `${res.preset.name} snapped to ${res.actuator.label}`
+        : snap?.bodyId
+          ? `${res.preset.name} connected to ${snap.bodyId}`
+          : `${res.preset.name} placed`,
+    );
+    if (!keepArmed) {
+      this.stampPresetId = null;
+      this.stampPreview = null;
+      this.renderDraft();
+      this.renderSnapIndicator(null);
+      this.drawing?.setTool("select");
+      this.setActive(false, { closeToolbar: false });
+    }
+  }
+
   addMechanismPreset(presetId) {
     const preset = MECHANISM_PRESETS.find((m) => m.id === presetId);
     if (!preset) return;
@@ -1490,6 +1606,11 @@ export class PhysicsLayer {
       this.guide.hidden = !this.guide.hidden;
       return "";
     }
+    if (kind === "phys-toggle:preserve") {
+      this.preserveConnections = !this.preserveConnections;
+      this.updateToolbarState();
+      return "";
+    }
     if (kind === "phys-toggle:floor") {
       this.pushUndo();
       this.scene.world.floor = !this.scene.world.floor;
@@ -1564,6 +1685,7 @@ export class PhysicsLayer {
     if (!this.hasContent()) return;
     if (syncLinkedPoliplanMarks(this.scene, doc)) {
       this.persistChange();
+      this.renderInspector();
     }
   }
 
@@ -1656,11 +1778,11 @@ export class PhysicsLayer {
 
     const onDown = (e) => {
       if (!this.active) {
-        // Unified Select: Poliplan's V tool forwards clicks on Physics bodies/joints here!
+        // Unified Select (V) & Direct Edit (Shift+V): Poliplan forwards clicks on Physics bodies, joints & handles here!
         if (this.drawing?.active && e.button === 0 && !this.canvas.space) {
           e.preventDefault();
           e.stopPropagation();
-          this.handleSelectDown(this.worldPoint(e), e.shiftKey);
+          this.handleSelectDown(this.worldPoint(e), e.shiftKey, e.altKey);
         }
         return;
       }
@@ -1670,6 +1792,12 @@ export class PhysicsLayer {
       e.stopPropagation();
 
       const rawPt = this.worldPoint(e);
+      if (this.tool === "stamp" && this.stampPresetId) {
+        const snap = this.resolveSnap(rawPt, e);
+        const pt = snap ? { x: snap.x, y: snap.y } : rawPt;
+        this.placeMechanismStamp(this.stampPresetId, pt, snap, Boolean(e.shiftKey));
+        return;
+      }
       const snap = ["hinge", "weld", "spring", "slider", "link", "gear", "circle"].includes(this.tool)
         ? this.resolveSnap(rawPt, e)
         : null;
@@ -1696,6 +1824,14 @@ export class PhysicsLayer {
     const onMove = (e) => {
       const rawPt = this.worldPoint(e);
       if (!this.drag) {
+        if (this.active && this.tool === "stamp" && this.stampPresetId) {
+          const snap = this.resolveSnap(rawPt, e);
+          this.renderSnapIndicator(snap);
+          const pt = snap ? { x: snap.x, y: snap.y } : rawPt;
+          this.stampPreview = this.buildStampAt(this.stampPresetId, pt, snap);
+          this.renderDraft();
+          return;
+        }
         if (this.active && ["hinge", "weld", "spring", "slider", "link", "gear", "circle"].includes(this.tool)) {
           this.renderSnapIndicator(this.resolveSnap(rawPt, e));
         } else if (this.hoverSnap) {
@@ -1729,6 +1865,52 @@ export class PhysicsLayer {
           else mj.joint[mj.prop] = [mj.orig[0] + dx, mj.orig[1] + dy];
         }
         this.render();
+      } else if (this.drag.kind === "transform-scale") {
+        this.drag.cur = rawPt;
+        const dist = Math.max(4, Math.hypot(rawPt.x - this.drag.cx, rawPt.y - this.drag.cy));
+        const scale = dist / this.drag.startDist;
+        applyTransformScale(
+          this.drag.origBodies,
+          this.drag.origJoints,
+          this.drag.bodies,
+          this.drag.joints,
+          this.drag.cx,
+          this.drag.cy,
+          scale,
+        );
+        this.render();
+        this.renderInspector();
+      } else if (this.drag.kind === "transform-rotate") {
+        this.drag.cur = rawPt;
+        let delta = Math.atan2(rawPt.y - this.drag.cy, rawPt.x - this.drag.cx) - this.drag.startAngle;
+        if (e.shiftKey) {
+          const step = Math.PI / 12; // 15° snap
+          delta = Math.round(delta / step) * step;
+        }
+        applyTransformRotate(
+          this.drag.origBodies,
+          this.drag.origJoints,
+          this.drag.bodies,
+          this.drag.joints,
+          this.drag.cx,
+          this.drag.cy,
+          delta,
+        );
+        this.render();
+        this.renderInspector();
+      } else if (this.drag.kind === "direct-handle") {
+        const { body, handle } = this.drag;
+        const canSnap = handle.kind === "linkEnd" || handle.kind === "vertex";
+        const snap = canSnap ? this.resolveSnap(rawPt, e, { ignoreBodyId: body.id }) : null;
+        this.renderSnapIndicator(snap);
+        const nx = snap ? snap.x : rawPt.x;
+        const ny = snap ? snap.y : rawPt.y;
+        this.drag.cur = { x: nx, y: ny };
+        applyDirectHandleDrag(this.scene, body, handle, nx, ny, {
+          carryJoints: this.preserveConnections && !e.altKey,
+        });
+        this.render();
+        this.renderInspector();
       } else if (this.drag.kind === "move-joint") {
         const j = this.drag.joint;
         const snap = this.resolveSnap(rawPt, e, { ignoreJointId: j.id });
@@ -1738,6 +1920,7 @@ export class PhysicsLayer {
         this.drag.cur = { x: nx, y: ny };
         if (this.drag.end === "pa") j.pa = [nx, ny];
         else if (this.drag.end === "pb") j.pb = [nx, ny];
+        else if (this.drag.preserveLinks) movePivotPreservingLinks(this.scene, j, nx, ny);
         else j.anchor = [nx, ny];
         this.drag.snap = snap;
         this.render();
@@ -1785,6 +1968,21 @@ export class PhysicsLayer {
           this.clearSelection();
         }
         this.setTool("select");
+        this.renderInspector();
+        this.render();
+      } else if (d.kind === "transform-scale" || d.kind === "transform-rotate") {
+        if (Math.hypot(d.cur.x - d.start.x, d.cur.y - d.start.y) >= 1) {
+          this.pushUndo(d.beforeSnap);
+          this.persistChange();
+        }
+        this.renderInspector();
+        this.render();
+      } else if (d.kind === "direct-handle") {
+        this.renderSnapIndicator(null);
+        if (Math.hypot(d.cur.x - d.start.x, d.cur.y - d.start.y) >= 1) {
+          this.pushUndo(d.beforeSnap);
+          this.persistChange();
+        }
         this.renderInspector();
         this.render();
       } else if (d.kind === "move-body") {
@@ -1869,7 +2067,104 @@ export class PhysicsLayer {
     window.addEventListener("pointerup", onUp);
   }
 
-  handleSelectDown(pt, shiftKey = false) {
+  /** Return `{ bodies, joints }` eligible for Poliplan-style transform box (scale/rotate) in V mode. */
+  transformSelectionInfo() {
+    if (this.running || this.directEdit || !this.drawing?.active || !this.selectedBodies.size) return null;
+    const bodies = this.scene.bodies.filter((b) => this.selectedBodies.has(b.id) && !b.sourceMarkId);
+    if (!bodies.length) return null;
+    const bSet = new Set(bodies.map((b) => b.id));
+    const joints = this.scene.joints.filter(
+      (j) => !j.actuatorId && ((j.a && bSet.has(j.a)) || (j.b && bSet.has(j.b)) || this.selectedJoints.has(j.id)),
+    );
+    const bounds = selectionBounds(this.scene, bSet, joints.map((j) => j.id));
+    if (!bounds) return null;
+    const pad = 6;
+    const x0 = bounds.minX - pad;
+    const y0 = bounds.minY - pad;
+    const x1 = bounds.maxX + pad;
+    const y1 = bounds.maxY + pad;
+    return {
+      bodies,
+      joints,
+      bounds,
+      corners: [
+        [x0, y0],
+        [x1, y0],
+        [x1, y1],
+        [x0, y1],
+      ],
+      rotHandle: [bounds.cx, y0 - 20],
+      box: { x0, y0, x1, y1 },
+    };
+  }
+
+  handleSelectDown(pt, shiftKey = false, altKey = false) {
+    // 0a. In V mode, check Poliplan-style transform box handles (4 scale corners + top rotate knob)!
+    const xform = !shiftKey ? this.transformSelectionInfo() : null;
+    if (xform) {
+      const { bodies, joints, bounds, corners, rotHandle } = xform;
+      if (Math.hypot(rotHandle[0] - pt.x, rotHandle[1] - pt.y) <= 10) {
+        this.drag = {
+          kind: "transform-rotate",
+          cx: bounds.cx,
+          cy: bounds.cy,
+          startAngle: Math.atan2(pt.y - bounds.cy, pt.x - bounds.cx),
+          bodies,
+          origBodies: structuredClone(bodies),
+          joints,
+          origJoints: structuredClone(joints),
+          beforeSnap: structuredClone(this.scene),
+          start: pt,
+          cur: pt,
+        };
+        return;
+      }
+      for (const [cx, cy] of corners) {
+        if (Math.hypot(cx - pt.x, cy - pt.y) <= 10) {
+          this.drag = {
+            kind: "transform-scale",
+            cx: bounds.cx,
+            cy: bounds.cy,
+            startDist: Math.max(8, Math.hypot(pt.x - bounds.cx, pt.y - bounds.cy)),
+            bodies,
+            origBodies: structuredClone(bodies),
+            joints,
+            origJoints: structuredClone(joints),
+            beforeSnap: structuredClone(this.scene),
+            start: pt,
+            cur: pt,
+          };
+          return;
+        }
+      }
+    }
+
+    // 0b. In Direct Edit (Shift+V), check body resize/endpoint handles first!
+    if (this.directEdit && !this.running) {
+      const ordered = [
+        ...this.scene.bodies.filter((b) => this.selectedBodies.has(b.id)),
+        ...this.scene.bodies.filter((b) => !this.selectedBodies.has(b.id)),
+      ];
+      for (const b of ordered) {
+        for (const h of directHandlesForBody(b)) {
+          if (Math.hypot(h.x - pt.x, h.y - pt.y) <= 11) {
+            this.selectSingle("body", b.id);
+            this.renderInspector();
+            this.render();
+            this.drag = {
+              kind: "direct-handle",
+              body: b,
+              handle: h,
+              beforeSnap: structuredClone(this.scene),
+              start: pt,
+              cur: pt,
+            };
+            return;
+          }
+        }
+      }
+    }
+
     // Check joints first (small pins on top of bodies) and allow dragging them when paused.
     for (let i = this.scene.joints.length - 1; i >= 0; i--) {
       const j = this.scene.joints[i];
@@ -1908,10 +2203,12 @@ export class PhysicsLayer {
         this.renderInspector();
         this.render();
         if (!this.running && !shiftKey) {
+          // In normal V mode, dragging a pivot preserves connected link bars; in Shift+V Direct Edit (or Alt), repositions just the pivot!
           this.drag = {
             kind: "move-joint",
             joint: j,
             end: "anchor",
+            preserveLinks: !this.directEdit && this.preserveConnections && !altKey,
             beforeSnap: structuredClone(this.scene),
             start: pt,
             cur: pt,
@@ -1940,8 +2237,13 @@ export class PhysicsLayer {
         this.core.grabStart(b.id, pt.x, pt.y);
         this.drag = { kind: "grab", start: pt, cur: pt };
       } else if (!this.running) {
-        // Move all selected bodies together, plus single-body joints & internal joints between selected bodies.
-        const bodySet = new Set(this.selectedBodies);
+        // Connection-preserving drag (default in V mode): carry the connected mechanical assembly intact!
+        // Hold Alt (or use Shift+V Direct Edit) to move just the selected body.
+        const preserve = !this.directEdit && this.preserveConnections && !altKey;
+        const asm = preserve
+          ? connectedAssembly(this.scene, this.selectedBodies)
+          : { bodyIds: new Set(this.selectedBodies), jointIds: new Set(this.selectedJoints) };
+        const bodySet = asm.bodyIds;
         const movedBodies = this.scene.bodies
           .filter((x) => bodySet.has(x.id))
           .map((x) => ({ body: x, origX: x.x, origY: x.y }));
@@ -1954,7 +2256,7 @@ export class PhysicsLayer {
           } else if (Array.isArray(j.anchor)) {
             const aIn = !j.a || bodySet.has(j.a);
             const bIn = !j.b || bodySet.has(j.b);
-            if ((aIn && bIn && (j.a || j.b)) || this.selectedJoints.has(j.id)) {
+            if ((aIn && bIn && (j.a || j.b)) || asm.jointIds.has(j.id)) {
               movedJoints.push({ joint: j, prop: "anchor", orig: [...j.anchor] });
             }
           }
@@ -2239,6 +2541,50 @@ export class PhysicsLayer {
 
   renderDraft() {
     this.gDraft.replaceChildren();
+    if (!this.drag && this.tool === "stamp" && this.stampPreview) {
+      const { bodies, joints } = this.stampPreview;
+      const gGhost = svgEl("g", { opacity: "0.55", "pointer-events": "none" });
+      for (const b of bodies || []) {
+        const g = svgEl("g", {
+          transform: `translate(${b.x.toFixed(1)} ${b.y.toFixed(1)}) rotate(${(b.angle || 0).toFixed(1)})`,
+        });
+        const fill = b.color || "#4e8da6";
+        const stroke = "#3b7a6c";
+        if (b.shape === "circle") {
+          g.append(svgEl("circle", { cx: 0, cy: 0, r: b.r || 16, fill, "fill-opacity": 0.35, stroke, "stroke-dasharray": "4 3", "stroke-width": 1.5 }));
+        } else if (b.shape === "box") {
+          const w = b.w || 40;
+          const h = b.h || 24;
+          g.append(svgEl("rect", { x: -w / 2, y: -h / 2, width: w, height: h, rx: 3, fill, "fill-opacity": 0.35, stroke, "stroke-dasharray": "4 3", "stroke-width": 1.5 }));
+        } else if (b.shape === "link") {
+          const len = b.length || 80;
+          const w = b.width || 12;
+          const r = w / 2;
+          g.append(svgEl("rect", { x: -len / 2 - r, y: -r, width: len + w, height: w, rx: r, fill, "fill-opacity": 0.35, stroke, "stroke-dasharray": "4 3", "stroke-width": 1.5 }));
+        } else if (b.shape === "gear") {
+          const geo = gearGeometry(b.teeth, b.module);
+          const ptsStr = geo.outline.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+          g.append(svgEl("polygon", { points: ptsStr, fill, "fill-opacity": 0.35, stroke, "stroke-dasharray": "4 3", "stroke-width": 1.5 }));
+        } else if (b.shape === "chain" && b.pts?.length >= 2) {
+          const d = b.pts.map((p, i) => `${i ? "L" : "M"}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join("");
+          g.append(svgEl("path", { d, fill: "none", stroke, "stroke-width": b.thickness || 8, "stroke-dasharray": "5 3", "stroke-linecap": "round" }));
+        } else if (b.shape === "polygon" && b.pts?.length >= 3) {
+          const ptsStr = b.pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+          g.append(svgEl("polygon", { points: ptsStr, fill, "fill-opacity": 0.35, stroke, "stroke-dasharray": "4 3", "stroke-width": 1.5 }));
+        }
+        gGhost.append(g);
+      }
+      for (const j of joints || []) {
+        if (j.kind === "curve" && j.pts?.length >= 2) {
+          const d = j.pts.map((p, i) => `${i ? "L" : "M"}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join("");
+          gGhost.append(svgEl("path", { d, fill: "none", stroke: "#3b7a6c", "stroke-width": 2.5, "stroke-dasharray": "5 3" }));
+        } else if (j.anchor) {
+          gGhost.append(svgEl("circle", { cx: j.anchor[0], cy: j.anchor[1], r: 4.5, fill: "#fff", stroke: "#3b7a6c", "stroke-width": 1.6 }));
+        }
+      }
+      this.gDraft.append(gGhost);
+      return;
+    }
     if (!this.drag) return;
     if (this.drag.kind === "box-select") {
       const { start, cur } = this.drag;
@@ -2358,6 +2704,33 @@ export class PhysicsLayer {
       );
     }
 
+    // Push live physics poses back into Poliplan so attached marks themselves move & rotate (zero ghost!)
+    let hasLinked = false;
+    const markPoses = {};
+    for (const b of this.scene.bodies) {
+      if (!b.sourceMarkId) continue;
+      hasLinked = true;
+      if (this.simTime > 0 && b.type === "dynamic") {
+        const p = this.poseOf(b);
+        const restRad = ((b.angle || 0) * Math.PI) / 180;
+        markPoses[b.sourceMarkId] = {
+          ox: b.x,
+          oy: b.y,
+          x: p.x,
+          y: p.y,
+          a: p.a - restRad,
+        };
+      }
+    }
+    const poseCount = Object.keys(markPoses).length;
+    if (poseCount > 0) {
+      this._hadPoliplanPoses = true;
+      this.drawing?.setHostPoses(markPoses);
+    } else if (this._hadPoliplanPoses) {
+      this._hadPoliplanPoses = false;
+      this.drawing?.setHostPoses({});
+    }
+
     // Bodies (drawn in layer order A -> B -> C -> D -> pass-through so upper turning layers render on top)
     this.gBodies.replaceChildren();
     const byId = new Map();
@@ -2367,31 +2740,27 @@ export class PhysicsLayer {
       const pose = this.poseOf(b);
       const deg = (pose.a * 180) / Math.PI;
       const sel = this.selectedBodies.has(b.id);
+      const linkedMark = Boolean(b.sourceMarkId);
+      // Poliplan renders the actual moving mark via setHostPoses — only draw a subtle outline when selected!
+      if (linkedMark && !sel) continue;
       const g = svgEl("g", {
         class: `phys-body${sel ? " selected" : ""}`,
         transform: `translate(${pose.x.toFixed(2)} ${pose.y.toFixed(2)}) rotate(${deg.toFixed(2)})`,
       });
       const fill = b.color || "#4e8da6";
-      const linkedMark = Boolean(b.sourceMarkId);
-      const linkedAtRest = linkedMark && (b.type === "static" || this.simTime <= 0);
-      const fillOpacity = linkedAtRest
-        ? 0.12
-        : linkedMark
-          ? 0.72
-          : b.type === "sensor"
-            ? 0.2
-            : b.type === "static"
-              ? 0.78
-              : 0.86;
+      const fillOpacity = linkedMark
+        ? 0.08
+        : b.type === "sensor"
+          ? 0.2
+          : b.type === "static"
+            ? 0.78
+            : 0.86;
       const stroke = sel
-        ? "#1b4d42"
-        : linkedAtRest
-          ? b.type === "static"
-            ? "#6c7b88"
-            : "#3b7a6c"
-          : "rgba(20, 26, 28, 0.55)";
-      const strokeW = sel ? 2.2 : linkedAtRest ? 1.5 : 1.3;
-      const dash = linkedAtRest && !sel ? "4 3" : null;
+        ? "#3b7a6c"
+        : "rgba(20, 26, 28, 0.55)";
+      const strokeW = sel ? 2 : 1.3;
+      const dash = linkedMark ? "4 3" : null;
+      const linkedAtRest = linkedMark;
 
       if (b.shape === "circle") {
         const r = b.r || 18;
@@ -2585,6 +2954,124 @@ export class PhysicsLayer {
         );
       }
       this.gJoints.append(g);
+    }
+
+    // Direct-Edit (Shift+V) construction handles OR Poliplan-style Transform Box (V: scale corners + top rotate handle)
+    this.gHandles.replaceChildren();
+    if (this.directEdit && !this.running && this.drawing?.active) {
+      const targetBodies = this.selectedBodies.size
+        ? this.scene.bodies.filter((b) => this.selectedBodies.has(b.id))
+        : this.scene.bodies;
+      for (const b of targetBodies) {
+        const isSel = this.selectedBodies.has(b.id);
+        for (const h of directHandlesForBody(b)) {
+          const g = svgEl("g", { class: "phys-handle" });
+          if (h.kind === "boxCorner" || h.kind === "vertex") {
+            g.append(
+              svgEl("rect", {
+                x: h.x - 4.5,
+                y: h.y - 4.5,
+                width: 9,
+                height: 9,
+                rx: 1.5,
+                fill: "#fff",
+                stroke: "#3b7a6c",
+                "stroke-width": isSel ? 2 : 1.4,
+              }),
+            );
+          } else {
+            g.append(
+              svgEl("circle", {
+                cx: h.x,
+                cy: h.y,
+                r: isSel ? 5.5 : 4.5,
+                fill: "#fff",
+                stroke: "#3b7a6c",
+                "stroke-width": isSel ? 2 : 1.5,
+              }),
+            );
+          }
+          if (isSel && h.label && (h.kind === "gearRadius" || h.kind === "circleRadius")) {
+            const lbl = svgEl("text", {
+              x: h.x + 9,
+              y: h.y + 3,
+              "font-size": 10,
+              "font-family": "ui-monospace, monospace",
+              fill: "#3b7a6c",
+            });
+            lbl.textContent = h.label;
+            g.append(lbl);
+          }
+          this.gHandles.append(g);
+        }
+      }
+    } else {
+      const xform = this.transformSelectionInfo();
+      if (xform) {
+        const { box, corners, rotHandle, bounds } = xform;
+        // Poliplan-style dashed outer selection frame + subtle solid inner frame
+        this.gHandles.append(
+          svgEl("rect", {
+            x: box.x0 - 3,
+            y: box.y0 - 3,
+            width: box.x1 - box.x0 + 6,
+            height: box.y1 - box.y0 + 6,
+            fill: "none",
+            stroke: "rgba(255, 255, 255, 0.55)",
+            "stroke-width": 1.2,
+            "stroke-dasharray": "4 3",
+            "pointer-events": "none",
+          }),
+          svgEl("rect", {
+            x: box.x0,
+            y: box.y0,
+            width: box.x1 - box.x0,
+            height: box.y1 - box.y0,
+            fill: "none",
+            stroke: "rgba(255, 255, 255, 0.35)",
+            "stroke-width": 1,
+            "pointer-events": "none",
+          }),
+          svgEl("line", {
+            x1: bounds.cx,
+            y1: box.y0,
+            x2: rotHandle[0],
+            y2: rotHandle[1],
+            stroke: "rgba(255, 255, 255, 0.55)",
+            "stroke-width": 1.2,
+            "pointer-events": "none",
+          }),
+        );
+        // 4 corner scale handles (matching Poliplan's dark-fill white-stroke squares)
+        for (const [cx, cy] of corners) {
+          const g = svgEl("g", { class: "phys-handle", style: "cursor:nwse-resize" });
+          g.append(
+            svgEl("rect", {
+              x: cx - 4.5,
+              y: cy - 4.5,
+              width: 9,
+              height: 9,
+              fill: "#1f2224",
+              stroke: "#e8ecea",
+              "stroke-width": 1.4,
+            }),
+          );
+          this.gHandles.append(g);
+        }
+        // Top rotation handle
+        const gRot = svgEl("g", { class: "phys-handle", style: "cursor:grab" });
+        gRot.append(
+          svgEl("circle", {
+            cx: rotHandle[0],
+            cy: rotHandle[1],
+            r: 5,
+            fill: "#1f2224",
+            stroke: "#e8ecea",
+            "stroke-width": 1.5,
+          }),
+        );
+        this.gHandles.append(gRot);
+      }
     }
 
         // Actuator shaft snap hubs (plus servo horn-tip mounting hole!)

@@ -1784,8 +1784,14 @@ document.addEventListener("keydown", (e) => {
   const modifier = e.metaKey || e.ctrlKey;
   if (modifier && e.key === ".") {
     e.preventDefault();
-    stop();
-    bridge.stop();
+    const anyRunning = running || workbench?.physics?.running || workbench?.p5Running;
+    if (anyRunning) {
+      stop();
+      bridge.stop();
+      workbench?.physics?.pause();
+    } else {
+      rewindSimulation();
+    }
     return;
   }
   const editing = e

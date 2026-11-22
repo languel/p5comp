@@ -57,11 +57,22 @@ svg.physics-layer-svg {
   pointer-events: auto;
 }
 
-/* Unified Select: when Draw & Physics mode is open, Poliplan's V tool can click/drag physics bodies & joints directly */
+/* Unified Select & Direct Edit: Poliplan's V / Shift+V tools can click/drag bodies, joints, and direct-edit handles */
 #stage.draw-physics-open svg.physics-layer-svg .phys-body,
 #stage.draw-physics-open svg.physics-layer-svg .phys-joint {
   pointer-events: auto;
   cursor: move;
+}
+
+#stage.draw-physics-open svg.physics-layer-svg .phys-handle {
+  pointer-events: auto;
+  cursor: grab;
+}
+
+#stage.draw-physics-open svg.physics-layer-svg .phys-handle:hover circle,
+#stage.draw-physics-open svg.physics-layer-svg .phys-handle:hover rect {
+  fill: #3b7a6c;
+  stroke: #fff;
 }
 
 svg.physics-layer-svg.hidden-layer {
@@ -346,6 +357,24 @@ svg.physics-layer-svg.hidden-layer {
 }
 
 .phys-inspector[hidden] {
+  display: none;
+}
+
+.phys-inspector.docked {
+  position: static;
+  right: auto;
+  bottom: auto;
+  z-index: auto;
+  width: auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  padding: 10px 12px 14px;
+}
+
+.phys-inspector.docked > header {
   display: none;
 }
 

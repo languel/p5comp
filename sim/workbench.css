@@ -800,6 +800,12 @@ input[type="checkbox"]:focus-visible {
 .unified .canvas-tools {
   overflow: visible;
 }
+.unified .canvas-tools #zoomOut {
+  margin-left: auto;
+}
+.unified .canvas-tools .canvas-settings {
+  margin-left: 0;
+}
 .unified .canvas-settings > div {
   position: fixed;
   z-index: 210;

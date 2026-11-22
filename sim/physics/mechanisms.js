@@ -56,6 +56,12 @@ export const MECHANISM_PRESETS = [
     build: buildRatchetPawl,
   },
   {
+    id: "curve-track",
+    name: "Curved guide track",
+    tagline: "Curved arc track constraining a sliding carriage pin (connect a link to drive it)",
+    build: buildCurveTrack,
+  },
+  {
     id: "ball-launcher",
     name: "Catapult & ramp",
     tagline: "Actuator paddle launching bouncy balls onto a sloped track",
@@ -1053,6 +1059,68 @@ export function buildBallLauncher({
         ...(actuatorId
           ? { actuatorId, mount: "shaft" }
           : { motor: { on: true, speed: 120, torque: 240 } }),
+      },
+    ],
+  };
+}
+
+/**
+ * 9. Curved Guide Track (general `curve` constraint building block)
+ * Drops a smooth arc track with a sliding carriage pin at its start point.
+ * Connect a link bar to the carriage pin to drive it along the curve!
+ */
+export function buildCurveTrack({
+  origin = [360, 240],
+  radius = 90,
+  spanDeg = 120,
+  existingBodies = [],
+  existingJoints = [],
+} = {}) {
+  const bTaken = [...existingBodies];
+  const jTaken = [...existingJoints];
+  const [ox, oy] = origin;
+
+  const carId = mkId("car", bTaken);
+  const pts = [];
+  const steps = 16;
+  const startRad = ((-90 - spanDeg / 2) * Math.PI) / 180;
+  const endRad = ((-90 + spanDeg / 2) * Math.PI) / 180;
+  const cx = ox;
+  const cy = oy + radius;
+  for (let i = 0; i <= steps; i++) {
+    const a = startRad + (i / steps) * (endRad - startRad);
+    pts.push([cx + Math.cos(a) * radius, cy + Math.sin(a) * radius]);
+  }
+  const mid = pts[Math.floor(pts.length / 2)];
+
+  return {
+    bodies: [
+      {
+        id: carId,
+        label: "Curve carriage",
+        type: "dynamic",
+        shape: "circle",
+        collisionMask: 1,
+        x: mid[0],
+        y: mid[1],
+        angle: 0,
+        r: 10,
+        color: "#4e8da6",
+        trace: true,
+        ...MATERIAL_DEFAULTS,
+        density: 1.0,
+      },
+    ],
+    joints: [
+      {
+        id: mkId("j", jTaken),
+        kind: "curve",
+        a: null,
+        b: carId,
+        anchor: [mid[0], mid[1]],
+        pts,
+        closed: false,
+        friction: 0.03,
       },
     ],
   };
