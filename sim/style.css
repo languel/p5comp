@@ -705,6 +705,7 @@ footer button {
   position: fixed;
   z-index: 100;
   min-width: 178px;
+  width: max-content;
   padding: 6px;
   border: 1px solid var(--ui-line);
   border-radius: 6px;
@@ -1684,21 +1685,52 @@ footer button {
   flex: 0 0 11px;
 }
 .canvas-palette {
-  gap: 3px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 7px 8px;
+  border-top: 1px solid var(--ui-line);
+  border-bottom: 1px solid var(--ui-line);
+  margin: 2px 0 4px;
+}
+.canvas-palette:first-child {
+  border-top: 0;
+  margin-top: 0;
+  padding-top: 4px;
 }
 .canvas-palette button,
-.canvas-palette .custom-color-dot {
-  width: 10px;
-  height: 10px;
-  min-width: 10px;
-  flex-basis: 10px;
+.canvas-palette .custom-color-dot,
+.canvas-palette .no-tint-dot {
+  width: 14px;
+  height: 14px;
+  min-width: 14px;
+  max-width: 14px;
+  flex: 0 0 14px;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  line-height: 1;
 }
 .canvas-palette .no-tint-dot {
   background: transparent;
   border: 1px solid var(--ui-quiet);
   color: var(--ui-text);
-  font-size: 9px;
-  line-height: 8px;
+  font-size: 10px;
+}
+.canvas-palette .custom-color-dot {
+  background: transparent;
+  border: 1px dashed var(--ui-quiet);
+  color: var(--ui-text);
+  font-size: 11px;
+}
+.canvas-palette .no-tint-dot svg,
+.canvas-palette .custom-color-dot svg {
+  width: 10px;
+  height: 10px;
+  display: block;
 }
 .canvas-transform-tools {
   display: flex;
@@ -1727,10 +1759,11 @@ footer button {
 .alpha-color-swatch {
   display: inline-grid;
   place-items: stretch;
-  width: 26px;
-  height: 26px;
-  min-width: 26px;
-  padding: 3px;
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  padding: 0;
+  overflow: hidden;
   border: 1px solid var(--ui-line);
   border-radius: 50%;
   background: repeating-conic-gradient(#aaa 0% 25%, #eee 0% 50%) 50% / 8px 8px;

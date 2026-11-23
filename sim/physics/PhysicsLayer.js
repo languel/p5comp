@@ -940,7 +940,8 @@ export class PhysicsLayer {
       if (this.selectedJoints.size) parts.push(`${this.selectedJoints.size} ${this.selectedJoints.size === 1 ? "joint" : "joints"}`);
       const title = `Selected · ${parts.join(", ")}`;
       this.inspector.hidden = false;
-      this.onPropertiesState?.(true, title);
+      const selJointsList = this.scene.joints.filter((j) => this.selectedJoints.has(j.id));
+      this.onPropertiesState?.(true, title, { bodies: selBodies, joints: selJointsList });
       const updateAll = (patch) => {
         if (!selBodies.length) return;
         this.pushUndo();
@@ -1059,7 +1060,7 @@ export class PhysicsLayer {
         return;
       }
       this.inspector.hidden = false;
-      this.onPropertiesState?.(true, `${b.label || b.shape} (${b.id})`);
+      this.onPropertiesState?.(true, `${b.label || b.shape} (${b.id})`, b);
       const update = (patch) => {
         this.pushUndo();
         Object.assign(b, patch);
@@ -1224,7 +1225,7 @@ export class PhysicsLayer {
         return;
       }
       this.inspector.hidden = false;
-      this.onPropertiesState?.(true, `${j.kind[0].toUpperCase() + j.kind.slice(1)} (${j.id})`);
+      this.onPropertiesState?.(true, `${j.kind[0].toUpperCase() + j.kind.slice(1)} (${j.id})`, j);
       const update = (patch) => {
         this.pushUndo();
         Object.assign(j, patch);
@@ -1336,6 +1337,7 @@ export class PhysicsLayer {
           }
         }
       } else if (j.kind === "spring") {
+        const autoLen = j.pa && j.pb ? Math.round(Math.hypot(j.pb[0] - j.pa[0], j.pb[1] - j.pa[1])) : 60;
         this.inspector.append(
           el(
             "div",
@@ -1361,6 +1363,55 @@ export class PhysicsLayer {
               max: "50",
               value: j.damping ?? 2,
               onchange: (e) => update({ damping: Math.max(0, Number(e.target.value) || 0) }),
+            }),
+          ),
+          el(
+            "div",
+            { class: "phys-row" },
+            el("label", {}, "Color"),
+            el("input", {
+              type: "color",
+              value: j.color || "#3b7a6c",
+              onchange: (e) => update({ color: e.target.value }),
+            }),
+          ),
+          el(
+            "div",
+            { class: "phys-row" },
+            el("label", {}, "Rest length"),
+            el("input", {
+              type: "number",
+              step: "5",
+              min: "5",
+              max: "600",
+              value: Math.round(j.restLength ?? autoLen),
+              onchange: (e) => update({ restLength: Math.max(5, Number(e.target.value) || autoLen) }),
+            }),
+          ),
+        );
+      } else if (j.kind === "slider") {
+        const [minL, maxL] = Array.isArray(j.limits) ? j.limits : [-80, 80];
+        this.inspector.append(
+          el(
+            "div",
+            { class: "phys-row" },
+            el("label", {}, "Min travel"),
+            el("input", {
+              type: "number",
+              step: "10",
+              value: Math.round(minL),
+              onchange: (e) => update({ limits: [Number(e.target.value) || 0, maxL] }),
+            }),
+          ),
+          el(
+            "div",
+            { class: "phys-row" },
+            el("label", {}, "Max travel"),
+            el("input", {
+              type: "number",
+              step: "10",
+              value: Math.round(maxL),
+              onchange: (e) => update({ limits: [minL, Number(e.target.value) || 0] }),
             }),
           ),
         );
@@ -2193,6 +2244,25 @@ export class PhysicsLayer {
             return;
           }
         }
+        // Also allow clicking anywhere along the spring coil segment to select it!
+        if (j.pa && j.pb) {
+          const dx = j.pb[0] - j.pa[0];
+          const dy = j.pb[1] - j.pa[1];
+          const len2 = dx * dx + dy * dy || 1;
+          const t = Math.max(0, Math.min(1, ((pt.x - j.pa[0]) * dx + (pt.y - j.pa[1]) * dy) / len2));
+          const dist = Math.hypot(pt.x - (j.pa[0] + dx * t), pt.y - (j.pa[1] + dy * t));
+          if (dist <= 10) {
+            if (shiftKey) {
+              if (this.selectedJoints.has(j.id)) this.selectedJoints.delete(j.id);
+              else this.selectedJoints.add(j.id);
+            } else {
+              this.selectSingle("joint", j.id);
+            }
+            this.renderInspector();
+            this.render();
+            return;
+          }
+        }
       } else if (j.anchor && Math.hypot(j.anchor[0] - pt.x, j.anchor[1] - pt.y) <= 12) {
         if (shiftKey) {
           if (this.selectedJoints.has(j.id)) this.selectedJoints.delete(j.id);
@@ -2880,17 +2950,18 @@ export class PhysicsLayer {
       if (j.kind === "spring") {
         const p1 = livePointOn(j.a, j.pa);
         const p2 = livePointOn(j.b, j.pb);
+        const col = j.color || "#3b7a6c";
         g.append(
           svgEl("path", {
             d: springPath(p1, p2),
             fill: "none",
-            stroke: sel ? "#3b7a6c" : "#3a454a",
-            "stroke-width": sel ? 2.4 : 1.7,
+            stroke: sel ? col : j.color || "#3a454a",
+            "stroke-width": sel ? 2.5 : 1.8,
             "stroke-linecap": "round",
             "stroke-linejoin": "round",
           }),
-          svgEl("circle", { cx: p1[0], cy: p1[1], r: 3, fill: "#3b7a6c" }),
-          svgEl("circle", { cx: p2[0], cy: p2[1], r: 3, fill: "#3b7a6c" }),
+          svgEl("circle", { cx: p1[0], cy: p1[1], r: 3, fill: col }),
+          svgEl("circle", { cx: p2[0], cy: p2[1], r: 3, fill: col }),
         );
       } else if (j.kind === "slider") {
         const p = livePointOn(j.a, j.anchor);

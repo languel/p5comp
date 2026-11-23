@@ -23,8 +23,8 @@ const ACTIONS = [
 const hasMarks = (doc) => Boolean(doc?.elements?.length);
 
 export class DrawingBoard {
-  constructor({ workspace, stage, canvas, tools, persist, addAsset, assetNames, mountServo, onPhysicsAction, onDocChange, onActiveChange, onSelectionChange, onToolChange, onHostPointer, getHostToolbar }) {
-    Object.assign(this, { workspace, stage, canvas, persist, addAsset, assetNames, mountServo, onPhysicsAction, onDocChange, onActiveChange, onSelectionChange, onToolChange, onHostPointer, getHostToolbar });
+  constructor({ workspace, stage, canvas, tools, persist, addAsset, assetNames, mountServo, onPhysicsAction, onCircuitAction, onDocChange, onActiveChange, onSelectionChange, onToolChange, onHostPointer, getHostToolbar, scoreTransport = false }) {
+    Object.assign(this, { workspace, stage, canvas, persist, addAsset, assetNames, mountServo, onPhysicsAction, onCircuitAction, onDocChange, onActiveChange, onSelectionChange, onToolChange, onHostPointer, getHostToolbar, scoreTransport: Boolean(scoreTransport) });
     stage.addEventListener('p5comp:selection-box', event => {
       if (!this.active || this.tab || !this.editor) return;
       this.editor.selectBox?.(event.detail).catch(error=>console.warn('Drawing selection:',error));
@@ -148,10 +148,10 @@ export class DrawingBoard {
     if (!silent) this.onActiveChange?.(on);
   }
 
-  /** Push updated host toolbar sections (e.g. Physics brushes & live checkmarks) into Poliplan's toolbar. */
+  /** Merge and push host toolbar sections (e.g. Physics & Circuit toolkits) into Poliplan's toolbar. */
   setHostToolbar(sections) {
-    this._hostToolbar = sections;
-    this.editor?.setHostToolbar?.(sections).catch(() => {});
+    this._hostToolbar = { ...(this._hostToolbar || {}), ...(sections || {}) };
+    this.editor?.setHostToolbar?.(this._hostToolbar).catch(() => {});
   }
 
   /** Push live rigid-body poses for physics-attached Poliplan marks so the marks themselves move & rotate. */
@@ -170,6 +170,12 @@ export class DrawingBoard {
     this.editor?.setTool?.(tool).catch(() => {});
   }
 
+  /** Toggle Poliplan's bottom score transport bar (off by default). */
+  setScoreTransport(on) {
+    this.scoreTransport = Boolean(on);
+    this.editor?.setUI?.({ transport: this.scoreTransport }).catch(() => {});
+  }
+
   /** What the editor shows, one request after another so they cannot overtake each other. */
   applyUI() {
     const editor = this.editor;
@@ -177,7 +183,11 @@ export class DrawingBoard {
     const tab = this.tab, tools = this.active || tab;
     this.uiChain = (this.uiChain || Promise.resolve()).then(async () => {
       await editor.setMode(tab ? "standalone" : "overlay");
-      await editor.setUI(tab ? { tools: true, view: true, zoom: true, panels: true } : { tools, view: false, zoom: false, panels: false });
+      await editor.setUI(
+        tab
+          ? { tools: true, view: true, zoom: true, panels: true, transport: this.scoreTransport }
+          : { tools, view: false, zoom: false, panels: false, transport: this.scoreTransport },
+      );
     }).catch(() => {});
     return this.uiChain;
   }
@@ -199,7 +209,8 @@ export class DrawingBoard {
           document: this.doc || undefined,
           overlay: true,
           passthrough: true,
-          ui: { tools: this.active || this.tab },
+          transport: this.scoreTransport,
+          ui: { tools: this.active || this.tab, transport: this.scoreTransport },
           actions: ACTIONS,
           hostToolbar: this._hostToolbar || this.getHostToolbar?.() || undefined,
           camera: this.camera(),
@@ -244,7 +255,15 @@ export class DrawingBoard {
     if (!types.includes(m.event)) return;
     const r = this.editor.frame.getBoundingClientRect();
     const x = r.left + m.x, y = r.top + m.y;
-    const init = { ...m, clientX: x, clientY: y, bubbles: true, composed: true, cancelable: true };
+    const init = {
+      ...m,
+      button: Number.isFinite(m.button) ? m.button : 0,
+      clientX: x,
+      clientY: y,
+      bubbles: true,
+      composed: true,
+      cancelable: true,
+    };
     if (this.onHostPointer?.(m.event, init)) return;
     if (m.event === "pointerdown" || !this.passTarget?.isConnected) {
       const hidden = this.layer.hidden;
@@ -261,8 +280,22 @@ export class DrawingBoard {
       while (host?.getRootNode()?.host) host = host.getRootNode().host;
       this.passTarget = this.stage.contains(host) ? target : this.stage;
     }
+    const target = this.passTarget;
     const EventClass = m.event.startsWith("pointer") ? PointerEvent : MouseEvent;
-    this.passTarget.dispatchEvent(new EventClass(m.event, init));
+    const notCanceled = target.dispatchEvent(new EventClass(m.event, init));
+    // Wokwi interactive controls (potentiometer dial, slide pot, switches, buttons)
+    // listen to compatibility mouse events, which browsers fire only when pointerdown
+    // is not defaultPrevented by the canvas drag handler.
+    if (m.event === "pointerdown") {
+      this.passMouse = notCanceled;
+      if (this.passMouse) target.dispatchEvent(new MouseEvent("mousedown", init));
+    } else if (m.event === "pointermove") {
+      if (this.passMouse) target.dispatchEvent(new MouseEvent("mousemove", init));
+    } else if (m.event === "pointerup" || m.event === "pointercancel") {
+      if (this.passMouse) target.dispatchEvent(new MouseEvent("mouseup", init));
+      this.passMouse = false;
+      this.passTarget = null;
+    }
   }
 
   camera() {
@@ -312,6 +345,11 @@ export class DrawingBoard {
   async save(kind, ids) {
     try {
       if (kind === "servo") { await this.mountServo(ids); return; }
+      if (kind.startsWith("circuit:") || kind.startsWith("view:")) {
+        const msg = await this.onCircuitAction?.(kind);
+        if (msg) this.say(msg);
+        return;
+      }
       if (kind.startsWith("phys-")) {
         const needsDoc = ["phys-dynamic", "phys-static", "phys-curve"].includes(kind);
         if (needsDoc) {

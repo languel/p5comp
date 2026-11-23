@@ -8,7 +8,27 @@
 
 import { basePath } from "../../shared/basePath.js";
 
+export const LFM3_LOCAL_PI_MODEL_ID = "/models/LFM3-1.7B-pi-Q4_K_M.gguf";
 export const LFM3_DEFAULT_MODEL_ID = "LiquidAI/LFM3-1.7B-GGUF";
+export const LFM3_QAD_MODEL_ID = "LiquidAI/LFM3-1.7B-GGUF::LFM3-1.7B-QAD-Q4_0.gguf";
+export const LFM3_MODELS = [
+  { id: LFM3_LOCAL_PI_MODEL_ID, label: "LFM3-1.7B-pi · Q4_K_M (Local WebGPU)" },
+  { id: LFM3_DEFAULT_MODEL_ID, label: "LFM3-1.7B · Q4_K_M (HF WebGPU)" },
+  { id: LFM3_QAD_MODEL_ID, label: "LFM3-1.7B · QAD Q4_0 (HF WebGPU)" },
+];
+
+export function parseLfm3ModelSpec(modelId = LFM3_DEFAULT_MODEL_ID) {
+  const raw = String(modelId || LFM3_DEFAULT_MODEL_ID);
+  if (raw.includes("::")) {
+    const [repo, file] = raw.split("::");
+    return { repo: repo || LFM3_DEFAULT_MODEL_ID, file: file || undefined };
+  }
+  if (/^(\/|\.|https?:)/i.test(raw) && raw.toLowerCase().endsWith(".gguf")) {
+    const clean = raw.startsWith("/") ? basePath(raw.slice(1)) : raw;
+    return { repo: clean, file: raw.split("/").pop() };
+  }
+  return { repo: raw, file: undefined };
+}
 
 export const ASSISTANT_PROVIDERS = [
   { id: "ollama", label: "Ollama (Local)", defaultUrl: "http://localhost:11434/v1", defaultModel: "" },
@@ -26,9 +46,12 @@ export function loadAssistantSettings() {
     const raw = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
     const provider = ASSISTANT_PROVIDERS.some((p) => p.id === raw.provider) ? raw.provider : "ollama";
     const spec = ASSISTANT_PROVIDERS.find((p) => p.id === provider);
-    // Migrate any stale ONNX model id to LiquidAI/LFM3-1.7B-GGUF.
+    // Migrate any stale ONNX or LoRA-only model id to LiquidAI/LFM3-1.7B-GGUF.
     let model = raw.model || spec.defaultModel;
-    if (provider === "lfm3" && (!model || model.includes("LFM2.5") || model.includes("ONNX"))) {
+    if (
+      provider === "lfm3" &&
+      (!model || model.includes("LFM2.5") || model.includes("ONNX") || model.includes("harness-hub/LFM3-1.7B-pi"))
+    ) {
       model = LFM3_DEFAULT_MODEL_ID;
     }
     return {
@@ -36,6 +59,14 @@ export function loadAssistantSettings() {
       baseUrl: raw.baseUrl ?? spec.defaultUrl,
       model,
       apiKey: raw.apiKey || "",
+      toolsEnabled: raw.toolsEnabled !== false,
+      showSteps: raw.showSteps !== false,
+      maxSteps: raw.maxStepsManual
+        ? Math.max(1, Math.min(24, Number(raw.maxSteps) || 14))
+        : Math.max(14, Math.min(24, Number(raw.maxSteps) || 14)),
+      maxStepsManual: Boolean(raw.maxStepsManual),
+      agentMode: raw.agentMode === "json" ? "json" : "pi",
+      toolSet: ["auto", "full", "small"].includes(raw.toolSet) ? raw.toolSet : "auto",
     };
   } catch {
     return {
@@ -43,6 +74,11 @@ export function loadAssistantSettings() {
       baseUrl: "http://127.0.0.1:11434/v1",
       model: "",
       apiKey: "",
+      toolsEnabled: true,
+      showSteps: true,
+      maxSteps: 14,
+      agentMode: "pi",
+      toolSet: "auto",
     };
   }
 }
@@ -105,7 +141,20 @@ export async function probeModels({ provider, baseUrl, apiKey }) {
             if (!caps || !caps.length) return !/embed/i.test(String(m.name || ""));
             return caps.includes("completion");
           });
+          const scoreOllama = (m) => {
+            const name = String(m.name || m.model || "");
+            const caps = Array.isArray(m.capabilities) ? m.capabilities : [];
+            let s = 0;
+            if (caps.includes("tools")) s += 40;
+            if (caps.includes("vision")) s += 10;
+            if (/lfm3.*pi|qwen|coder|inkling|bonsai|lfm2\.5|claude|gpt|mistral|llama/i.test(name)) s += 20;
+            if (/lfm3.*pi/i.test(name)) s += 15;
+            if (/peline|humanizer|ocr|phonon|embed/i.test(name)) s -= 30;
+            return s;
+          };
           const list = (chatModels.length ? chatModels : raw)
+            .slice()
+            .sort((a, b) => scoreOllama(b) - scoreOllama(a))
             .map((m) => String(m.name || m.model || ""))
             .filter(Boolean);
           resolvedOllamaRoot = root;
@@ -186,10 +235,11 @@ export class Lfm3Client {
 
   async load(modelId = LFM3_DEFAULT_MODEL_ID) {
     if (this.session && this.readyModel === modelId) {
-      this.onStatus({ status: "ready", fraction: 1, message: `${modelId} ready on WebGPU` });
+      this.onStatus({ status: "ready", fraction: 1, message: "LFM3-1.7B ready on WebGPU" });
       return;
     }
     if (this.loading) return this.loading;
+    const { repo, file } = parseLfm3ModelSpec(modelId);
     this.loading = (async () => {
       try {
         if (typeof navigator === "undefined" || !("gpu" in navigator)) {
@@ -198,13 +248,14 @@ export class Lfm3Client {
         this.onStatus({ status: "loading", fraction: 0.02, message: "Loading LFM3 WebGPU runtime…" });
         const runtimeUrl = new URL(basePath("vendor/Lfm3ForCausalLM.js"), location.href).href;
         const mod = await import(/* @vite-ignore */ runtimeUrl);
-        const check = await mod.Lfm3ForCausalLM.checkAvailability(modelId).catch(() => true);
+        const check = await mod.Lfm3ForCausalLM.checkAvailability(repo, file ? { file } : undefined).catch(() => true);
         if (check && typeof check === "object" && check.ok === false) {
           throw new Error(check.reason || "This GPU cannot run LFM3-1.7B.");
         }
         if (this.session?.dispose) await this.session.dispose();
         if (this.model?.dispose) await this.model.dispose();
-        this.model = await mod.Lfm3ForCausalLM.from_pretrained(modelId, {
+        this.model = await mod.Lfm3ForCausalLM.from_pretrained(repo, {
+          ...(file ? { file } : {}),
           maxLength: 32768,
           onProgress: (p) => {
             const fraction =
@@ -225,7 +276,11 @@ export class Lfm3Client {
         });
         this.session = this.model.create_session();
         this.readyModel = modelId;
-        this.onStatus({ status: "ready", fraction: 1, message: "LFM3-1.7B ready on WebGPU" });
+        this.onStatus({
+          status: "ready",
+          fraction: 1,
+          message: `LFM3-1.7B (${file ? "QAD Q4_0" : "Q4_K_M"}) ready on WebGPU`,
+        });
       } catch (err) {
         this.session = null;
         this.readyModel = "";
@@ -238,28 +293,115 @@ export class Lfm3Client {
     return this.loading;
   }
 
-  async generate(messages, { modelId = LFM3_DEFAULT_MODEL_ID, onChunk, signal } = {}) {
+  get ready() {
+    return Boolean(this.session);
+  }
+
+  resetSession() {
+    if (this.session?.dispose) void Promise.resolve(this.session.dispose()).catch(() => {});
+    this.session = this.model ? this.model.create_session() : null;
+  }
+
+  async generate(messages, { modelId = LFM3_DEFAULT_MODEL_ID, onChunk, onActivity, signal } = {}) {
     if (!this.session || this.readyModel !== modelId) {
       await this.load(modelId);
     }
     const gen = this.session.generate(messages, {
-      max_new_tokens: 2048,
+      max_new_tokens: 4096,
       do_sample: false,
       signal,
     });
     for await (const ev of gen) {
       if (ev?.type === "text" && ev.text) onChunk?.(ev.text);
+      else if (ev?.type === "reasoning" && ev.text) onActivity?.({ kind: "thinking", delta: ev.text });
+      else if (ev?.type === "prefill" && ev.total) {
+        onActivity?.({ kind: "reading", fraction: Math.min(1, (ev.done ?? 0) / ev.total) });
+      }
     }
     const res = await gen.result;
     return res?.message?.content || "";
   }
+
+  /** Native Pi tool-calling turn on WebGPU (LiquidAI/LFM3-1.7B-GGUF Q4_K_M or QAD-Q4_0). */
+  async completeWithTools(messages, tools = [], { modelId = LFM3_DEFAULT_MODEL_ID, onText, onActivity, signal } = {}) {
+    if (!this.session || this.readyModel !== modelId) {
+      await this.load(modelId);
+    }
+    const gen = this.session.generate(sanitizeTextOnlyMessages(messages), {
+      ...(tools.length ? { tools } : {}),
+      max_new_tokens: 4096,
+      do_sample: false,
+      signal,
+    });
+    for await (const ev of gen) {
+      if (ev?.type === "text" && ev.text) onText?.(ev.text);
+      else if (ev?.type === "reasoning" && ev.text) onActivity?.({ kind: "thinking", delta: ev.text });
+      else if (ev?.type === "prefill" && ev.total) {
+        onActivity?.({ kind: "reading", fraction: Math.min(1, (ev.done ?? 0) / ev.total) });
+      }
+    }
+    const res = await gen.result;
+    const rawCalls = Array.isArray(res?.message?.tool_calls) ? res.message.tool_calls : [];
+    const calls = rawCalls.map((c, idx) => ({
+      ...c,
+      id: c.id || `lfm_${Date.now().toString(36)}_${idx}`,
+      type: "function",
+      function: {
+        name: String(c.function?.name || ""),
+        arguments:
+          c.function?.arguments && typeof c.function.arguments === "object"
+            ? c.function.arguments
+            : (() => {
+                try {
+                  return JSON.parse(String(c.function?.arguments || "{}"));
+                } catch {
+                  return {};
+                }
+              })(),
+      },
+    }));
+    const finish =
+      res?.finish_reason === "tool_calls" && calls.length
+        ? "tool_calls"
+        : res?.finish_reason === "cancelled"
+          ? "cancelled"
+          : res?.finish_reason === "length"
+            ? "length"
+            : "stop";
+    return {
+      message: {
+        role: "assistant",
+        content: res?.message?.content ?? "",
+        ...(calls.length ? { tool_calls: calls } : {}),
+      },
+      finish,
+    };
+  }
+}
+
+function sanitizeTextOnlyMessages(messages) {
+  return messages.map((m) => {
+    if (!m.images?.length) return m;
+    const names = m.images.map((i) => i.label || "image").join(", ");
+    const { images: _drop, ...rest } = m;
+    return {
+      ...rest,
+      content: `${m.content || ""}\n\n[Attached image(s): ${names}. Note: LFM3-1.7B WebGPU is text-only; switch to a vision model or attach Canvas SVG to inspect geometry.]`.trim(),
+    };
+  });
+}
+
+function splitDataUrl(dataUrl, fallbackMime = "image/png") {
+  const m = /^data:([^;,]+);base64,([\s\S]+)$/.exec(String(dataUrl || ""));
+  if (m) return { mimeType: m[1], base64: m[2] };
+  return { mimeType: fallbackMime, base64: String(dataUrl || "").replace(/^data:[^,]*,/, "") };
 }
 
 /** Run one chat completion against Ollama / OpenAI / OpenRouter / Gemini / Anthropic / LFM3. */
-export async function completeChat(settings, messages, { lfm3, onChunk, signal } = {}) {
+export async function completeChat(settings, messages, { lfm3, onChunk, onActivity, signal } = {}) {
   const { provider, baseUrl, model, apiKey } = settings;
   if (provider === "lfm3") {
-    return lfm3.generate(messages, { modelId: model || LFM3_DEFAULT_MODEL_ID, onChunk, signal });
+    return lfm3.generate(sanitizeTextOnlyMessages(messages), { modelId: model || LFM3_DEFAULT_MODEL_ID, onChunk, onActivity, signal });
   }
 
   if (!model) throw new Error("No model selected. Click ↻ to load available models.");
@@ -272,10 +414,15 @@ export async function completeChat(settings, messages, { lfm3, onChunk, signal }
     const sys = messages.find((m) => m.role === "system")?.content || "";
     const contents = messages
       .filter((m) => m.role !== "system")
-      .map((m) => ({
-        role: m.role === "assistant" ? "model" : "user",
-        parts: [{ text: m.content }],
-      }));
+      .map((m) => {
+        const parts = [];
+        for (const img of m.images || []) {
+          const { mimeType, base64 } = splitDataUrl(img.dataUrl, img.mimeType);
+          parts.push({ inlineData: { mimeType, data: base64 } });
+        }
+        if (m.content || !parts.length) parts.push({ text: m.content || "" });
+        return { role: m.role === "assistant" ? "model" : "user", parts };
+      });
     const res = await fetch(
       `${clean}/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
       {
@@ -296,6 +443,17 @@ export async function completeChat(settings, messages, { lfm3, onChunk, signal }
 
   if (provider === "anthropic") {
     const sys = messages.find((m) => m.role === "system")?.content || "";
+    const antMessages = messages
+      .filter((m) => m.role !== "system")
+      .map((m) => {
+        if (!m.images?.length) return { role: m.role, content: m.content };
+        const blocks = m.images.map((img) => {
+          const { mimeType, base64 } = splitDataUrl(img.dataUrl, img.mimeType);
+          return { type: "image", source: { type: "base64", media_type: mimeType, data: base64 } };
+        });
+        if (m.content) blocks.push({ type: "text", text: m.content });
+        return { role: m.role, content: blocks };
+      });
     const res = await fetch(`${clean}/messages`, {
       method: "POST",
       headers: {
@@ -307,9 +465,9 @@ export async function completeChat(settings, messages, { lfm3, onChunk, signal }
       signal,
       body: JSON.stringify({
         model,
-        max_tokens: 2048,
+        max_tokens: 4096,
         system: sys,
-        messages: messages.filter((m) => m.role !== "system"),
+        messages: antMessages,
       }),
     });
     if (!res.ok) throw new Error(`Anthropic HTTP ${res.status}: ${await res.text()}`);
@@ -322,13 +480,27 @@ export async function completeChat(settings, messages, { lfm3, onChunk, signal }
   if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
   if (provider === "openrouter") headers["X-Title"] = "p5comp";
 
+  const oaMessages = messages.map((m) => {
+    if (m.role === "user" && m.images?.length) {
+      return {
+        role: "user",
+        content: [
+          ...(m.content ? [{ type: "text", text: m.content }] : []),
+          ...m.images.map((img) => ({ type: "image_url", image_url: { url: img.dataUrl } })),
+        ],
+      };
+    }
+    const { images: _drop, ...rest } = m;
+    return rest;
+  });
+
   const res = await fetch(`${clean}/chat/completions`, {
     method: "POST",
     headers,
     signal,
     body: JSON.stringify({
       model,
-      messages,
+      messages: oaMessages,
       temperature: 0.2,
     }),
   });

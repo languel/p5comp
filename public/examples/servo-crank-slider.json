@@ -2,9 +2,9 @@
   "version": 2,
   "canvas": {
     "camera": {
-      "x": 70,
-      "y": 60,
-      "zoom": 0.85
+      "x": 40,
+      "y": 95,
+      "zoom": 0.78
     },
     "snap": true,
     "orthogonal": true,
@@ -57,7 +57,7 @@
         {
           "density": 0.9,
           "friction": 0.05,
-          "bounce": 0.25,
+          "bounce": 0.65,
           "damping": 0.08,
           "angularDamping": 0.08,
           "angle": 0,
@@ -74,48 +74,179 @@
         },
         {
           "density": 1,
-          "friction": 0.12,
-          "bounce": 0.4,
+          "friction": 0.06,
+          "bounce": 0.55,
           "damping": 0.05,
           "angularDamping": 0.05,
           "angle": 0,
           "color": "#6c7b88",
           "id": "shelf",
-          "label": "Return track",
+          "label": "Pinball cabinet",
           "type": "static",
           "shape": "chain",
-          "x": 766.467,
-          "y": 177.77300000000002,
+          "x": 700,
+          "y": 184,
           "pts": [
             [
-              -65,
-              6
+              -70,
+              0
             ],
             [
-              65,
-              -4
+              35,
+              0
             ],
             [
-              85,
-              -28
+              220,
+              -14
+            ],
+            [
+              275,
+              -30
+            ],
+            [
+              315,
+              -62
+            ],
+            [
+              335,
+              -108
+            ],
+            [
+              330,
+              -162
+            ],
+            [
+              295,
+              -196
+            ],
+            [
+              230,
+              -210
+            ],
+            [
+              140,
+              -210
+            ],
+            [
+              75,
+              -192
+            ],
+            [
+              40,
+              -150
+            ],
+            [
+              38,
+              -46
             ]
           ],
           "thickness": 8
         },
         {
-          "density": 0.6,
-          "friction": 0.35,
-          "bounce": 0.72,
+          "density": 1,
+          "friction": 0.05,
+          "bounce": 1.08,
           "damping": 0.05,
           "angularDamping": 0.05,
           "angle": 0,
+          "color": "#d99b38",
+          "id": "bumper1",
+          "label": "Pop bumper",
+          "type": "static",
+          "shape": "circle",
+          "x": 915,
+          "y": 42,
+          "r": 16
+        },
+        {
+          "density": 1,
+          "friction": 0.05,
+          "bounce": 1.08,
+          "damping": 0.05,
+          "angularDamping": 0.05,
+          "angle": 0,
+          "color": "#e07a5f",
+          "id": "bumper2",
+          "label": "Pop bumper",
+          "type": "static",
+          "shape": "circle",
+          "x": 825,
+          "y": 24,
+          "r": 15
+        },
+        {
+          "density": 1,
+          "friction": 0.05,
+          "bounce": 1.02,
+          "damping": 0.05,
+          "angularDamping": 0.05,
+          "angle": 0,
+          "color": "#d99b38",
+          "id": "bumper3",
+          "label": "Lower bumper",
+          "type": "static",
+          "shape": "circle",
+          "x": 935,
+          "y": 98,
+          "r": 13
+        },
+        {
+          "density": 1,
+          "friction": 0.05,
+          "bounce": 0.95,
+          "damping": 0.05,
+          "angularDamping": 0.05,
+          "angle": 0,
+          "color": "#4e8da6",
+          "id": "slingshot",
+          "label": "Slingshot rail",
+          "type": "static",
+          "shape": "chain",
+          "x": 758,
+          "y": 78,
+          "pts": [
+            [
+              -10,
+              -24
+            ],
+            [
+              12,
+              16
+            ]
+          ],
+          "thickness": 7
+        },
+        {
+          "density": 0.35,
+          "friction": 0.05,
+          "bounce": 0.7,
+          "damping": 0.02,
+          "angularDamping": 0.02,
+          "angle": 25,
+          "color": "#5b8f74",
+          "id": "spinner",
+          "label": "Spinner",
+          "type": "dynamic",
+          "shape": "box",
+          "x": 845,
+          "y": 100,
+          "w": 50,
+          "h": 8
+        },
+        {
+          "density": 0.6,
+          "friction": 0.08,
+          "bounce": 0.78,
+          "damping": 0.015,
+          "angularDamping": 0.02,
+          "angle": 0,
           "color": "#c45b4a",
           "id": "ball",
-          "label": "Rubber ball",
+          "label": "Pinball",
           "type": "dynamic",
           "shape": "circle",
-          "x": 721.467,
-          "y": 165.77300000000002,
+          "x": 740,
+          "y": 166,
           "r": 13,
           "trace": true
         }
@@ -159,6 +290,16 @@
           "limits": [
             -115,
             115
+          ]
+        },
+        {
+          "id": "j_spin",
+          "kind": "hinge",
+          "a": null,
+          "b": "spinner",
+          "anchor": [
+            845,
+            100
           ]
         }
       ]
@@ -236,7 +377,7 @@
     ]
   },
   "controls": {
-    "pot": 512
+    "pot": 780
   },
   "api": "none",
   "p5": {

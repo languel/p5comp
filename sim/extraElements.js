@@ -138,8 +138,12 @@ class DCMotor extends LitElement {
       display: block;
     }
     text {
-      font: 9px system-ui;
-      fill: #333;
+      font: 600 10px system-ui, -apple-system, sans-serif;
+      fill: var(--ui-text, #e6e8e6);
+      paint-order: stroke;
+      stroke: var(--ui-bg, transparent);
+      stroke-width: 2.5px;
+      stroke-linejoin: round;
     }
   `;
   constructor() {

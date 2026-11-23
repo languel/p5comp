@@ -43,9 +43,9 @@ export const TOOLS = [
   ),
   tool(
     "export",
-    "Export a project JSON, ZIP, SVG or PNG as text/base64, or download a PDF with code.",
+    "Export a project JSON, ZIP, SVG, PNG (circuit), stage_png (live screenshot of full canvas including circuit, physics, drawing & notes), or download a PDF with code.",
     {
-      format: { enum: ["json", "zip", "svg", "png", "pdf"] },
+      format: { enum: ["json", "zip", "svg", "png", "stage_png", "pdf"] },
       includeCode: bool,
     },
     ["format"],
@@ -64,7 +64,7 @@ export const TOOLS = [
   ),
   tool(
     "settings",
-    "Read or set global theme, editor theme/font size, icon size and PWM refresh. Project backgrounds are in workbench.settings.",
+    "Read or set global theme, editor theme/font size, icon size, PWM refresh, and score transport bar visibility. Project backgrounds are in workbench.settings.",
     {
       theme: { enum: ["dark", "light"] },
       editorTheme: {
@@ -79,6 +79,7 @@ export const TOOLS = [
       fontSize: { type: "number", minimum: 8, maximum: 32 },
       iconSize: { type: "number", minimum: 12, maximum: 28 },
       pwmRefreshHz: { type: "number", minimum: 10, maximum: 120 },
+      scoreTransport: bool,
     },
   ),
   tool(
@@ -126,9 +127,45 @@ export const TOOLS = [
   ),
   tool(
     "part_put",
-    "Create or replace a component. IDs, types, positions, rotation, flips, labels and attrs are explicit.",
-    { part: obj, expectedRevision: { type: "integer" } },
+    "Create or replace a component. Pass part: { id, type, left, top, rotate?, attrs? }.",
+    {
+      part: {
+        type: "object",
+        properties: {
+          id: str,
+          type: str,
+          left: num,
+          top: num,
+          rotate: num,
+          label: str,
+          attrs: obj,
+        },
+        required: ["id", "type"],
+      },
+      expectedRevision: { type: "integer" },
+    },
     ["part"],
+  ),
+  tool(
+    "build",
+    "Batch-build or update a circuit, Arduino/p5 code, and physics mechanism in ONE call. Much faster than calling part_put/wire_put one by one.",
+    {
+      clear: bool,
+      keepBoard: bool,
+      parts: { type: "array", items: obj },
+      connections: { type: "array" },
+      arduino: str,
+      p5: str,
+      mechanism: {
+        type: "object",
+        properties: {
+          preset: str,
+          actuatorId: str,
+        },
+      },
+      run: bool,
+    },
+    [],
   ),
   tool(
     "part_remove",
@@ -152,9 +189,24 @@ export const TOOLS = [
     ["index"],
   ),
   tool(
+    "code_get",
+    "Read the current Arduino (.ino) and/or p5.js (sketch.js) source code and list any extra project files.",
+    {
+      language: { enum: ["arduino", "p5", "all"] },
+      name: str,
+    },
+    [],
+    true,
+  ),
+  tool(
     "code_set",
-    "Set a source file; main Arduino and active p5 files update their live editors.",
-    { language: { enum: ["arduino", "p5"] }, name: str, source: str },
+    "Set Arduino or p5.js source code. Omit `name` to update the active main sketch (recommended). Pass `createFile: true` only when intentionally creating a new extra file.",
+    {
+      language: { enum: ["arduino", "p5"] },
+      name: str,
+      source: str,
+      createFile: bool,
+    },
     ["language", "source"],
   ),
   tool(
@@ -165,7 +217,7 @@ export const TOOLS = [
   ),
   tool(
     "runtime",
-    "Control simulated Arduino/p5. Physical connect, upload and media acquisition require the human UI.",
+    "Control simulated Arduino/p5/physics transport (start, stop, pause, resume, rewind, p5_start, p5_stop, compile). Physical connect, upload and media acquisition require the human UI.",
     {
       action: {
         enum: [
@@ -173,11 +225,43 @@ export const TOOLS = [
           "stop",
           "pause",
           "resume",
+          "rewind",
           "p5_start",
           "p5_stop",
           "compile",
         ],
       },
+    },
+    ["action"],
+  ),
+  tool(
+    "physics",
+    "Inspect or edit the 2D Physics & Mechanisms layer: read state, add/update/remove rigid bodies (box, circle, link, gear, ramp/chain) and joints (hinge, weld, spring, slider, curve), attach mechanism presets (crank-slider, four-bar, gear-pair, rack-pinion, cam-follower, scotch-yoke, ratchet-pawl, ball-launcher, curve-track) to actuators, configure gravity/visibility/settings, select items, or run/stop/rewind physics.",
+    {
+      action: {
+        enum: [
+          "get",
+          "clear",
+          "body_put",
+          "body_remove",
+          "joint_put",
+          "joint_remove",
+          "mechanism",
+          "select",
+          "settings",
+          "run",
+          "stop",
+          "rewind",
+        ],
+      },
+      body: obj,
+      joint: obj,
+      id: str,
+      ids: { type: "array", items: str },
+      preset: str,
+      actuatorId: str,
+      origin: { type: "array", items: num, minItems: 2, maxItems: 2 },
+      settings: obj,
     },
     ["action"],
   ),
@@ -219,6 +303,20 @@ export const TOOLS = [
     ["id"],
   ),
   tool(
+    "diagram",
+    "Render a Mermaid diagram using Obsidian's Pele SVG engine and place it on the canvas as a live-editable note card (mode:'note', default), a standalone SVG image (mode:'image'), or save it to project assets (mode:'asset').",
+    {
+      code: str,
+      mode: { enum: ["note", "image", "asset"] },
+      id: str,
+      name: str,
+      x: num,
+      y: num,
+      width: num,
+    },
+    ["code"],
+  ),
+  tool(
     "asset",
     "List/get/put/remove portable project assets.",
     {
@@ -232,8 +330,10 @@ export const TOOLS = [
     "view",
     "Select an inspector tab, bottom tool tab, main view/layout, or p5 docking mode.",
     {
-      inspector: { enum: ["arduino", "p5", "properties", "help", "settings"] },
-      bottom: { enum: ["simulation", "serial", "console"] },
+      inspector: {
+        enum: ["arduino", "p5", "properties", "assistant", "help", "settings"],
+      },
+      bottom: { enum: ["simulation", "serial", "console", "timeline"] },
       main: { enum: ["circuit", "p5", "draw"] },
       layout: { enum: ["tabs", "horizontal", "vertical"] },
       dock: str,
@@ -250,6 +350,36 @@ export const TOOLS = [
     "serial",
     "Read serial/console or write text to the active simulated connection.",
     { action: { enum: ["read", "write"] }, text: str },
+    ["action"],
+  ),
+  tool(
+    "console",
+    "Read or clear the error/build console (Arduino compiler diagnostics, p5.js runtime errors, and workbench notices).",
+    {
+      action: { enum: ["read", "clear"] },
+      errorsOnly: bool,
+      limit: { type: "integer", minimum: 1, maximum: 500 },
+    },
+    ["action"],
+  ),
+  tool(
+    "assistant",
+    "Control the built-in Chat / Pi Agent: inspect state/history (get), switch provider/model/agentMode/toolSet/toolsEnabled/maxSteps (configure), list available models (models), download/load WebGPU model (load), send a message and await the reply & tool steps (send), or clear chat (clear).",
+    {
+      action: { enum: ["get", "configure", "models", "load", "send", "clear"] },
+      provider: { enum: ["ollama", "lfm3", "openai", "openrouter", "gemini", "anthropic"] },
+      model: str,
+      baseUrl: str,
+      apiKey: str,
+      agentMode: { enum: ["pi", "json"] },
+      toolSet: { enum: ["auto", "full", "small"] },
+      toolsEnabled: bool,
+      showSteps: bool,
+      maxSteps: { type: "integer", minimum: 1, maximum: 24 },
+      prompt: str,
+      clear: bool,
+      wait: bool,
+    },
     ["action"],
   ),
   tool(

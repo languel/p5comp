@@ -249,7 +249,7 @@ export class Workbench {
     this.editorPanel = node(
       "aside",
       "wb-right",
-      '<nav class="wb-tabs" role="tablist" aria-label="Inspector"><button role="tab" data-tab="arduino" title="Arduino code" aria-label="Arduino code">∞</button><button role="tab" data-tab="p5" title="p5.js code" aria-label="p5.js code">p5</button><button role="tab" data-tab="assistant" title="Assistant (AI circuit & code builder)" aria-label="Assistant">✦</button><button role="tab" data-tab="properties" title="Properties" aria-label="Properties">☷</button><button role="tab" data-tab="help" title="Help" aria-label="Help">?</button><button role="tab" data-tab="settings" title="Settings" aria-label="Settings">⚙</button><button id="closeInspector" title="Hide inspector">×</button></nav><section data-pane="arduino"></section><section data-pane="p5"></section><section data-pane="assistant"></section><section data-pane="properties"><div class="section-bar"><span id="propertyTitle">Selection</span><button id="applyProperties" title="Apply properties (⌘/Ctrl Enter)" aria-label="Apply properties">▷</button></div><div id="partAttributes"></div><output id="partState"></output><div id="propertyEditor"></div><div id="referenceProperties"></div></section><section data-pane="help"><div id="helpHome"><p>Select an element and press ? for documentation.</p><p>⌘/Ctrl Enter: run · Shift-click wire: bend · Space-drag: pan</p></div></section>',
+      '<nav class="wb-tabs" role="tablist" aria-label="Inspector"><button role="tab" data-tab="arduino" title="Arduino code" aria-label="Arduino code">∞</button><button role="tab" data-tab="p5" title="p5.js code" aria-label="p5.js code">p5</button><button role="tab" data-tab="properties" title="Properties (⌘/Ctrl ;)" aria-label="Properties">☷</button><button role="tab" data-tab="assistant" title="Chat Assistant" aria-label="Chat Assistant">💬</button><button role="tab" data-tab="help" title="Help" aria-label="Help">?</button><button role="tab" data-tab="settings" title="Settings" aria-label="Settings">⚙</button><button id="closeInspector" title="Hide inspector">×</button></nav><section data-pane="arduino"></section><section data-pane="p5"></section><section data-pane="properties"><div class="section-bar"><span id="propertyTitle">Selection</span><button id="applyProperties" title="Apply properties (⌘/Ctrl Enter)" aria-label="Apply properties">▷</button></div><div id="partAttributes"></div><output id="partState"></output><div id="propertyEditor"></div><div id="referenceProperties"></div></section><section data-pane="assistant"></section><section data-pane="help"><div id="helpHome"><p>Select an element and press ? for documentation.</p><p>⌘/Ctrl Enter: run · Shift-click wire: bend · Space-drag: pan</p></div></section>',
     );
     const editors = document.querySelectorAll("#code .editors > section");
     this.editorPanel.querySelector('[data-pane="arduino"]').append(editors[0]);
@@ -309,7 +309,66 @@ export class Workbench {
     $("hideUI").before(settingsButton);
     const settingsPane = node("section", "settings-pane");
     settingsPane.dataset.pane = "settings";
-    settingsPane.append($("globalSettings"));
+    const gs = $("globalSettings");
+    const savedScoreTransport = localStorage.getItem("p5comp.scoreTransport") === "true";
+    const scoreTransportRow = node(
+      "label",
+      "",
+      `Score transport bar <input id="scoreTransportToggle" type="checkbox"${savedScoreTransport ? " checked" : ""} aria-label="Show Poliplan score transport bar">`,
+    );
+    const makeGroup = (title, open, ...rows) => {
+      const d = node("details", "settings-group");
+      if (open) d.open = true;
+      d.append(node("summary", "", title));
+      const body = node("div", "settings-group-body");
+      for (const r of rows) if (r) body.append(r);
+      d.append(body);
+      return d;
+    };
+    const rowOf = (id) => $(id)?.closest?.("label") || $(id);
+    const aiSettingsGroup = makeGroup("AI / Model", false);
+    aiSettingsGroup.id = "aiSettingsGroup";
+    this.aiSettingsHost = aiSettingsGroup.querySelector(".settings-group-body");
+    const groups = [
+      makeGroup(
+        "Appearance",
+        true,
+        rowOf("appTheme"),
+        rowOf("workbenchColor"),
+        rowOf("outputColor"),
+        rowOf("uiIconSize"),
+        scoreTransportRow,
+      ),
+      aiSettingsGroup,
+      makeGroup(
+        "Code Editor",
+        false,
+        rowOf("editorTheme"),
+        rowOf("editorFontSize"),
+        rowOf("editorWordWrap"),
+      ),
+      makeGroup(
+        "Simulation & p5",
+        false,
+        rowOf("pwmRefreshHz"),
+        rowOf("p5Major"),
+      ),
+      makeGroup(
+        "Compiler & Export",
+        false,
+        rowOf("compilerBackend"),
+        rowOf("compilerURLField"),
+        $("localCompilerHelp"),
+        rowOf("exportCode"),
+      ),
+    ];
+    gs.replaceChildren(...groups);
+    $("scoreTransportToggle").onchange = () => {
+      const on = $("scoreTransportToggle").checked;
+      try { localStorage.setItem("p5comp.scoreTransport", String(on)); } catch {}
+      this.drawing?.setScoreTransport(on);
+    };
+    settingsPane.append(gs);
     this.editorPanel.append(settingsPane);
     settingsMenu.remove();
     const resize = node("div", "inspector-resize");
@@ -329,12 +388,27 @@ export class Workbench {
       language: "javascript",
       onRun: () => this.applyProperties(),
     });
+    const propPane = this.editorPanel.querySelector('[data-pane="properties"]');
+    const canvasInspector = document.querySelector(".canvas-inspector");
+    if (canvasInspector && propPane) {
+      $("partAttributes").after(canvasInspector);
+    }
+    const rawJsonSection = node("details", "raw-json-section");
+    rawJsonSection.id = "rawJsonSection";
+    const rawSummary = node("summary", "", "<span>Raw JSON</span>");
+    const applyBtn = $("applyProperties");
+    if (applyBtn) {
+      applyBtn.addEventListener("click", (e) => e.stopPropagation());
+      rawSummary.append(applyBtn);
+    }
+    rawJsonSection.append(rawSummary, $("propertyEditor"));
+    propPane?.append(rawJsonSection);
     const noteProperties = node("section", "note-properties");
     noteProperties.id = "noteProperties";
     noteProperties.hidden = true;
     noteProperties.innerHTML =
       '<div class="note-source-tools"><input id="noteName" aria-label="Note name"><select id="noteFormat" aria-label="Note format" data-native><option value="markdown">Markdown</option><option value="html">HTML</option><option value="latex">LaTeX / KaTeX</option></select></div><div id="noteAppearance" class="note-appearance"></div><div id="noteSourceEditor"></div>';
-    $("propertyEditor").after(noteProperties);
+    rawJsonSection.before(noteProperties);
     installColorFields();
     this.noteEditor = createEditor({
       parent: $("noteSourceEditor"),
@@ -639,12 +713,26 @@ export class Workbench {
       persist: () => ctx.persist(),
       mountServo: ids => mountServoDrawing(this, ctx.selected()?.id, ids),
       onPhysicsAction: (kind, doc, ids) => this.physics?.handlePoliplanAction(kind, doc, ids),
+      onCircuitAction: (kind) => this.handleCircuitToolbarAction(kind),
       onDocChange: (doc) => this.physics?.syncFromPoliplan(doc),
       onActiveChange: (on) => this.physics?.onDrawToggle(on),
       onSelectionChange: (ids) => this.physics?.onPoliplanSelection(ids),
-      onToolChange: (toolId) => this.physics?.onPoliplanTool(toolId),
+      onToolChange: (toolId) => {
+        const wireOn = toolId === "host:circuit-wire";
+        if (ctx.canvas.wireMode !== wireOn) {
+          ctx.canvas.wireMode = wireOn;
+          if (!wireOn) ctx.canvas.draft = null;
+          ctx.canvas.render();
+        }
+        this.physics?.onPoliplanTool(toolId);
+      },
       onHostPointer: (type, init) => this.physics?.handleHostPointer(type, init),
-      getHostToolbar: () => this.physics?.poliplanToolbarConfig(),
+      getHostToolbar: () => ({
+        ...(this.physics?.poliplanToolbarConfig() || {}),
+        ...this.circuitToolbarConfig(),
+        ...this.frameToolbarConfig(),
+      }),
+      scoreTransport: savedScoreTransport,
       assetNames: (wanted) => {   // drawing.png, then drawing-2.png, …
         const [, stem, ext] = /^(.*)\.(\w+)$/.exec(wanted);
         let name = wanted;
@@ -670,7 +758,7 @@ export class Workbench {
       getSelectedPart: () => ctx.selected?.() || null,
       getDrawingDoc: () => this.drawing?.snapshot() || null,
       propertiesHost: this.editorPanel.querySelector('[data-pane="properties"]'),
-      onPropertiesState: (active, title) => this.syncPhysicsProperties(active, title),
+      onPropertiesState: (active, title, rawObj) => this.syncPhysicsProperties(active, title, rawObj),
       onRewindActuators: () => ctx.rewindActuators?.(),
       onTimeChange: (t) => this.setSimTime(t),
       persist: () => ctx.persist(),
@@ -692,9 +780,50 @@ export class Workbench {
     simTimer.setAttribute("aria-label", "Simulation time");
     this.simTimerEl = simTimer;
     $("run")?.after(rewindBtn, simTimer);
-    mountAssistantPanel(
+    // Push initial Circuit + Frame toolkit sections into Poliplan's toolbar and keep them synced.
+    this.drawing.setHostToolbar({
+      ...this.circuitToolbarConfig(),
+      ...this.frameToolbarConfig(),
+    });
+    let lastZoomPct = Math.round((ctx.canvas.camera.zoom || 1) * 100);
+    const prevViewChange = ctx.canvas.onViewChange;
+    ctx.canvas.onViewChange = (...a) => {
+      prevViewChange?.(...a);
+      const pct = Math.round((ctx.canvas.camera.zoom || 1) * 100);
+      if (pct !== lastZoomPct) {
+        lastZoomPct = pct;
+        this.drawing.setHostToolbar(this.frameToolbarConfig());
+      }
+    };
+    for (const id of ["labels", "snap", "orthogonal"]) {
+      $(id)?.addEventListener("change", () =>
+        this.drawing.setHostToolbar(this.circuitToolbarConfig()),
+      );
+    }
+    // Activate the unified Poliplan + Physics + Circuit toolbar by default on startup.
+    requestAnimationFrame(() => {
+      if (!this.drawing.active && !this.drawing.tab) {
+        this.drawing.setActive(true);
+      }
+    });
+    // Keep the docked Physics inspector above the bottom Raw JSON disclosure.
+    if (this.physics?.inspector && $("rawJsonSection")) {
+      $("rawJsonSection").before(this.physics.inspector);
+    }
+    this.assistant = mountAssistantPanel(
       this.editorPanel.querySelector('[data-pane="assistant"]'),
       this,
+      {
+        settingsHost: this.aiSettingsHost,
+        openSettings: () => {
+          this.tab("settings");
+          const g = $("aiSettingsGroup");
+          if (g) {
+            g.open = true;
+            g.scrollIntoView({ block: "nearest", behavior: "smooth" });
+          }
+        },
+      },
     );
     this.timeline = new TakeTimeline(this);
     const setSplit = (ratio) => {
@@ -1469,6 +1598,11 @@ export class Workbench {
   selectPart() {
     this.selectedReferenceId = null;
     document.querySelectorAll(".scene-item.selected").forEach(el=>el.classList.remove("selected"));
+    const part = this.ctx.selected();
+    if (!part && this.physics?.selectionCount?.() > 0) {
+      this.physics.renderInspector();
+      return;
+    }
     this.selectedNoteId = null;
     $("noteProperties").hidden = true;
     if (this.physics?.inspector) this.physics.inspector.hidden = true;
@@ -1482,29 +1616,196 @@ export class Workbench {
       .forEach((row) => (row.hidden = false));
     $("applyProperties").title = "Apply properties (⌘/Ctrl Enter)";
     $("applyProperties").setAttribute("aria-label", "Apply properties");
-    const part = this.ctx.selected();
     this.ctx.setCode(this.propertyEditor, JSON.stringify(part || {}, null, 2));
     $("propertyTitle").textContent = part?.label || part?.id || "Selection";
     this.renderAttributes(part);
     this.showPartState();
   }
-  syncPhysicsProperties(active, title = "Selection") {
+  circuitToolbarConfig() {
+    const iconSvg = (d) =>
+      `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+    const labelsOn = Boolean($("labels")?.checked);
+    const snapOn = Boolean($("snap")?.checked);
+    const orthoOn = Boolean($("orthogonal")?.checked);
+    return {
+      circuit: [
+        {
+          id: "circuit-add",
+          label: "Add electronic component",
+          kbd: "A",
+          icon: iconSvg('<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 7v10M7 12h10"/>'),
+          hint: "Add an electronic component (Arduino, servo, motor, LED, sensor…)",
+          action: "circuit:add",
+        },
+        {
+          id: "circuit-wire",
+          label: "Connect pins",
+          kbd: "W",
+          icon: iconSvg('<path d="M5 5h7v14h7"/><rect x="2.5" y="2.5" width="4" height="4" rx="0.8"/><rect x="17.5" y="17.5" width="4" height="4" rx="0.8"/>'),
+          hint: "Connect pins: click or drag between component terminals to wire them",
+          items: [
+            { heading: "Wiring" },
+            {
+              id: "wire",
+              label: "Connect pins",
+              icon: iconSvg('<path d="M5 5h7v14h7"/><rect x="2.5" y="2.5" width="4" height="4" rx="0.8"/><rect x="17.5" y="17.5" width="4" height="4" rx="0.8"/>'),
+              tool: "host:circuit-wire",
+              hint: "Click or drag between component pins",
+            },
+            "-",
+            { label: "Autoroute selected wire", action: "circuit:route-wire" },
+            { label: "Autoroute simple", action: "circuit:route-simple" },
+            { label: "Cleanup all wires", action: "circuit:cleanup" },
+          ],
+        },
+        {
+          id: "circuit-settings",
+          label: "Circuit settings",
+          icon: iconSvg('<path d="M3 6h18M3 12h18M3 18h18M8 3.5v5M16 9.5v5M10 15.5v5"/>'),
+          hint: "Circuit labels, pin snap, orthogonal wires, and wire routing",
+          items: [
+            { heading: "Circuit Settings" },
+            { label: "Component labels", checked: labelsOn, action: "circuit:toggle-labels" },
+            { label: "Snap to grid", checked: snapOn, action: "circuit:toggle-snap" },
+            { label: "Orthogonal wires", checked: orthoOn, action: "circuit:toggle-orthogonal" },
+            "-",
+            { label: "Autoroute selected wire", action: "circuit:route-wire" },
+            { label: "Autoroute simple", action: "circuit:route-simple" },
+            { label: "Cleanup wires", action: "circuit:cleanup" },
+          ],
+        },
+      ],
+    };
+  }
+  frameToolbarConfig() {
+    const iconSvg = (d) =>
+      `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+    const pct = Math.round((this.ctx.canvas.camera.zoom || 1) * 100);
+    return {
+      frame: [
+        {
+          id: "view-zoom-out",
+          label: "Zoom out (⌘−)",
+          icon: iconSvg('<circle cx="10.5" cy="10.5" r="7"/><path d="M15.8 15.8L21 21M7.5 10.5h6"/>'),
+          hint: "Zoom out (⌘/Ctrl −)",
+          action: "view:zoom-out",
+        },
+        {
+          id: "view-zoom-pct",
+          label: `Zoom ${pct}%`,
+          text: `${pct}%`,
+          hint: "Click for zoom presets or 100% (⌘/Ctrl 0)",
+          items: [
+            { heading: "Zoom Scale" },
+            ...[50, 75, 100, 125, 150, 200].map((v) => ({
+              label: `${v}%`,
+              checked: Math.abs(pct - v) <= 2,
+              action: `view:zoom:${v}`,
+            })),
+            "-",
+            { label: "Fit circuit", action: "view:fit" },
+          ],
+        },
+        {
+          id: "view-zoom-in",
+          label: "Zoom in (⌘+)",
+          icon: iconSvg('<circle cx="10.5" cy="10.5" r="7"/><path d="M15.8 15.8L21 21M10.5 7.5v6M7.5 10.5h6"/>'),
+          hint: "Zoom in (⌘/Ctrl +)",
+          action: "view:zoom-in",
+        },
+        {
+          id: "view-fit",
+          label: "Fit circuit",
+          icon: iconSvg('<path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5"/><rect x="8" y="8" width="8" height="8" rx="1"/>'),
+          hint: "Fit circuit in view",
+          action: "view:fit",
+        },
+      ],
+    };
+  }
+  handleCircuitToolbarAction(kind) {
+    if (kind === "view:zoom-in") {
+      this.ctx.canvas.zoomAt(1.2);
+      return "";
+    }
+    if (kind === "view:zoom-out") {
+      this.ctx.canvas.zoomAt(1 / 1.2);
+      return "";
+    }
+    if (kind === "view:zoom-reset") {
+      this.ctx.canvas.zoomAt(1 / this.ctx.canvas.camera.zoom);
+      return "";
+    }
+    if (kind.startsWith("view:zoom:")) {
+      const pct = Number(kind.slice("view:zoom:".length));
+      if (Number.isFinite(pct) && pct > 0) {
+        const target = Math.max(0.15, Math.min(4, pct / 100));
+        this.ctx.canvas.zoomAt(target / this.ctx.canvas.camera.zoom);
+      }
+      return "";
+    }
+    if (kind === "view:fit") {
+      $("fit")?.click();
+      return "";
+    }
+    if (kind === "circuit:add") {
+      $("addElement")?.click();
+      return "";
+    }
+    if (kind === "circuit:toggle-labels" && $("labels")) {
+      $("labels").checked = !$("labels").checked;
+      $("labels").dispatchEvent(new Event("change"));
+      return "";
+    }
+    if (kind === "circuit:toggle-snap" && $("snap")) {
+      $("snap").checked = !$("snap").checked;
+      $("snap").dispatchEvent(new Event("change"));
+      return "";
+    }
+    if (kind === "circuit:toggle-orthogonal" && $("orthogonal")) {
+      $("orthogonal").checked = !$("orthogonal").checked;
+      $("orthogonal").dispatchEvent(new Event("change"));
+      return "";
+    }
+    if (kind === "circuit:route-wire") {
+      $("routeWire")?.click();
+      return "";
+    }
+    if (kind === "circuit:route-simple") {
+      $("routeWireSimple")?.click();
+      return "";
+    }
+    if (kind === "circuit:cleanup") {
+      $("cleanup")?.click();
+      return "";
+    }
+    return "";
+  }
+  syncPhysicsProperties(active, title = "Selection", rawObj = null) {
     const show = Boolean(active);
+    const ci = this.editorPanel.querySelector(".canvas-inspector");
     if (show) {
       $("noteProperties").hidden = true;
-      $("propertyEditor").hidden = true;
       $("partAttributes").hidden = true;
       $("partState").hidden = true;
       $("referenceProperties").hidden = true;
+      if (ci) ci.hidden = true;
       $("applyProperties").hidden = true;
+      $("rawJsonSection").hidden = false;
+      $("propertyEditor").hidden = false;
+      if (rawObj !== null) {
+        this.ctx.setCode(this.propertyEditor, JSON.stringify(rawObj, null, 2));
+      }
       $("propertyTitle").textContent = title || "Physics";
     } else if (!this.selectedReferenceId && !this.selectedNoteId) {
       $("propertyEditor").hidden = false;
+      $("rawJsonSection").hidden = false;
       $("partAttributes").hidden = false;
       $("partState").hidden = false;
       $("referenceProperties").hidden = false;
       $("applyProperties").hidden = false;
       const part = this.ctx.selected?.();
+      this.ctx.setCode(this.propertyEditor, JSON.stringify(part || {}, null, 2));
       $("propertyTitle").textContent = part?.label || part?.id || "Selection";
     }
   }

@@ -1,6 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { parseReply, repairJson, runAgentTurn, buildSystemPrompt } from "../sim/assistant/protocol.js";
+import { PiAgent, buildPiApiRequest, readPiApiResponse } from "../sim/assistant/piAgent.js";
+import { TOOLS } from "../shared/automation/tools.js";
+import { physicsCommand } from "../sim/automation/physics.js";
+import { createEmptyPhysicsScene } from "../sim/physics/model.js";
+import { LFM3_DEFAULT_MODEL_ID, LFM3_QAD_MODEL_ID, LFM3_MODELS, parseLfm3ModelSpec } from "../sim/assistant/providers.js";
 
 test("parseReply handles clean JSON, markdown fences, thinking tags, and truncated small-model JSON", () => {
   const clean = parseReply('{"say":"Added LED.","actions":[{"tool":"add_part","args":{"type":"wokwi-led"}}],"done":true}');
@@ -72,4 +77,142 @@ test("runAgentTurn executes multi-step Pi-agent tool loops and returns tool resu
   const prompt = buildSystemPrompt("Parts: none", tools.specs());
   assert.ok(prompt.includes("add_part"));
   assert.ok(prompt.includes("wokwi-servo"));
+});
+
+test("canonical MCP/WebMCP TOOLS include physics, rewind, and assistant view, and LFM3-1.7B-pi is registered", () => {
+  const names = new Set(TOOLS.map((t) => t.name));
+  assert.ok(names.has("p5comp_physics"));
+  assert.ok(names.has("p5comp_drawing"));
+  assert.ok(names.has("p5comp_diagram"));
+  assert.ok(names.has("p5comp_console"));
+  assert.ok(names.has("p5comp_assistant"));
+  assert.ok(names.has("p5comp_build"));
+  assert.ok(names.has("p5comp_runtime"));
+  const exp = TOOLS.find((t) => t.name === "p5comp_export");
+  assert.ok(exp.inputSchema.properties.format.enum.includes("stage_png"));
+  const runtime = TOOLS.find((t) => t.name === "p5comp_runtime");
+  assert.ok(runtime.inputSchema.properties.action.enum.includes("rewind"));
+  const view = TOOLS.find((t) => t.name === "p5comp_view");
+  assert.ok(view.inputSchema.properties.inspector.enum.includes("assistant"));
+  assert.equal(LFM3_DEFAULT_MODEL_ID, "LiquidAI/LFM3-1.7B-GGUF");
+  assert.ok(LFM3_MODELS.some((m) => m.id === LFM3_DEFAULT_MODEL_ID));
+  assert.ok(LFM3_MODELS.some((m) => m.id === LFM3_QAD_MODEL_ID));
+  assert.deepEqual(parseLfm3ModelSpec(LFM3_QAD_MODEL_ID), {
+    repo: "LiquidAI/LFM3-1.7B-GGUF",
+    file: "LFM3-1.7B-QAD-Q4_0.gguf",
+  });
+});
+
+test("physicsCommand creates bodies, joints, mechanisms, and reads physics state", async () => {
+  const scene = createEmptyPhysicsScene();
+  const mockPhysics = {
+    scene,
+    running: false,
+    simTime: 0,
+    visible: true,
+    active: false,
+    selectedBodies: new Set(),
+    selectedJoints: new Set(),
+    actuators: () => [{ id: "servo1", type: "wokwi-servo", x: 300, y: 180 }],
+    pushUndo() {},
+    persistChange() {},
+    updateToolbarState() {},
+    renderInspector() {},
+    draw() {},
+  };
+
+  const b = await physicsCommand(mockPhysics, {
+    action: "body_put",
+    body: { shape: "circle", x: 120, y: 80, r: 18, color: "#4e8da6" },
+  });
+  assert.ok(b.addedBody);
+  assert.equal(scene.bodies.length, 1);
+
+  const j = await physicsCommand(mockPhysics, {
+    action: "joint_put",
+    joint: { kind: "spring", a: b.addedBody, b: null, anchor: [120, 40], stiffness: 8, color: "#5ca688" },
+  });
+  assert.ok(j.addedJoint);
+  assert.equal(scene.joints.length, 1);
+
+  const m = await physicsCommand(mockPhysics, {
+    action: "mechanism",
+    preset: "crank-slider",
+    actuatorId: "servo1",
+  });
+  assert.equal(m.mechanism, "crank-slider");
+  assert.equal(m.attachedTo, "servo1");
+  assert.ok(m.bodies.length >= 2);
+
+  const st = await physicsCommand(mockPhysics, { action: "get" });
+  assert.equal(st.bodies.length, scene.bodies.length);
+  assert.ok(st.presets.some((p) => p.id === "curve-track"));
+});
+
+test("PiAgent executes native tool calls, streams events, and formats OpenAI/Anthropic/Gemini requests", async () => {
+  const events = [];
+  let turn = 0;
+  const fakeModel = {
+    label: "fake-pi",
+    async complete(messages, tools, opts) {
+      turn++;
+      if (turn === 1) {
+        opts.onActivity?.({ kind: "thinking", delta: "planning mechanism" });
+        return {
+          message: {
+            role: "assistant",
+            content: "",
+            tool_calls: [
+              { id: "c1", type: "function", function: { name: "p5comp_physics", arguments: { action: "mechanism", preset: "four-bar" } } },
+            ],
+          },
+          finish: "tool_calls",
+        };
+      }
+      assert.equal(messages.at(-1).role, "tool");
+      opts.onText?.("Built a four-bar linkage.");
+      return {
+        message: { role: "assistant", content: "Built a four-bar linkage." },
+        finish: "stop",
+      };
+    },
+  };
+
+  const agent = new PiAgent({
+    model: fakeModel,
+    tools: [{ type: "function", function: { name: "p5comp_physics", description: "Physics", parameters: { type: "object", properties: {} } } }],
+    runTool: async (name, args) => ({ ok: true, name, preset: args.preset }),
+  });
+
+  await agent.send("Build a four-bar linkage", (e) => events.push(e));
+  assert.ok(events.some((e) => e.type === "tool_execution_start"));
+  assert.ok(events.some((e) => e.type === "tool_execution_end" && e.ok));
+  assert.ok(events.some((e) => e.type === "agent_end" && e.reason === "done"));
+
+  const sampleTools = [{ type: "function", function: { name: "p5comp_state", description: "State", parameters: { type: "object", properties: {} } } }];
+  const oa = buildPiApiRequest({ provider: "openai", baseUrl: "https://api.openai.com/v1", model: "gpt-4o-mini", apiKey: "k" }, [{ role: "user", content: "hi" }], sampleTools);
+  assert.equal(oa.kind, "openai");
+  assert.equal(oa.body.tools.length, 1);
+  const oaResp = readPiApiResponse("openai", { choices: [{ finish_reason: "tool_calls", message: { content: "", tool_calls: [{ id: "1", function: { name: "p5comp_state", arguments: "{}" } }] } }] });
+  assert.equal(oaResp.finish, "tool_calls");
+
+  const ant = buildPiApiRequest({ provider: "anthropic", baseUrl: "https://api.anthropic.com/v1", model: "claude-sonnet-4-0", apiKey: "k" }, [{ role: "user", content: "hi" }], sampleTools);
+  assert.equal(ant.kind, "anthropic");
+  assert.equal(ant.body.tools[0].input_schema.type, "object");
+
+  const gem = buildPiApiRequest({ provider: "gemini", baseUrl: "https://generativelanguage.googleapis.com/v1beta", model: "gemini-2.5-flash", apiKey: "k" }, [{ role: "user", content: "hi" }], sampleTools);
+  assert.equal(gem.kind, "gemini");
+  assert.equal(gem.body.tools[0].functionDeclarations[0].name, "p5comp_state");
+  const gemResp = readPiApiResponse("gemini", { candidates: [{ finishReason: "STOP", content: { parts: [{ functionCall: { name: "p5comp_state", args: {} } }] } }] });
+  assert.equal(gemResp.finish, "tool_calls");
+
+  // Multimodal image payloads across OpenAI, Anthropic, and Gemini
+  const imgMsg = [{ role: "user", content: "check wiring", images: [{ label: "canvas.png", mimeType: "image/png", dataUrl: "data:image/png;base64,AAAA" }] }];
+  const oaImg = buildPiApiRequest({ provider: "openai", baseUrl: "https://api.openai.com/v1", model: "gpt-4o", apiKey: "k" }, imgMsg, []);
+  assert.equal(oaImg.body.messages[0].content[1].type, "image_url");
+  const antImg = buildPiApiRequest({ provider: "anthropic", baseUrl: "https://api.anthropic.com/v1", model: "claude-sonnet-4-0", apiKey: "k" }, imgMsg, []);
+  assert.equal(antImg.body.messages[0].content[0].type, "image");
+  assert.equal(antImg.body.messages[0].content[0].source.data, "AAAA");
+  const gemImg = buildPiApiRequest({ provider: "gemini", baseUrl: "https://generativelanguage.googleapis.com/v1beta", model: "gemini-2.5-flash", apiKey: "k" }, imgMsg, []);
+  assert.equal(gemImg.body.contents[0].parts[0].inlineData.data, "AAAA");
 });

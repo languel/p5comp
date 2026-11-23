@@ -14,6 +14,7 @@ const outputTests = new Map();
 import { SerialMonitor } from "./SerialMonitor.js";
 import { dipCount } from "./switchTypes.js";
 import { drawingCommand } from "./automation/drawing.js";
+import { physicsCommand } from "./automation/physics.js";
 import {formatCode} from "../shared/editor/formatCode.js";
 import {matchingPortName} from "../shared/serial/portIdentity.js";
 import {createSerialActivity} from "./serialActivity.js";
@@ -812,6 +813,66 @@ const canvas = new CircuitCanvas({
 });
 $("zoomIn").onclick = () => canvas.zoomAt(1.2);
 $("zoomOut").onclick = () => canvas.zoomAt(1 / 1.2);
+// Capture Cmd/Ctrl + / - / 0 globally so they zoom the canvas and never resize the browser webpage.
+window.addEventListener(
+  "keydown",
+  (e) => {
+    if (!(e.metaKey || e.ctrlKey) || e.altKey) return;
+    if (e.key === "=" || e.key === "+" || e.code === "Equal" || e.code === "NumpadAdd") {
+      e.preventDefault();
+      canvas.zoomAt(1.2);
+    } else if (e.key === "-" || e.key === "_" || e.code === "Minus" || e.code === "NumpadSubtract") {
+      e.preventDefault();
+      canvas.zoomAt(1 / 1.2);
+    } else if (e.key === "0" || e.code === "Digit0" || e.code === "Numpad0") {
+      e.preventDefault();
+      canvas.zoomAt(1 / canvas.camera.zoom);
+    }
+  },
+  { capture: true },
+);
+{
+  const zl = $("zoomLabel");
+  if (zl) {
+    zl.title = "Zoom scale · click to type a percentage (e.g. 100%)";
+    zl.tabIndex = 0;
+    const startEdit = () => {
+      if (zl.querySelector("input")) return;
+      const prev = Math.round(canvas.camera.zoom * 100);
+      const inp = document.createElement("input");
+      inp.type = "text";
+      inp.className = "zoom-edit-input";
+      inp.value = String(prev);
+      inp.setAttribute("aria-label", "Zoom percentage");
+      let done = false;
+      const finish = (apply) => {
+        if (done) return;
+        done = true;
+        if (apply) {
+          const pct = parseFloat(inp.value.replace("%", "").trim());
+          if (Number.isFinite(pct) && pct > 0) {
+            const target = Math.max(0.15, Math.min(4, pct / 100));
+            canvas.zoomAt(target / canvas.camera.zoom);
+          }
+        }
+        zl.textContent = Math.round(canvas.camera.zoom * 100) + "%";
+      };
+      inp.addEventListener("keydown", (e) => {
+        e.stopPropagation();
+        if (e.key === "Enter") { e.preventDefault(); finish(true); }
+        else if (e.key === "Escape") { e.preventDefault(); finish(false); }
+      });
+      inp.addEventListener("blur", () => finish(true));
+      zl.replaceChildren(inp);
+      inp.focus();
+      inp.select();
+    };
+    zl.addEventListener("click", startEdit);
+    zl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); startEdit(); }
+    });
+  }
+}
 $("fit").onclick = () => canvas.fit();
 $("snap").checked = canvas.snap;
 $("orthogonal").checked = canvas.orthogonal;
@@ -1794,6 +1855,16 @@ document.addEventListener("keydown", (e) => {
     }
     return;
   }
+  if (modifier && !e.altKey && (e.key === ";" || e.code === "Semicolon")) {
+    e.preventDefault();
+    const propsPane = workbench?.editorPanel?.querySelector('[data-pane="properties"]');
+    if (workbench && !workbench.editorPanel.hidden && propsPane && !propsPane.hidden) {
+      workbench.editorPanel.hidden = true;
+    } else {
+      workbench?.tab("properties");
+    }
+    return;
+  }
   const editing = e
     .composedPath()
     .some((n) =>
@@ -2014,6 +2085,18 @@ agentSurface = installAgentSurface(
       selection: {
         parts: [...canvas.selectedParts],
         wires: [...canvas.selectedWires],
+        physicsBodies: [...(workbench.physics?.selectedBodies || [])],
+        physicsJoints: [...(workbench.physics?.selectedJoints || [])],
+        drawingMarks: [...(workbench.drawing?.drawingSelection || [])],
+      },
+      physics: {
+        running: Boolean(workbench.physics?.running),
+        simTime: workbench.physics?.simTime || 0,
+        bodies: workbench.physics?.scene?.bodies?.length || 0,
+        joints: workbench.physics?.scene?.joints?.length || 0,
+      },
+      drawing: {
+        active: Boolean(workbench.drawing?.active),
       },
       controls: structuredClone(controls),
       topology,
@@ -2080,6 +2163,11 @@ agentSurface = installAgentSurface(
     },
     setControl,
     drawing: (a) => drawingCommand(workbench.drawing, a),
+    physics: (a) => physicsCommand(workbench.physics, a),
+    assistant: (a) => {
+      if (!workbench.assistant) throw Error("Assistant panel is not mounted.");
+      return workbench.assistant.command(a);
+    },
     exportPDF: async () => { await workbench.export("PDF"); return {downloaded:true,format:"pdf"}; },
     runtime: async (action) => {
       if (action === "start") {
@@ -2091,6 +2179,12 @@ agentSurface = installAgentSurface(
         stop();
         bridge.stop();
         return { running: false };
+      }
+      if (action === "rewind") {
+        stop();
+        bridge.stop();
+        workbench.physics?.rewind?.();
+        return { running: false, simTime: 0 };
       }
       if (action === "p5_start") {
         await runP5();

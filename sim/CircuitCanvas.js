@@ -4,7 +4,7 @@ import {deleteCircuitSelection} from "./selectionDeletion.js";
 import {snapInsertion, terminalContacts, syncSeating, unplugContacts, movingParts, groupParts, ungroupParts, connectorRole} from "./terminalContacts.js";
 import { isBreadboard } from "./breadboard.js";
 import { componentColor } from "./componentColor.js";
-import { WIRE_COLORS } from "./colors.js";
+import { WIRE_COLORS, autoWireColor } from "./colors.js";
 import {
   CONNECTION_DOT_RADIUS,
   usesOriginalColors,
@@ -609,7 +609,7 @@ export class CircuitCanvas {
     this.diagram.connections.push([
       this.draft.source,
       id,
-      this.newColor,
+      autoWireColor(this.draft.source, id, this.newColor),
       simplify(points).slice(1, -1),
     ]);
     this.draft = null;

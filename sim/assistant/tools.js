@@ -1,10 +1,9 @@
 /**
- * Pi-Agent Tool Registry for p5comp.
- * Gives the assistant direct, validated control over:
- * - Circuit parts & wires (Electronics layer)
- * - Arduino (.ino) and p5.js sketches
- * - Physics & Mechanisms layer (presets, bodies, joints, actuator coupling)
- * - Shipped examples & simulation transport (Run / Pause / Stop)
+ * Unified Assistant & Pi-Agent Tool Registry for p5comp.
+ * - Exposes ALL canonical MCP / WebMCP tools (`shared/automation/tools.js`) through
+ *   `window.p5comp.callTool(...)` when running in the workbench.
+ * - Preserves friendly high-level convenience aliases (`add_part`, `connect_wire`,
+ *   `add_mechanism`, `set_arduino_code`, etc.) for small local models and `!tool` commands.
  */
 
 import { ELEMENTS } from "../elements.js";
@@ -13,8 +12,30 @@ import { MECHANISM_PRESETS } from "../physics/mechanisms.js";
 import { MATERIAL_DEFAULTS, MATERIAL_PRESETS, nextPhysicsId } from "../physics/model.js";
 import { listActuators } from "../physics/actuators.js";
 import { basePath } from "../../shared/basePath.js";
+import { TOOLS as CANONICAL_TOOLS, TOOL_MAP } from "../../shared/automation/tools.js";
 
-const TOOL_SPECS = [
+/** Compact core subset of canonical tools suited for 1.7B local models (like LFM3-1.7B). */
+export const PI_SMALL_TOOL_NAMES = [
+  "p5comp_build",
+  "p5comp_state",
+  "p5comp_catalog",
+  "p5comp_part_put",
+  "p5comp_part_remove",
+  "p5comp_wire_put",
+  "p5comp_wire_remove",
+  "p5comp_code_get",
+  "p5comp_code_set",
+  "p5comp_control_set",
+  "p5comp_runtime",
+  "p5comp_physics",
+  "p5comp_drawing",
+  "p5comp_diagram",
+  "p5comp_console",
+  "p5comp_export",
+  "p5comp_examples",
+];
+
+const SHORT_TOOL_SPECS = [
   { name: "get_project_state", params: "", description: "Read current circuit parts, wires, actuators, physics bodies, and code sizes." },
   { name: "list_components", params: "query?", description: "Search available circuit components by name or type." },
   { name: "clear_circuit", params: "keepBoard?", description: "Clear circuit parts, wires, and physics layer (keeps Arduino Uno by default)." },
@@ -23,12 +44,28 @@ const TOOL_SPECS = [
   { name: "connect_wire", params: "from, to, color?", description: "Wire two terminals (e.g. from:'board:9', to:'servo1:PWM')." },
   { name: "set_arduino_code", params: "code", description: "Set the Arduino sketch (.ino) source code." },
   { name: "set_p5_code", params: "code", description: "Set the p5.js sketch (sketch.js) source code." },
-  { name: "add_mechanism", params: "preset, actuatorId?", description: "Attach a physics mechanism preset (crank-slider, four-bar, gear-pair, rack-pinion, cam-follower, ball-launcher) to an actuator." },
+  { name: "add_mechanism", params: "preset, actuatorId?", description: "Attach a physics mechanism preset (crank-slider, four-bar, gear-pair, rack-pinion, cam-follower, scotch-yoke, ratchet-pawl, ball-launcher, curve-track) to an actuator." },
   { name: "add_physics_body", params: "shape, x, y, type?, w?, h?, r?, length?, teeth?, material?, color?, trace?", description: "Add a rigid body (box, circle, link, gear, ramp) to the Physics layer." },
-  { name: "add_physics_joint", params: "kind, a?, b?, anchor?, actuatorId?, motorSpeed?", description: "Add a hinge, weld, spring, or slider joint to the Physics layer." },
+  { name: "add_physics_joint", params: "kind, a?, b?, anchor?, actuatorId?, motorSpeed?", description: "Add a hinge, weld, spring, slider, or curve joint to the Physics layer." },
   { name: "load_example", params: "query", description: "Load a shipped example project matching query (e.g. 'servo crank', 'four bar', 'one led', 'servo garden')." },
-  { name: "run_simulation", params: "action", description: "Control simulation: action is 'run', 'pause', or 'stop'." },
+  { name: "run_simulation", params: "action", description: "Control simulation: action is 'run', 'pause', 'stop', or 'rewind'." },
 ];
+
+/**
+ * OpenAI/Pi function-calling tool specs derived directly from the canonical MCP/WebMCP TOOLS.
+ * @param {"small" | "full"} set
+ */
+export function piToolSpecs(set = "full") {
+  const allowed = set === "small" ? new Set(PI_SMALL_TOOL_NAMES) : null;
+  return CANONICAL_TOOLS.filter((t) => !allowed || allowed.has(t.name)).map((t) => ({
+    type: "function",
+    function: {
+      name: t.name,
+      description: t.description,
+      parameters: t.inputSchema,
+    },
+  }));
+}
 
 export function createAssistantTools(wb) {
   const ctx = wb.ctx;
@@ -60,7 +97,134 @@ export function createAssistantTools(wb) {
     ].join("\n");
   }
 
+  /**
+   * Forgiving argument normalizer so small/medium LLMs don't burn rounds on AJV wrapper mismatches.
+   */
+  async function normalizeCanonicalArgs(tool, rawArgs = {}) {
+    const a = rawArgs && typeof rawArgs === "object" ? structuredClone(rawArgs) : {};
+    if (tool === "p5comp_part_put") {
+      if (!a.part && a.type) {
+        const { expectedRevision, ...rest } = a;
+        return {
+          part: rest,
+          ...(expectedRevision != null ? { expectedRevision } : {}),
+        };
+      }
+      if (a.part && typeof a.part === "object") {
+        const d = getDiagram();
+        const idx = (d.parts || []).length;
+        if (!a.part.id && a.part.type) {
+          a.part.id =
+            a.part.type.replace(/^(wokwi|p5comp)-/, "").replace(/[^a-z0-9]/gi, "") + (idx + 1);
+        }
+        if (!Number.isFinite(Number(a.part.left))) a.part.left = 340 + (idx % 3) * 140;
+        if (!Number.isFinite(Number(a.part.top))) a.part.top = 80 + Math.floor(idx / 3) * 120;
+        if (!a.part.attrs || typeof a.part.attrs !== "object") a.part.attrs = {};
+      }
+      return a;
+    }
+    if (tool === "p5comp_wire_put") {
+      if (!a.connection && a.from && a.to) {
+        const autoColor = (ep) =>
+          /:(gnd|neg|minus|-)/i.test(ep)
+            ? "#242625"
+            : /:(5v|3\.3v|vcc|vin|v\+|pos|\+)/i.test(ep)
+              ? "#c45b4a"
+              : null;
+        const color = a.color || autoColor(a.from) || autoColor(a.to) || "#4e8da6";
+        return {
+          connection: [String(a.from), String(a.to), color, []],
+          ...(a.index != null ? { index: a.index } : {}),
+        };
+      }
+      return a;
+    }
+    if (tool === "p5comp_code_set") {
+      if (a.source == null && typeof a.code === "string") {
+        a.source = a.code;
+        delete a.code;
+      }
+      if (!a.language) {
+        a.language = /\.js$/i.test(String(a.name || "")) ? "p5" : "arduino";
+      }
+      return a;
+    }
+    if (tool === "p5comp_runtime") {
+      if (a.action === "run") a.action = "start";
+      if (a.action === "reset") a.action = "rewind";
+      return a;
+    }
+    if (tool === "p5comp_physics") {
+      if (a.action === "body_put" && !a.body && a.shape) {
+        const { action, ...rest } = a;
+        return { action, body: rest };
+      }
+      if (a.action === "joint_put" && !a.joint && a.kind) {
+        const { action, ...rest } = a;
+        return { action, joint: rest };
+      }
+      if (a.action === "settings" && !a.settings) {
+        const { action, ...rest } = a;
+        return { action, settings: rest };
+      }
+      return a;
+    }
+    if (tool === "p5comp_examples" && !a.path && a.query) {
+      try {
+        const q = String(a.query).toLowerCase();
+        const index = await (await fetch(basePath("examples/index.json"))).json();
+        const match =
+          index.find((e) => e.name.toLowerCase().includes(q) || e.project.toLowerCase().includes(q)) ||
+          index.find((e) => (e.folder || "").toLowerCase().includes(q));
+        if (match) return { path: match.project };
+      } catch {}
+      return {};
+    }
+    if (tool === "p5comp_diagram" && !a.code && (a.mermaid || a.source)) {
+      a.code = a.mermaid || a.source;
+      delete a.mermaid;
+      delete a.source;
+      return a;
+    }
+    return a;
+  }
+
   async function run(tool, args = {}) {
+    // 1. Canonical MCP / WebMCP tools route straight through window.p5comp.callTool when present.
+    if (TOOL_MAP.has(tool)) {
+      const api = typeof window !== "undefined" ? window.p5comp : null;
+      if (api?.callTool) {
+        const normalized = await normalizeCanonicalArgs(tool, args);
+        const res = await api.callTool(tool, normalized, { source: "agent" });
+        const value = res?.result ?? res;
+        // Keep agent-facing payloads compact so small models don't get truncated mid-object.
+        if (tool === "p5comp_catalog" && Array.isArray(value)) {
+          return value.slice(0, 24).map((e) => ({
+            type: e.type,
+            name: e.name,
+            group: e.group,
+            pins: e.pins,
+          }));
+        }
+        if (tool === "p5comp_state" && value && typeof value === "object") {
+          const d = getDiagram();
+          return {
+            running: value.running,
+            paused: value.paused,
+            p5Running: value.p5Running,
+            parts: (d.parts || []).map((p) => ({ id: p.id, type: p.type, left: Math.round(p.left), top: Math.round(p.top), attrs: p.attrs })),
+            connections: d.connections || [],
+            physics: value.physics,
+            selection: value.selection,
+            recentConsole: (value.console || []).slice(-12),
+          };
+        }
+        return value;
+      }
+      throw new Error(`Canonical tool ${tool} requires the live p5comp agent surface.`);
+    }
+
+    // 2. Friendly short aliases (used by lightweight JSON loop, !tool commands, and unit tests).
     if (tool === "get_project_state") {
       const d = getDiagram();
       return {
@@ -288,6 +452,11 @@ export function createAssistantTools(wb) {
         ctx.stop?.();
         return { status: "stopped" };
       }
+      if (action === "rewind") {
+        ctx.stop?.();
+        wb.physics?.rewind?.();
+        return { status: "rewound" };
+      }
       if (action === "pause") {
         document.getElementById("pause")?.click();
         return { status: "paused" };
@@ -299,7 +468,15 @@ export function createAssistantTools(wb) {
   }
 
   return {
-    specs: () => TOOL_SPECS,
+    specs: () => [
+      ...SHORT_TOOL_SPECS,
+      ...CANONICAL_TOOLS.map((t) => ({
+        name: t.name,
+        params: Object.keys(t.inputSchema?.properties || {}).join(", "),
+        description: t.description,
+      })),
+    ],
+    piSpecs: (set = "full") => piToolSpecs(set),
     summary,
     run,
   };

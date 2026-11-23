@@ -105,7 +105,7 @@ export class AgentController {
     };
     const interrupt =
       (name === "p5comp_replay" && ["cancel", "state"].includes(args.action)) ||
-      ["p5comp_state", "p5comp_events"].includes(name);
+      ["p5comp_state", "p5comp_events", "p5comp_assistant", "p5comp_code_get", "p5comp_console"].includes(name);
     const task = interrupt ? execute() : this.queue.then(execute);
     if (!interrupt) this.queue = task.catch(() => {});
     if (meta.requestId) {

@@ -1,6 +1,7 @@
 import { projectArchive } from "../projectArchive.js";
 import { portableProject } from "../../shared/takes/frameStore.js";
 import { circuitSVG, svgPNG } from "../exportCircuit.js";
+import { toPng } from "html-to-image";
 import {
   editorPreferences,
   setEditorPreferences,
@@ -8,6 +9,8 @@ import {
 import { ELEMENTS as elementCatalog } from "../elements.js";
 import { basePath } from "../../shared/basePath.js";
 import { validSourceName } from "../projectFiles.js";
+import { renderDiagramSVG } from "../lessonContent.js";
+import { embedComms } from "../commsCode.js";
 export function createAgentAdapter(ctx) {
   const project = () => structuredClone(ctx.project());
   const edit = async (fn) => {
@@ -37,11 +40,19 @@ export function createAgentAdapter(ctx) {
           });
         if (a.iconSize) field("uiIconSize", a.iconSize);
         if (a.pwmRefreshHz) field("pwmRefreshHz", a.pwmRefreshHz);
+        if (typeof a.scoreTransport === "boolean") {
+          const el = document.getElementById("scoreTransportToggle");
+          if (el) {
+            el.checked = a.scoreTransport;
+            el.dispatchEvent(new Event("change"));
+          }
+        }
         return {
           theme: document.documentElement.dataset.theme,
           editor: editorPreferences(),
           iconSize: Number(document.getElementById("uiIconSize").value),
           pwmRefreshHz: Number(document.getElementById("pwmRefreshHz").value),
+          scoreTransport: Boolean(document.getElementById("scoreTransportToggle")?.checked),
         };
       }
       if (op === "library") {
@@ -117,6 +128,28 @@ export function createAgentAdapter(ctx) {
           };
         }
         if (a.format === "pdf") return ctx.exportPDF();
+        if (a.format === "stage_png") {
+          const stageEl = document.getElementById("stage");
+          if (stageEl) {
+            try {
+              const dataUrl = await toPng(stageEl, {
+                cacheBust: true,
+                pixelRatio: 1,
+                backgroundColor: getComputedStyle(stageEl).backgroundColor || "#1e1f1e",
+                filter: (node) =>
+                  !(node instanceof HTMLElement && node.classList.contains("canvas-menu")),
+              });
+              return {
+                name: name + "-stage.png",
+                mimeType: "image/png",
+                dataUrl,
+                base64: dataUrl.split(",")[1],
+              };
+            } catch {
+              /* fall through to circuit SVG -> PNG */
+            }
+          }
+        }
         const sources = a.includeCode
           ? {
               [p.workbench.arduinoName]: p.arduino,
@@ -152,6 +185,96 @@ export function createAgentAdapter(ctx) {
           if (i < 0) p.diagram.parts.push(a.part);
           else p.diagram.parts[i] = a.part;
         });
+      if (op === "build") {
+        const addedParts = [];
+        const addedWires = [];
+        await edit((p) => {
+          if (a.clear) {
+            const keepBoard = a.keepBoard !== false;
+            const board = keepBoard
+              ? p.diagram.parts.find((x) => x.type.startsWith("wokwi-arduino-")) || {
+                  id: "board",
+                  type: "wokwi-arduino-uno",
+                  left: 0,
+                  top: 80,
+                  attrs: {},
+                }
+              : null;
+            p.diagram.parts = board ? [board] : [];
+            p.diagram.connections = [];
+          }
+          for (const rawPart of a.parts || []) {
+            if (!rawPart || !rawPart.type) continue;
+            const spec = elementCatalog.find((e) => e.type === rawPart.type);
+            const idx = p.diagram.parts.length;
+            const id =
+              rawPart.id ||
+              rawPart.type.replace(/^(wokwi|p5comp)-/, "").replace(/[^a-z0-9]/gi, "") +
+                (idx + 1);
+            const part = {
+              id,
+              type: rawPart.type,
+              left: Number.isFinite(Number(rawPart.left)) ? Number(rawPart.left) : 340 + (idx % 3) * 140,
+              top: Number.isFinite(Number(rawPart.top)) ? Number(rawPart.top) : 80 + Math.floor(idx / 3) * 120,
+              ...(Number.isFinite(Number(rawPart.rotate)) ? { rotate: Number(rawPart.rotate) } : {}),
+              ...(rawPart.label ? { label: rawPart.label } : {}),
+              attrs: { ...(spec?.attrs || {}), ...(rawPart.attrs || {}) },
+            };
+            const existing = p.diagram.parts.findIndex((x) => x.id === part.id);
+            if (existing < 0) p.diagram.parts.push(part);
+            else p.diagram.parts[existing] = part;
+            addedParts.push(part.id);
+          }
+          for (const rawConn of a.connections || []) {
+            let conn = null;
+            if (Array.isArray(rawConn) && rawConn.length >= 2) {
+              conn = [String(rawConn[0]), String(rawConn[1]), String(rawConn[2] || "#4e8da6"), Array.isArray(rawConn[3]) ? rawConn[3] : []];
+            } else if (rawConn && typeof rawConn === "object" && rawConn.from && rawConn.to) {
+              conn = [String(rawConn.from), String(rawConn.to), String(rawConn.color || "#4e8da6"), []];
+            }
+            if (conn) {
+              p.diagram.connections.push(conn);
+              addedWires.push(`${conn[0]}->${conn[1]}`);
+            }
+          }
+          if (typeof a.arduino === "string" && a.arduino.trim()) {
+            p.arduino = a.arduino;
+            p.artifact = null;
+          }
+          if (typeof a.p5 === "string" && a.p5.trim()) {
+            p.p5[p.api] = a.p5;
+          }
+        });
+        let mech = null;
+        if (a.clear) {
+          try {
+            await ctx.physics?.({ action: "clear" });
+          } catch {}
+        }
+        if (a.mechanism?.preset) {
+          mech = await ctx.physics?.({
+            action: "mechanism",
+            preset: a.mechanism.preset,
+            ...(a.mechanism.actuatorId ? { actuatorId: a.mechanism.actuatorId } : {}),
+          });
+        }
+        let runtime = null;
+        if (a.run) {
+          try {
+            runtime = await ctx.runtime?.("start");
+          } catch (err) {
+            runtime = { running: false, error: err.message };
+          }
+        }
+        return {
+          parts: addedParts,
+          wires: addedWires.length,
+          arduinoUpdated: Boolean(a.arduino),
+          p5Updated: Boolean(a.p5),
+          mechanism: mech,
+          runtime,
+        };
+      }
       if (op === "part_remove")
         return edit((p) => {
           p.diagram.parts = p.diagram.parts.filter((x) => x.id !== a.id);
@@ -174,32 +297,95 @@ export function createAgentAdapter(ctx) {
             throw Error("Wire index not found.");
           p.diagram.connections.splice(a.index, 1);
         });
-      if (op === "code_set")
-        return edit((p) => {
-          const name =
-            a.name ||
-            (a.language === "arduino"
-              ? p.workbench.arduinoName
-              : p.workbench.p5Name);
-          if (!validSourceName(name)) throw Error("Invalid source filename.");
+      if (op === "code_get") {
+        const p = project();
+        const lang = a.language || "all";
+        if (a.name) {
+          if (a.name === p.workbench.arduinoName) {
+            return { language: "arduino", name: a.name, source: p.arduino || "" };
+          }
+          if (a.name === p.workbench.p5Name) {
+            return { language: "p5", name: a.name, source: p.p5?.[p.api] || "" };
+          }
+          if (a.name in (p.workbench.files || {})) {
+            return { name: a.name, source: p.workbench.files[a.name] };
+          }
+          throw Error(`Source file not found: ${a.name}`);
+        }
+        return {
+          ...(lang === "all" || lang === "arduino"
+            ? { arduinoName: p.workbench.arduinoName, arduino: p.arduino || "" }
+            : {}),
+          ...(lang === "all" || lang === "p5"
+            ? { p5Name: p.workbench.p5Name, api: p.api, p5: p.p5?.[p.api] || "" }
+            : {}),
+          extraFiles: Object.keys(p.workbench.files || {}).filter(
+            (n) => n !== p.workbench.arduinoName && n !== p.workbench.p5Name,
+          ),
+        };
+      }
+      if (op === "code_set") {
+        let targetName = "";
+        let isMain = true;
+        await edit((p) => {
           const main =
             a.language === "arduino"
               ? p.workbench.arduinoName
               : p.workbench.p5Name;
-          if (name === main) {
+          const existingFiles = p.workbench.files || {};
+          // Route to the active main file unless an existing extra file is targeted or createFile is true.
+          const useExtra =
+            a.name &&
+            a.name !== main &&
+            (a.createFile === true || Object.prototype.hasOwnProperty.call(existingFiles, a.name));
+          const name = useExtra ? a.name : main;
+          if (!validSourceName(name)) throw Error("Invalid source filename.");
+          targetName = name;
+          isMain = name === main;
+          if (isMain) {
             if (a.language === "arduino") {
               p.arduino = a.source;
               p.artifact = null;
-            } else p.p5[p.api] = a.source;
-          } else p.workbench.files[name] = a.source;
+            } else {
+              let nextP5 = String(a.source || "");
+              const prevP5 = String(p.p5[p.api] || "");
+              const beginMarker = "// p5comp communications: begin";
+              const beginIdx = prevP5.indexOf(beginMarker);
+              if (beginIdx >= 0 && !nextP5.includes(beginMarker)) {
+                nextP5 = `${nextP5.trimEnd()}\n\n${prevP5.slice(beginIdx)}`;
+              } else if (
+                !nextP5.includes(beginMarker) &&
+                /\bfunction\s+acceptLine\b|\barduinoComms\b/.test(nextP5)
+              ) {
+                nextP5 = embedComms(nextP5, p.api || "webserial");
+              }
+              p.p5[p.api] = nextP5;
+            }
+          } else {
+            p.workbench.files[name] = a.source;
+          }
         });
+        return {
+          updated: true,
+          language: a.language,
+          name: targetName,
+          isMain,
+          lines: String(a.source || "").split("\n").length,
+        };
+      }
       if (op === "control_set") {
         if (!ctx.project().diagram.parts.some((p) => p.id === a.id))
           throw Error("Component not found.");
         ctx.setControl(a.id, a.value);
         return { value: a.value };
       }
-      if (op === "runtime") return ctx.runtime(a.action);
+      if (op === "runtime") {
+        if (a.action === "start" || a.action === "p5_start") {
+          const el = document.getElementById("buildConsole");
+          if (el) el.textContent = "";
+        }
+        return ctx.runtime(a.action);
+      }
       if (op === "canvas") return ctx.canvas(a);
       if (op === "media_put")
         return edit((p) => {
@@ -227,6 +413,76 @@ export function createAgentAdapter(ctx) {
               (x) => x.id !== a.id,
             )),
         );
+      if (op === "diagram") {
+        const code = String(a.code || "").trim();
+        if (!code) throw Error("Diagram code is required.");
+        const mode = a.mode || "note";
+        const rendered = renderDiagramSVG(code, { standalone: true });
+        const name = a.name || `${rendered.type || "diagram"}`;
+        const id = a.id || `diagram-${Date.now().toString(36)}`;
+        if (mode === "asset") {
+          const fileName = name.endsWith(".svg") ? name : `${name.replace(/[^a-z0-9_-]/gi, "-")}.svg`;
+          const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(rendered.svg)}`;
+          await edit((p) => {
+            p.workbench.assets ??= {};
+            p.workbench.assets[fileName] = {
+              type: "image/svg+xml",
+              size: rendered.svg.length,
+              src: dataUrl,
+            };
+          });
+          return { asset: fileName, type: rendered.type, width: rendered.width, height: rendered.height };
+        }
+        const x = Number.isFinite(Number(a.x)) ? Number(a.x) : 420;
+        const y = Number.isFinite(Number(a.y)) ? Number(a.y) : 60;
+        const width = Number.isFinite(Number(a.width)) && Number(a.width) > 0
+          ? Number(a.width)
+          : Math.max(240, Math.min(560, Math.round((rendered.width || 320) + 32)));
+        if (mode === "image") {
+          const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(rendered.svg)}`;
+          await edit((p) => {
+            p.workbench.references ??= [];
+            const item = {
+              id,
+              kind: "image",
+              name,
+              x,
+              y,
+              width,
+              opacity: 1,
+              blend: "normal",
+              showLabel: false,
+              src: dataUrl,
+            };
+            const idx = p.workbench.references.findIndex((r) => r.id === id);
+            if (idx < 0) p.workbench.references.push(item);
+            else p.workbench.references[idx] = item;
+          });
+          return { id, mode: "image", type: rendered.type, width, height: rendered.height };
+        }
+        // Default: live-editable Markdown note card containing the ```mermaid``` block
+        const source = "```mermaid\n" + code + "\n```";
+        await edit((p) => {
+          p.workbench.references ??= [];
+          const item = {
+            id,
+            kind: "note",
+            format: "markdown",
+            name,
+            x,
+            y,
+            width,
+            opacity: 1,
+            blend: "normal",
+            showLabel: false,
+            source,
+          };
+          const idx = p.workbench.references.findIndex((r) => r.id === id);
+          if (idx < 0) p.workbench.references.push(item);
+          else p.workbench.references[idx] = item;
+        });
+        return { id, mode: "note", type: rendered.type, width, height: rendered.height };
+      }
       if (op === "asset") {
         const assets = ctx.project().workbench.assets || {};
         if (a.action === "list")
@@ -247,6 +503,8 @@ export function createAgentAdapter(ctx) {
         });
       }
       if (op === "drawing") return ctx.drawing(a);
+      if (op === "physics") return ctx.physics(a);
+      if (op === "assistant") return ctx.assistant(a);
       if (op === "view") return ctx.view(a);
       if (op === "examples") {
         const index = await (
@@ -260,6 +518,47 @@ export function createAgentAdapter(ctx) {
         return { loaded: a.path };
       }
       if (op === "serial") return ctx.serial(a);
+      if (op === "console") {
+        const el = document.getElementById("buildConsole");
+        const noticeEl = document.getElementById("notice");
+        if (a.action === "clear") {
+          if (el) el.textContent = "";
+          if (noticeEl) {
+            noticeEl.textContent = "";
+            noticeEl.hidden = true;
+          }
+          return { cleared: true };
+        }
+        const rawBuild = (el?.textContent || "")
+          .split("\n")
+          .map((l) => l.trimEnd())
+          .filter(Boolean);
+        const notice = noticeEl && !noticeEl.hidden ? (noticeEl.textContent || "").trim() : "";
+        const runtimeLines = (ctx.state?.().console || []).map(String);
+        const merged = [...rawBuild];
+        for (const l of runtimeLines) {
+          if (!/^[←→]/.test(l) && !merged.includes(l)) merged.push(l);
+        }
+        if (notice && !merged.includes(notice)) merged.push(`Notice: ${notice}`);
+        const errorRe = /error|err:|exception|failed|cannot|undefined|syntax|warning|invalid|uncaught|referenceerror|typeerror/i;
+        const filtered = a.errorsOnly ? merged.filter((l) => errorRe.test(l)) : merged;
+        const deduped = [];
+        for (const line of filtered) {
+          const prev = deduped.at(-1);
+          if (prev && prev.line === line) prev.count++;
+          else deduped.push({ line, count: 1 });
+        }
+        const limit = Number.isFinite(Number(a.limit)) ? Math.max(1, Number(a.limit)) : 200;
+        const out = deduped
+          .slice(-limit)
+          .map((d) => (d.count > 1 ? `${d.line} (×${d.count})` : d.line));
+        return {
+          lines: out,
+          text: out.join("\n"),
+          notice: notice || null,
+          total: merged.length,
+        };
+      }
       throw Error("Unknown operation: " + op);
     },
   };

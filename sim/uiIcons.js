@@ -37,6 +37,8 @@ const paths = {
   add: "M12 2v20M2 12h20",
   addPart: "M2 2h20v20H2ZM12 6v12M6 12h12",
   minus: "M2 12h20",
+  zoomIn: "M10.5 3a7.5 7.5 0 1 0 0 15 7.5 7.5 0 0 0 0-15ZM16 16l5 5M10.5 7.5v6M7.5 10.5h6",
+  zoomOut: "M10.5 3a7.5 7.5 0 1 0 0 15 7.5 7.5 0 0 0 0-15ZM16 16l5 5M7.5 10.5h6",
   wire: "M4 4h8v16h8M2 2h4v4H2ZM18 18h4v4h-4Z",
   select: "M2 8V2h6M16 2h6v6M22 16v6h-6M8 22H2v-6",
   fit: "M2 8V2h6M16 2h6v6M22 16v6h-6M8 22H2v-6M7 7h10v10H7Z",
@@ -59,6 +61,7 @@ const paths = {
   comms: "M2 12h20M8 5l-7 7 7 7M16 5l7 7-7 7",
   none: "M2 22L22 2M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Z",
   chip: "M5 5h14v14H5ZM8 1v4m4-4v4m4-4v4M8 19v4m4-4v4m4-4v4M1 8h4m-4 4h4m-4 4h4m14-8h4m-4 4h4m-4 4h4",
+  chat: "M4 5h16v11H9l-5 4z",
 };
 const glyphs = {
   "⌁": "native",
@@ -128,8 +131,8 @@ const ids = {
   wireMode: "wire",
   selectTool: "select",
   fit: "fit",
-  zoomIn: "add",
-  zoomOut: "minus",
+  zoomIn: "zoomIn",
+  zoomOut: "zoomOut",
   undoCanvas: "undo",
   redoCanvas: "redo",
   usb: "usb",
@@ -181,6 +184,7 @@ export function initializeIconSystem(root = document) {
         if (control.dataset.mainView === "circuit") kind = "chip";
         if (control.dataset.tab === "arduino") kind = "chip";
         if (control.dataset.tab === "properties") kind = "properties";
+        if (control.dataset.tab === "assistant") kind = "chat";
         if (control.dataset.tab === "settings") kind = "gear";
         if (control.id === "collapseBottom") kind = "chevron";
         const label = control.getAttribute("aria-label") || "";

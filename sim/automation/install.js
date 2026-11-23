@@ -50,10 +50,10 @@ export function installAgentSurface(adapter) {
     ),
   );
   const settings = document.getElementById("globalSettings");
-  const group = document.createElement("section");
-  group.className = "agent-settings";
+  const group = document.createElement("details");
+  group.className = "settings-group agent-settings";
   group.innerHTML =
-    '<h4>Agents & process</h4><p>API: <code>window.p5comp</code> · WebMCP · local MCP/HTTP</p><label>Recording title <input id="processTitle" value="Class demo"></label><label>Saved recording <select id="processSaved"><option value="">Latest recording</option></select></label><label><input type="checkbox" id="processTimed"> Keep original timing</label><label>Step annotation <input id="processNote" placeholder="Explain this step…"></label><div><button id="processMark">Add annotation</button><button id="processCancel">Cancel replay</button><button id="processRecord">Record actions</button><button id="processStop">Stop recording</button><button id="processExport">Export recording</button><button id="processReplay">Load replay</button><button id="processStep">Next step</button><button id="processPlay">Replay all</button><button id="processImport">Import recording</button></div><output id="processStatus">Ready</output><output id="agentRelayStatus">Local relay: connecting…</output>';
+    '<summary>MCP &amp; Recording</summary><div class="settings-group-body"><p>API: <code>window.p5comp</code> · WebMCP · local MCP/HTTP</p><label>Recording title <input id="processTitle" value="Class demo"></label><label>Saved recording <select id="processSaved"><option value="">Latest recording</option></select></label><label>Keep original timing <input type="checkbox" id="processTimed"></label><label>Step annotation <input id="processNote" placeholder="Explain this step…"></label><div><button id="processMark">Add annotation</button><button id="processCancel">Cancel replay</button><button id="processRecord">Record actions</button><button id="processStop">Stop recording</button><button id="processExport">Export recording</button><button id="processReplay">Load replay</button><button id="processStep">Next step</button><button id="processPlay">Replay all</button><button id="processImport">Import recording</button></div><output id="processStatus">Ready</output><output id="agentRelayStatus">Local relay: connecting…</output></div>';
   settings.append(group);
   let recent = null;
   let annotation = "";
