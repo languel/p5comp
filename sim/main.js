@@ -1881,7 +1881,7 @@ document.addEventListener("keydown", (e) => {
     if (!running || paused) runArduino();
     return;
   }
-  if (editing || e.repeat) return;
+  if (e.defaultPrevented || editing || e.repeat) return;
   const id =
     e.key.toLowerCase() === "a"
       ? "b1"

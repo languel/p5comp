@@ -27,6 +27,7 @@ import { portableProject, localProject } from "../shared/takes/frameStore.js";
 import { TakeTimeline } from "./TakeTimeline.js";
 import { DrawingBoard } from "./DrawingBoard.js";
 import { PhysicsLayer } from "./physics/PhysicsLayer.js";
+import { resolveCircuitShortcut } from "./toolbarShortcuts.js";
 import { mountAssistantPanel } from "./assistant/AssistantPanel.js";
 import { createEditor } from "../shared/editor/createEditor.js";
 import { circuitSVG, svgPNG } from "./exportCircuit.js";
@@ -763,6 +764,28 @@ export class Workbench {
       onTimeChange: (t) => this.setSimTime(t),
       persist: () => ctx.persist(),
     });
+    window.addEventListener(
+      "keydown",
+      (e) => {
+        if (e.defaultPrevented) return;
+        if (e.target?.closest?.("input,textarea,select,[contenteditable],.cm-editor")) return;
+        if (this.activeView === "draw" || this.activeView === "p5") return;
+        const action = resolveCircuitShortcut(e);
+        if (!action) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        if (action.kind === "add") {
+          this.handleCircuitToolbarAction("circuit:add");
+        } else if (action.kind === "wire") {
+          if (this.drawing?.active) {
+            this.drawing.setTool(ctx.canvas.wireMode ? "select" : "host:circuit-wire");
+          } else {
+            $("wireMode")?.click();
+          }
+        }
+      },
+      true,
+    );
     // Global Rewind button + simulation timer directly next to the top-bar Play (#run) button.
     const rewindBtn = node(
       "button",

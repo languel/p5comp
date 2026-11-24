@@ -47,6 +47,12 @@ import {
   detachPoliplanMarks,
   syncLinkedPoliplanMarks,
 } from "./poliplanBridge.js";
+import {
+  PHYSICS_BODY_TOOLS,
+  PHYSICS_JOINT_TOOLS,
+  PHYSICS_TOOL_LABELS,
+  resolvePhysicsShortcut,
+} from "../toolbarShortcuts.js";
 
 const NS = "http://www.w3.org/2000/svg";
 const svgEl = (tag, attrs = {}) => {
@@ -363,6 +369,7 @@ export class PhysicsLayer {
     if (typeof toolId === "string" && toolId.startsWith("host:phys-stamp:")) {
       this.tool = "stamp";
       this.stampPresetId = toolId.slice("host:phys-stamp:".length);
+      this.activeStampPresetId = this.stampPresetId;
       this.stampPreview = null;
       this.active = true;
       this.stage.classList.add("draw-physics-open");
@@ -442,8 +449,8 @@ export class PhysicsLayer {
 
   setTool(tool) {
     this.tool = tool;
-    if (["box", "circle", "link", "gear", "ramp"].includes(tool)) this.activeBodyTool = tool;
-    if (["hinge", "weld", "spring", "slider"].includes(tool)) this.activeJointTool = tool;
+    if (PHYSICS_BODY_TOOLS.includes(tool)) this.activeBodyTool = tool;
+    if (PHYSICS_JOINT_TOOLS.includes(tool)) this.activeJointTool = tool;
     if (tool === "select") {
       this.drawing?.setTool("select");
       this.setActive(false, { closeToolbar: false });
@@ -452,6 +459,79 @@ export class PhysicsLayer {
     if (!this.active) this.setActive(true);
     this.drawing?.setTool(`host:phys-${tool}`);
     this.updateToolbarState();
+  }
+
+  cycleBodyTool() {
+    const cur = this.activeBodyTool || "link";
+    const idx = PHYSICS_BODY_TOOLS.indexOf(cur);
+    const next = PHYSICS_BODY_TOOLS[(idx + 1) % PHYSICS_BODY_TOOLS.length];
+    this.setTool(next);
+    this.toast(`Physics Brush: ${PHYSICS_TOOL_LABELS[next] || next}`, 1600);
+    return next;
+  }
+
+  cycleJointTool() {
+    const cur = this.activeJointTool || "hinge";
+    const idx = PHYSICS_JOINT_TOOLS.indexOf(cur);
+    const next = PHYSICS_JOINT_TOOLS[(idx + 1) % PHYSICS_JOINT_TOOLS.length];
+    this.setTool(next);
+    this.toast(`Constraint: ${PHYSICS_TOOL_LABELS[next] || next}`, 1600);
+    return next;
+  }
+
+  setStampTool(presetId) {
+    const preset = MECHANISM_PRESETS.find((m) => m.id === presetId) || MECHANISM_PRESETS[0];
+    if (!preset) return null;
+    this.activeStampPresetId = preset.id;
+    this.stampPresetId = preset.id;
+    this.stampPreview = null;
+    this.tool = "stamp";
+    if (!this.active) this.setActive(true);
+    this.drawing?.setTool(`host:phys-stamp:${preset.id}`);
+    this.updateToolbarState();
+    this.toast(`Mechanism: ${preset.name} (click to place · Shift+= to cycle)`, 2000);
+    return preset.id;
+  }
+
+  cycleStampTool() {
+    if (!MECHANISM_PRESETS.length) return null;
+    const cur = this.activeStampPresetId || this.stampPresetId || MECHANISM_PRESETS[0].id;
+    const idx = MECHANISM_PRESETS.findIndex((m) => m.id === cur);
+    const next = MECHANISM_PRESETS[(idx + 1) % MECHANISM_PRESETS.length];
+    return this.setStampTool(next.id);
+  }
+
+  handleShortcutKey(e) {
+    if (!this.drawing?.active || e.repeat) return false;
+    const action = resolvePhysicsShortcut(e, {
+      activeBodyTool: this.activeBodyTool || "link",
+      activeJointTool: this.activeJointTool || "hinge",
+      activeStampPresetId: this.activeStampPresetId || this.stampPresetId || MECHANISM_PRESETS[0]?.id,
+      inStampMode: Boolean(this.active && this.tool === "stamp"),
+      presetIds: MECHANISM_PRESETS.map((m) => m.id),
+    });
+    if (!action) return false;
+    e.preventDefault?.();
+    e.stopImmediatePropagation?.();
+    if (action.kind === "body") {
+      this.setTool(action.tool);
+      if (action.cycled) this.toast(`Physics Brush: ${PHYSICS_TOOL_LABELS[action.tool] || action.tool}`, 1600);
+      return true;
+    }
+    if (action.kind === "joint") {
+      this.setTool(action.tool);
+      if (action.cycled) this.toast(`Constraint: ${PHYSICS_TOOL_LABELS[action.tool] || action.tool}`, 1600);
+      return true;
+    }
+    if (action.kind === "stamp" && action.presetId) {
+      this.setStampTool(action.presetId);
+      return true;
+    }
+    if (action.kind === "guide") {
+      if (this.guide) this.guide.hidden = !this.guide.hidden;
+      return true;
+    }
+    return false;
   }
 
   toast(msg, ms = 2400) {
@@ -1776,18 +1856,7 @@ export class PhysicsLayer {
         }
         if (mod || e.altKey) return;
         if (this.drawing?.active && !e.repeat) {
-          if (e.code === "KeyM") {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            this.setTool(this.activeBodyTool || "link");
-            return;
-          }
-          if (e.code === "KeyJ") {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            this.setTool(this.activeJointTool || "hinge");
-            return;
-          }
+          if (this.handleShortcutKey(e)) return;
           // Pressing any Poliplan tool shortcut (V/H/0/1/2/B/S) or Escape disarms an active Physics brush.
           if (
             this.active &&
