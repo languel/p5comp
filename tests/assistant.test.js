@@ -5,7 +5,15 @@ import { PiAgent, buildPiApiRequest, readPiApiResponse } from "../sim/assistant/
 import { TOOLS } from "../shared/automation/tools.js";
 import { physicsCommand } from "../sim/automation/physics.js";
 import { createEmptyPhysicsScene } from "../sim/physics/model.js";
-import { LFM3_DEFAULT_MODEL_ID, LFM3_QAD_MODEL_ID, LFM3_MODELS, parseLfm3ModelSpec } from "../sim/assistant/providers.js";
+import {
+  LFM3_PI_MODEL_ID,
+  LFM3_BASE_MODEL_ID,
+  LFM3_DEFAULT_MODEL_ID,
+  LFM3_QAD_MODEL_ID,
+  LFM3_MODELS,
+  parseLfm3ModelSpec,
+  loadAssistantSettings,
+} from "../sim/assistant/providers.js";
 
 test("parseReply handles clean JSON, markdown fences, thinking tags, and truncated small-model JSON", () => {
   const clean = parseReply('{"say":"Added LED.","actions":[{"tool":"add_part","args":{"type":"wokwi-led"}}],"done":true}');
@@ -94,13 +102,26 @@ test("canonical MCP/WebMCP TOOLS include physics, rewind, and assistant view, an
   assert.ok(runtime.inputSchema.properties.action.enum.includes("rewind"));
   const view = TOOLS.find((t) => t.name === "p5comp_view");
   assert.ok(view.inputSchema.properties.inspector.enum.includes("assistant"));
-  assert.equal(LFM3_DEFAULT_MODEL_ID, "LiquidAI/LFM3-1.7B-GGUF");
+  assert.equal(LFM3_DEFAULT_MODEL_ID, LFM3_PI_MODEL_ID);
+  assert.equal(LFM3_DEFAULT_MODEL_ID, "languel/LFM3-1.7B-pi-GGUF::LFM3-1.7B-pi-Q4_K_M.gguf");
   assert.ok(LFM3_MODELS.some((m) => m.id === LFM3_DEFAULT_MODEL_ID));
+  assert.ok(LFM3_MODELS.some((m) => m.id === LFM3_BASE_MODEL_ID));
   assert.ok(LFM3_MODELS.some((m) => m.id === LFM3_QAD_MODEL_ID));
+  assert.deepEqual(parseLfm3ModelSpec(LFM3_DEFAULT_MODEL_ID), {
+    repo: "languel/LFM3-1.7B-pi-GGUF",
+    file: "LFM3-1.7B-pi-Q4_K_M.gguf",
+  });
   assert.deepEqual(parseLfm3ModelSpec(LFM3_QAD_MODEL_ID), {
     repo: "LiquidAI/LFM3-1.7B-GGUF",
     file: "LFM3-1.7B-QAD-Q4_0.gguf",
   });
+
+  // Fresh student setup defaults to HF-hosted LFM3-1.7B-pi on WebGPU + Pi Agent with tools enabled.
+  const defaults = loadAssistantSettings();
+  assert.equal(defaults.provider, "lfm3");
+  assert.equal(defaults.model, LFM3_DEFAULT_MODEL_ID);
+  assert.equal(defaults.agentMode, "pi");
+  assert.equal(defaults.toolsEnabled, true);
 });
 
 test("physicsCommand creates bodies, joints, mechanisms, and reads physics state", async () => {

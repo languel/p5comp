@@ -12,7 +12,8 @@ import { PiAgent, createPiModel, buildPiInstructions } from "./piAgent.js";
 import { lessonHTML, renderDiagramSVG } from "../lessonContent.js";
 import {
   ASSISTANT_PROVIDERS,
-  LFM3_LOCAL_PI_MODEL_ID,
+  LFM3_PI_MODEL_ID,
+  LFM3_BASE_MODEL_ID,
   LFM3_DEFAULT_MODEL_ID,
   LFM3_QAD_MODEL_ID,
   LFM3_MODELS,
@@ -220,24 +221,7 @@ export function mountAssistantPanel(root, wb, { settingsHost = null, openSetting
 
   const chatWebgpuBarFill = el("span", { class: "assist-lfm-bar-fill" });
   const chatWebgpuProgress = el("div", { class: "assist-lfm-bar", hidden: true }, chatWebgpuBarFill);
-  const chatWebgpuNote = el("span", { class: "assist-webgpu-note" }, "Local WebGPU · no API key");
-  const chatWebgpuQuant = el(
-    "select",
-    {
-      class: "assist-webgpu-quant",
-      "aria-label": "WebGPU quantization",
-      "data-native": true,
-      onchange: () => {
-        settings.model = chatWebgpuQuant.value;
-        saveAssistantSettings(settings);
-        populateModelPicker(LFM3_MODELS.map((m) => m.id));
-        syncWebgpuBanner();
-      },
-    },
-    el("option", { value: LFM3_LOCAL_PI_MODEL_ID }, "Pi · Q4_K_M (Local)"),
-    el("option", { value: LFM3_DEFAULT_MODEL_ID }, "Base · Q4_K_M (HF)"),
-    el("option", { value: LFM3_QAD_MODEL_ID }, "Base · QAD Q4_0 (HF)"),
-  );
+  const chatWebgpuNote = el("span", { class: "assist-webgpu-note" }, "LFM3-1.7B-pi · downloads once & caches in browser");
   const chatWebgpuLoadBtn = el(
     "button",
     {
@@ -245,12 +229,12 @@ export function mountAssistantPanel(root, wb, { settingsHost = null, openSetting
       class: "assist-webgpu-btn",
       onclick: () => triggerWebgpuLoad(),
     },
-    "Load WebGPU (~1.1 GB)",
+    "Load (~1.1 GB)",
   );
   const chatWebgpuBanner = el(
     "div",
     { class: "assist-webgpu-banner", hidden: true },
-    el("div", { class: "assist-webgpu-row" }, chatWebgpuNote, chatWebgpuQuant, chatWebgpuLoadBtn),
+    el("div", { class: "assist-webgpu-row" }, chatWebgpuNote, chatWebgpuLoadBtn),
     chatWebgpuProgress,
   );
 
@@ -259,16 +243,11 @@ export function mountAssistantPanel(root, wb, { settingsHost = null, openSetting
     const targetId = settings.model || LFM3_DEFAULT_MODEL_ID;
     const loaded = lfm3.ready && lfm3.readyModel === targetId;
     chatWebgpuBanner.hidden = !isLfm || loaded;
-    chatWebgpuQuant.value =
-      targetId === LFM3_LOCAL_PI_MODEL_ID
-        ? LFM3_LOCAL_PI_MODEL_ID
-        : targetId === LFM3_QAD_MODEL_ID
-          ? LFM3_QAD_MODEL_ID
-          : LFM3_DEFAULT_MODEL_ID;
+    const shortName = targetId === LFM3_PI_MODEL_ID ? "LFM3-1.7B-pi" : "LFM3-1.7B";
     if (!lfm3.loading) {
       chatWebgpuLoadBtn.disabled = false;
-      chatWebgpuLoadBtn.textContent = "Load WebGPU (~1.1 GB)";
-      chatWebgpuNote.textContent = "LFM3-1.7B · runs locally in browser";
+      chatWebgpuLoadBtn.textContent = "Load (~1.1 GB)";
+      chatWebgpuNote.textContent = `${shortName} · downloads once & stays cached`;
       chatWebgpuProgress.hidden = true;
     }
   };
@@ -345,16 +324,16 @@ export function mountAssistantPanel(root, wb, { settingsHost = null, openSetting
     const raw = settings.model || "";
     const short =
       settings.provider === "lfm3"
-        ? raw === LFM3_LOCAL_PI_MODEL_ID
-          ? "WebGPU Pi"
+        ? raw === LFM3_PI_MODEL_ID
+          ? "Pi · WebGPU"
           : raw === LFM3_QAD_MODEL_ID
-            ? "WebGPU QAD"
-            : "WebGPU Q4"
+            ? "QAD · WebGPU"
+            : "Base · WebGPU"
         : raw.includes("/")
           ? raw.split("/").pop()
           : raw;
     pillModel.textContent = short || "select model";
-    modelPillBtn.title = `${PROVIDER_SHORT[settings.provider] || settings.provider} · ${LFM3_LABEL_MAP.get(raw) || raw || "no model"} — click to switch provider or open AI settings`;
+    modelPillBtn.title = `${PROVIDER_SHORT[settings.provider] || settings.provider} · ${LFM3_LABEL_MAP.get(raw) || raw || "no model"} — click to switch model or open AI settings`;
   };
 
   const modelSelect = el("select", {
@@ -510,7 +489,7 @@ export function mountAssistantPanel(root, wb, { settingsHost = null, openSetting
   const lfmNote = el(
     "div",
     { class: "assist-settings-note", hidden: settings.provider !== "lfm3" },
-    "Runs in this browser on your GPU; the first use downloads the model.",
+    "Runs directly in your browser on WebGPU (Pi Agent). Downloads once from Hugging Face and stays cached — no Ollama or API key needed.",
   );
 
   const toolsChk = el("input", {
@@ -588,11 +567,32 @@ export function mountAssistantPanel(root, wb, { settingsHost = null, openSetting
   const toolsRow = el("label", {}, "Studio tools", toolsChk);
   const stepsRow = el("label", {}, "Tool details", stepsChk);
 
+  const advancedDetails = el(
+    "details",
+    { class: "assist-advanced", open: settings.provider !== "lfm3" },
+    el("summary", {}, "Advanced (other providers & agent)"),
+    el(
+      "div",
+      { class: "assist-advanced-body" },
+      providerRow,
+      urlRow,
+      keyRow,
+      customModelRow,
+      askingSub,
+      agentModeRow,
+      toolSetRow,
+      maxStepsRow,
+      toolsRow,
+      stepsRow,
+    ),
+  );
+
   const syncConfigVisibility = () => {
     const isLfm = settings.provider === "lfm3";
     urlRow.hidden = isLfm;
     keyRow.hidden = isLfm;
     lfmNote.hidden = !isLfm;
+    if (!isLfm) advancedDetails.open = true;
     const loaded = lfm3.ready && lfm3.readyModel === (settings.model || LFM3_DEFAULT_MODEL_ID);
     probeBtn.textContent = isLfm ? (loaded ? "Loaded" : "Load (~1.1 GB)") : "↻";
     syncWebgpuBanner();
@@ -601,20 +601,11 @@ export function mountAssistantPanel(root, wb, { settingsHost = null, openSetting
 
   if (settingsHost) {
     settingsHost.replaceChildren(
-      providerRow,
-      urlRow,
-      keyRow,
-      lfmNote,
       modelRow,
-      customModelRow,
+      lfmNote,
       lfmBar,
       settingsStatusEl,
-      askingSub,
-      agentModeRow,
-      toolSetRow,
-      maxStepsRow,
-      toolsRow,
-      stepsRow,
+      advancedDetails,
     );
   }
 
@@ -897,36 +888,26 @@ export function mountAssistantPanel(root, wb, { settingsHost = null, openSetting
       onclick: () => {
         showPopupMenu(modelPillBtn, [
           {
-            label: "WebGPU · LFM3-1.7B-pi (Local Q4_K_M)",
-            meta: settings.provider === "lfm3" && settings.model === LFM3_LOCAL_PI_MODEL_ID ? "✓" : "Pi",
-            hint: "Fused harness-hub/LFM3-1.7B-pi running directly in browser on WebGPU",
-            onClick: () => switchProviderQuick("lfm3", LFM3_LOCAL_PI_MODEL_ID),
+            label: "LFM3-1.7B-pi (Browser WebGPU)",
+            meta: settings.provider === "lfm3" && settings.model === LFM3_PI_MODEL_ID ? "✓" : "Default",
+            hint: "Pi-tuned LFM3-1.7B downloaded from Hugging Face and cached in your browser",
+            onClick: () => switchProviderQuick("lfm3", LFM3_PI_MODEL_ID),
           },
           {
-            label: "WebGPU · LFM3-1.7B (HF Q4_K_M)",
-            meta: settings.provider === "lfm3" && settings.model === LFM3_DEFAULT_MODEL_ID ? "✓" : "HF",
-            hint: "Run LiquidAI/LFM3-1.7B-GGUF directly in browser on WebGPU",
-            onClick: () => switchProviderQuick("lfm3", LFM3_DEFAULT_MODEL_ID),
+            label: "LFM3-1.7B Base (Browser WebGPU)",
+            meta: settings.provider === "lfm3" && settings.model === LFM3_BASE_MODEL_ID ? "✓" : "Q4_K_M",
+            hint: "LiquidAI/LFM3-1.7B-GGUF directly in browser on WebGPU",
+            onClick: () => switchProviderQuick("lfm3", LFM3_BASE_MODEL_ID),
           },
           {
-            label: "WebGPU · LFM3-1.7B (HF QAD Q4_0)",
-            meta: settings.provider === "lfm3" && settings.model === LFM3_QAD_MODEL_ID ? "✓" : "Fast",
+            label: "LFM3-1.7B Fast (Browser WebGPU)",
+            meta: settings.provider === "lfm3" && settings.model === LFM3_QAD_MODEL_ID ? "✓" : "QAD Q4_0",
             hint: "Smaller/faster QAD Q4_0 WebGPU quantization",
             onClick: () => switchProviderQuick("lfm3", LFM3_QAD_MODEL_ID),
           },
           "---",
           {
-            label: "Ollama · lfm3-1.7b-pi",
-            meta: settings.provider === "ollama" && settings.model === "lfm3-1.7b-pi:latest" ? "✓" : "1.7B",
-            onClick: () => switchProviderQuick("ollama", "lfm3-1.7b-pi:latest"),
-          },
-          {
-            label: "Ollama · qwen3.8-9b-coder",
-            meta: settings.provider === "ollama" && settings.model === "LisyNeko/qwen3.8-9b-coder:latest" ? "✓" : "9B+Vis",
-            onClick: () => switchProviderQuick("ollama", "LisyNeko/qwen3.8-9b-coder:latest"),
-          },
-          {
-            label: "AI / Model settings…",
+            label: "Other providers & settings…",
             onClick: () => openSettings?.(),
           },
         ]);

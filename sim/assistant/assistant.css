@@ -427,6 +427,42 @@
   color: var(--ui-muted, #8e9693);
 }
 
+.assist-advanced {
+  margin-top: 6px;
+  border-top: 1px solid var(--ui-line, rgba(128, 136, 134, 0.22));
+  padding-top: 6px;
+}
+.assist-advanced > summary {
+  cursor: pointer;
+  user-select: none;
+  font-size: 11px;
+  color: var(--ui-muted, #8e9693);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.assist-advanced > summary::-webkit-details-marker {
+  display: none;
+}
+.assist-advanced > summary::before {
+  content: "▸";
+  font-size: 10px;
+  transition: transform 0.12s ease;
+}
+.assist-advanced[open] > summary::before {
+  transform: rotate(90deg);
+}
+.assist-advanced > summary:hover {
+  color: var(--ui-text, inherit);
+}
+.assist-advanced-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
 .assist-lfm-bar {
   height: 4px;
   border-radius: 999px;

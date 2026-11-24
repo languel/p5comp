@@ -1,19 +1,20 @@
 /**
  * Unified model provider client for p5comp's Assistant:
- * 1. Ollama (Local) — queries /api/tags (filtering out embedding-only models) + /v1/chat/completions
- * 2. LFM3-1.7B (Browser WebGPU) — uses vendored public/vendor/Lfm3ForCausalLM.js + LiquidAI/LFM3-1.7B-GGUF
- *    (matching ~/dev/seloai/src/agent/piModel.ts)
+ * 1. LFM3-1.7B-pi (Browser WebGPU, default) — uses vendored public/vendor/Lfm3ForCausalLM.js +
+ *    languel/LFM3-1.7B-pi-GGUF (downloaded on demand from Hugging Face and cached in browser)
+ * 2. Ollama (Local) — queries /api/tags (filtering out embedding-only models) + /v1/chat/completions
  * 3. Cloud APIs (OpenAI-compatible, OpenRouter, Gemini, Anthropic)
  */
 
 import { basePath } from "../../shared/basePath.js";
 
-export const LFM3_LOCAL_PI_MODEL_ID = "/models/LFM3-1.7B-pi-Q4_K_M.gguf";
-export const LFM3_DEFAULT_MODEL_ID = "LiquidAI/LFM3-1.7B-GGUF";
+export const LFM3_PI_MODEL_ID = "languel/LFM3-1.7B-pi-GGUF::LFM3-1.7B-pi-Q4_K_M.gguf";
+export const LFM3_BASE_MODEL_ID = "LiquidAI/LFM3-1.7B-GGUF";
 export const LFM3_QAD_MODEL_ID = "LiquidAI/LFM3-1.7B-GGUF::LFM3-1.7B-QAD-Q4_0.gguf";
+export const LFM3_DEFAULT_MODEL_ID = LFM3_PI_MODEL_ID;
 export const LFM3_MODELS = [
-  { id: LFM3_LOCAL_PI_MODEL_ID, label: "LFM3-1.7B-pi · Q4_K_M (Local WebGPU)" },
-  { id: LFM3_DEFAULT_MODEL_ID, label: "LFM3-1.7B · Q4_K_M (HF WebGPU)" },
+  { id: LFM3_PI_MODEL_ID, label: "LFM3-1.7B-pi · Q4_K_M (HF WebGPU · Recommended)" },
+  { id: LFM3_BASE_MODEL_ID, label: "LFM3-1.7B · Q4_K_M (HF WebGPU)" },
   { id: LFM3_QAD_MODEL_ID, label: "LFM3-1.7B · QAD Q4_0 (HF WebGPU)" },
 ];
 
@@ -21,7 +22,7 @@ export function parseLfm3ModelSpec(modelId = LFM3_DEFAULT_MODEL_ID) {
   const raw = String(modelId || LFM3_DEFAULT_MODEL_ID);
   if (raw.includes("::")) {
     const [repo, file] = raw.split("::");
-    return { repo: repo || LFM3_DEFAULT_MODEL_ID, file: file || undefined };
+    return { repo: repo || LFM3_BASE_MODEL_ID, file: file || undefined };
   }
   if (/^(\/|\.|https?:)/i.test(raw) && raw.toLowerCase().endsWith(".gguf")) {
     const clean = raw.startsWith("/") ? basePath(raw.slice(1)) : raw;
@@ -31,8 +32,8 @@ export function parseLfm3ModelSpec(modelId = LFM3_DEFAULT_MODEL_ID) {
 }
 
 export const ASSISTANT_PROVIDERS = [
+  { id: "lfm3", label: "Browser WebGPU (Built-in)", defaultUrl: "", defaultModel: LFM3_DEFAULT_MODEL_ID },
   { id: "ollama", label: "Ollama (Local)", defaultUrl: "http://localhost:11434/v1", defaultModel: "" },
-  { id: "lfm3", label: "LFM3-1.7B (Browser WebGPU)", defaultUrl: "", defaultModel: LFM3_DEFAULT_MODEL_ID },
   { id: "openai", label: "OpenAI-compatible", defaultUrl: "https://api.openai.com/v1", defaultModel: "gpt-4o-mini" },
   { id: "openrouter", label: "OpenRouter", defaultUrl: "https://openrouter.ai/api/v1", defaultModel: "google/gemini-2.5-flash" },
   { id: "gemini", label: "Gemini API", defaultUrl: "https://generativelanguage.googleapis.com/v1beta", defaultModel: "gemini-2.5-flash" },
@@ -44,19 +45,27 @@ const SETTINGS_KEY = "p5comp.assistant.settings.v1";
 export function loadAssistantSettings() {
   try {
     const raw = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
-    const provider = ASSISTANT_PROVIDERS.some((p) => p.id === raw.provider) ? raw.provider : "ollama";
+    let provider = ASSISTANT_PROVIDERS.some((p) => p.id === raw.provider) ? raw.provider : "lfm3";
+    // Migrate unconfigured legacy default (ollama with no model selected) to built-in Browser WebGPU.
+    if (provider === "ollama" && !raw.model && !raw.apiKey) {
+      provider = "lfm3";
+    }
     const spec = ASSISTANT_PROVIDERS.find((p) => p.id === provider);
-    // Migrate any stale ONNX or LoRA-only model id to LiquidAI/LFM3-1.7B-GGUF.
+    // Migrate any stale ONNX, LoRA-only, or local-only /models/... id to the HF-hosted fused Pi GGUF.
     let model = raw.model || spec.defaultModel;
     if (
       provider === "lfm3" &&
-      (!model || model.includes("LFM2.5") || model.includes("ONNX") || model.includes("harness-hub/LFM3-1.7B-pi"))
+      (!model ||
+        model.includes("LFM2.5") ||
+        model.includes("ONNX") ||
+        model.includes("harness-hub/LFM3-1.7B-pi") ||
+        model.startsWith("/models/"))
     ) {
       model = LFM3_DEFAULT_MODEL_ID;
     }
     return {
       provider,
-      baseUrl: raw.baseUrl ?? spec.defaultUrl,
+      baseUrl: provider === "lfm3" ? "" : (raw.baseUrl ?? spec.defaultUrl),
       model,
       apiKey: raw.apiKey || "",
       toolsEnabled: raw.toolsEnabled !== false,
@@ -70,9 +79,9 @@ export function loadAssistantSettings() {
     };
   } catch {
     return {
-      provider: "ollama",
-      baseUrl: "http://127.0.0.1:11434/v1",
-      model: "",
+      provider: "lfm3",
+      baseUrl: "",
+      model: LFM3_DEFAULT_MODEL_ID,
       apiKey: "",
       toolsEnabled: true,
       showSteps: true,
@@ -118,7 +127,7 @@ export async function probeModels({ provider, baseUrl, apiKey }) {
   if (provider === "lfm3") {
     return {
       ok: true,
-      models: [LFM3_DEFAULT_MODEL_ID],
+      models: LFM3_MODELS.map((m) => m.id),
     };
   }
 
@@ -240,17 +249,19 @@ export class Lfm3Client {
     }
     if (this.loading) return this.loading;
     const { repo, file } = parseLfm3ModelSpec(modelId);
+    const shortName = modelId === LFM3_PI_MODEL_ID || /pi/i.test(file || repo) ? "LFM3-1.7B-pi" : "LFM3-1.7B";
+    const quantLabel = /QAD/i.test(file || "") ? "QAD Q4_0" : "Q4_K_M";
     this.loading = (async () => {
       try {
         if (typeof navigator === "undefined" || !("gpu" in navigator)) {
-          throw new Error("WebGPU is not available in this browser. Try Chrome/Edge or use Ollama.");
+          throw new Error("WebGPU is not available in this browser. Try Chrome or Edge, or pick another provider in Advanced settings.");
         }
-        this.onStatus({ status: "loading", fraction: 0.02, message: "Loading LFM3 WebGPU runtime…" });
+        this.onStatus({ status: "loading", fraction: 0.02, message: `Loading ${shortName} WebGPU runtime…` });
         const runtimeUrl = new URL(basePath("vendor/Lfm3ForCausalLM.js"), location.href).href;
         const mod = await import(/* @vite-ignore */ runtimeUrl);
         const check = await mod.Lfm3ForCausalLM.checkAvailability(repo, file ? { file } : undefined).catch(() => true);
         if (check && typeof check === "object" && check.ok === false) {
-          throw new Error(check.reason || "This GPU cannot run LFM3-1.7B.");
+          throw new Error(check.reason || `This GPU cannot run ${shortName}.`);
         }
         if (this.session?.dispose) await this.session.dispose();
         if (this.model?.dispose) await this.model.dispose();
@@ -270,7 +281,10 @@ export class Lfm3Client {
             this.onStatus({
               status: "loading",
               fraction,
-              message: p?.status === "weights" ? `Downloading LFM3-1.7B (${pct}%)…` : `Preparing LFM3-1.7B (${pct}%)…`,
+              message:
+                p?.status === "weights"
+                  ? `Downloading ${shortName} (${pct}%)…`
+                  : `Preparing ${shortName} (${pct}%)…`,
             });
           },
         });
@@ -279,7 +293,7 @@ export class Lfm3Client {
         this.onStatus({
           status: "ready",
           fraction: 1,
-          message: `LFM3-1.7B (${file ? "QAD Q4_0" : "Q4_K_M"}) ready on WebGPU`,
+          message: `${shortName} (${quantLabel}) ready on WebGPU`,
         });
       } catch (err) {
         this.session = null;

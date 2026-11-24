@@ -3,7 +3,7 @@
  *
  * Uses the exact same canonical p5comp_* tools exposed over WebMCP and stdio MCP,
  * with native tool-calling across:
- * - Local WebGPU: harness-hub/LFM3-1.7B-pi-GGUF (Pi RL-tuned) and LiquidAI/LFM3-1.7B-GGUF
+ * - Browser WebGPU (default): languel/LFM3-1.7B-pi-GGUF (fused Pi RL-tuned) and LiquidAI/LFM3-1.7B-GGUF
  * - API providers: Ollama, OpenAI-compatible, OpenRouter, Anthropic, and Gemini
  *
  * Emits Pi-vocabulary events (agent_start, turn_start, activity, message_update,

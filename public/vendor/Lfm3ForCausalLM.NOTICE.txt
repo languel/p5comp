@@ -3,7 +3,9 @@ Lfm3ForCausalLM.js: a WebGPU inference runtime for Liquid AI's LFM3 text models 
 Source: https://huggingface.co/spaces/webml-community/LFM3-1.7B-WebGPU-Pi (dist/runtime/Lfm3ForCausalLM.js)
 License of the Space: Apache-2.0. The library includes Hugging Face tokenization and Jinja templating.
 
-Model: LiquidAI/LFM3-1.7B-GGUF. The weights are not bundled: they download on first use from
-Hugging Face and remain subject to their repository's terms (the LFM Open License).
+Default model: languel/LFM3-1.7B-pi-GGUF (LFM3-1.7B-pi-Q4_K_M.gguf), a fused derivative of
+LiquidAI/LFM3-1.7B and harness-hub/LFM3-1.7B-pi. Optional base model: LiquidAI/LFM3-1.7B-GGUF.
+Weights are not bundled: they download on demand from Hugging Face into the browser's Cache API
+and remain subject to the LFM Open License v1.0.
 
-Used by SeloAI's in-app agent, Pi (src/agent/).
+Used by p5comp's embedded Pi agent (sim/assistant/).
