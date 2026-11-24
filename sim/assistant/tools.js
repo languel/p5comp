@@ -28,6 +28,7 @@ export const PI_SMALL_TOOL_NAMES = [
   "p5comp_control_set",
   "p5comp_runtime",
   "p5comp_physics",
+  "p5comp_media_put",
   "p5comp_drawing",
   "p5comp_diagram",
   "p5comp_console",
@@ -88,12 +89,21 @@ export function createAssistantTools(wb) {
     const wires = (d.connections || []).map((c) => `${c[0]}->${c[1]}`);
     const acts = listActuators(d.parts || [], ctx.partElements?.()).map((a) => a.id);
     const phys = wb.physics?.scene;
+    const bodyList = (phys?.bodies || [])
+      .slice(0, 12)
+      .map((b) => `${b.id}:${b.shape}${b.label ? `(${b.label})` : ""}`)
+      .join(", ");
+    const jointList = (phys?.joints || [])
+      .slice(0, 12)
+      .map((j) => `${j.id}:${j.kind}(${j.a || "ground"}↔${j.b || "ground"}${j.actuatorId ? `,act:${j.actuatorId}` : ""})`)
+      .join(", ");
     return [
       `Project: ${wb.name}`,
+      `Files: Arduino=${wb.arduinoName || "sketch.ino"}, p5=${wb.p5Name || "sketch.js"}`,
       `Parts (${parts.length}): ${parts.join(", ") || "none"}`,
       `Wires (${wires.length}): ${wires.slice(0, 14).join(", ") || "none"}${wires.length > 14 ? " …" : ""}`,
       `Actuators: ${acts.join(", ") || "none"}`,
-      `Physics: ${phys?.bodies?.length || 0} bodies, ${phys?.joints?.length || 0} joints`,
+      `Physics: ${phys?.bodies?.length || 0} bodies${bodyList ? ` [${bodyList}]` : ""}, ${phys?.joints?.length || 0} joints${jointList ? ` [${jointList}]` : ""}`,
     ].join("\n");
   }
 
@@ -167,7 +177,37 @@ export function createAssistantTools(wb) {
         const { action, ...rest } = a;
         return { action, settings: rest };
       }
+      if (a.action === "mechanism") {
+        const reserved = new Set(["action", "preset", "actuatorId", "origin", "clear", "params"]);
+        const extra = {};
+        for (const [k, v] of Object.entries(a)) {
+          if (!reserved.has(k)) {
+            extra[k] = v;
+            delete a[k];
+          }
+        }
+        if (Object.keys(extra).length) {
+          a.params = { ...(a.params || {}), ...extra };
+        }
+        return a;
+      }
       return a;
+    }
+    if (tool === "p5comp_media_put" && !a.media && (a.source || a.text || a.content)) {
+      const text = String(a.source || a.text || a.content);
+      const source = a.title ? `## ${a.title}\n\n${text}` : text;
+      return {
+        media: {
+          id: a.id || `note-${Date.now().toString(36)}`,
+          kind: "note",
+          x: Number.isFinite(Number(a.x)) ? Number(a.x) : 40,
+          y: Number.isFinite(Number(a.y)) ? Number(a.y) : -140,
+          width: Number.isFinite(Number(a.width)) ? Number(a.width) : 320,
+          height: Number.isFinite(Number(a.height)) ? Number(a.height) : 160,
+          source,
+          format: "markdown",
+        },
+      };
     }
     if (tool === "p5comp_examples" && !a.path && a.query) {
       try {
@@ -199,12 +239,30 @@ export function createAssistantTools(wb) {
         const value = res?.result ?? res;
         // Keep agent-facing payloads compact so small models don't get truncated mid-object.
         if (tool === "p5comp_catalog" && Array.isArray(value)) {
-          return value.slice(0, 24).map((e) => ({
+          const items = value.slice(0, 24).map((e) => ({
             type: e.type,
             name: e.name,
             group: e.group,
             pins: e.pins,
           }));
+          const q = String(args?.query || "").toLowerCase();
+          const mechMatches = q
+            ? MECHANISM_PRESETS.filter(
+                (m) =>
+                  m.id.includes(q) ||
+                  m.name.toLowerCase().includes(q) ||
+                  m.tagline.toLowerCase().includes(q) ||
+                  /linkage|mechanism|ball|ramp|crank|yoke|cam|ratchet|gear|rack|pinion|piston|slider|spring|hinge/.test(q),
+              ).map((m) => ({ preset: m.id, name: m.name, tagline: m.tagline }))
+            : [];
+          if (mechMatches.length) {
+            return {
+              electronicParts: items,
+              physicsMechanisms: mechMatches,
+              hint: "Physics mechanisms, balls, and ramps are built with p5comp_physics({ action:'demo'|'mechanism'|'batch' }), not p5comp_catalog.",
+            };
+          }
+          return items;
         }
         if (tool === "p5comp_state" && value && typeof value === "object") {
           const d = getDiagram();

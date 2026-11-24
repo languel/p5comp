@@ -9,6 +9,7 @@ import {
 import { ELEMENTS as elementCatalog } from "../elements.js";
 import { basePath } from "../../shared/basePath.js";
 import { validSourceName } from "../projectFiles.js";
+import { defaultServoSweepSketch } from "./physics.js";
 import { renderDiagramSVG } from "../lessonContent.js";
 import { embedComms } from "../commsCode.js";
 export function createAgentAdapter(ctx) {
@@ -246,7 +247,8 @@ export function createAgentAdapter(ctx) {
           }
         });
         let mech = null;
-        if (a.clear) {
+        const mechs = [];
+        if (a.clear || a.physics?.clear) {
           try {
             await ctx.physics?.({ action: "clear" });
           } catch {}
@@ -256,6 +258,31 @@ export function createAgentAdapter(ctx) {
             action: "mechanism",
             preset: a.mechanism.preset,
             ...(a.mechanism.actuatorId ? { actuatorId: a.mechanism.actuatorId } : {}),
+            ...(Array.isArray(a.mechanism.origin) ? { origin: a.mechanism.origin } : {}),
+            ...(a.mechanism.clear ? { clear: true } : {}),
+            ...(a.mechanism.params ? { params: a.mechanism.params } : {}),
+          });
+          if (mech) mechs.push(mech);
+        }
+        for (const m of a.mechanisms || []) {
+          if (!m?.preset) continue;
+          const r = await ctx.physics?.({
+            action: "mechanism",
+            preset: m.preset,
+            ...(m.actuatorId ? { actuatorId: m.actuatorId } : {}),
+            ...(Array.isArray(m.origin) ? { origin: m.origin } : {}),
+            ...(m.clear ? { clear: true } : {}),
+            ...(m.params ? { params: m.params } : {}),
+          });
+          if (r) mechs.push(r);
+        }
+        let physicsBatch = null;
+        if (a.physics && (a.physics.bodies?.length || a.physics.joints?.length || a.physics.gravity)) {
+          physicsBatch = await ctx.physics?.({
+            action: "batch",
+            bodies: a.physics.bodies || [],
+            joints: a.physics.joints || [],
+            ...(a.physics.gravity ? { settings: { gravity: a.physics.gravity } } : {}),
           });
         }
         let runtime = null;
@@ -271,7 +298,9 @@ export function createAgentAdapter(ctx) {
           wires: addedWires.length,
           arduinoUpdated: Boolean(a.arduino),
           p5Updated: Boolean(a.p5),
-          mechanism: mech,
+          mechanism: mech || mechs[0] || null,
+          ...(mechs.length > 1 ? { mechanisms: mechs } : {}),
+          ...(physicsBatch ? { physics: physicsBatch } : {}),
           runtime,
         };
       }
@@ -310,7 +339,24 @@ export function createAgentAdapter(ctx) {
           if (a.name in (p.workbench.files || {})) {
             return { name: a.name, source: p.workbench.files[a.name] };
           }
-          throw Error(`Source file not found: ${a.name}`);
+          // Graceful fallback: small models often pass guessed names like "main" or "sketch".
+          if (lang === "arduino") {
+            return {
+              language: "arduino",
+              name: p.workbench.arduinoName,
+              source: p.arduino || "",
+              note: `Returned active Arduino sketch (${p.workbench.arduinoName}); no separate file named "${a.name}".`,
+            };
+          }
+          if (lang === "p5") {
+            return {
+              language: "p5",
+              name: p.workbench.p5Name,
+              api: p.api,
+              source: p.p5?.[p.api] || "",
+              note: `Returned active p5.js sketch (${p.workbench.p5Name}); no separate file named "${a.name}".`,
+            };
+          }
         }
         return {
           ...(lang === "all" || lang === "arduino"
@@ -503,7 +549,77 @@ export function createAgentAdapter(ctx) {
         });
       }
       if (op === "drawing") return ctx.drawing(a);
-      if (op === "physics") return ctx.physics(a);
+      if (op === "physics") {
+        if (a.action === "demo") {
+          const pin = Number.isFinite(Number(a.pin)) ? Number(a.pin) : 9;
+          const actType = a.actuator === "gear-motor" ? "p5comp-gear-motor" : "wokwi-servo";
+          const actId = a.actuatorId || (actType === "wokwi-servo" ? "servo1" : "motor1");
+          await edit((p) => {
+            if (a.clear !== false) {
+              const board = p.diagram.parts.find((x) => x.type.startsWith("wokwi-arduino-")) || {
+                id: "board",
+                type: "wokwi-arduino-uno",
+                left: 0,
+                top: 80,
+                attrs: {},
+              };
+              p.diagram.parts = [
+                board,
+                { id: actId, type: actType, left: 320, top: 120, attrs: {} },
+              ];
+              p.diagram.connections =
+                actType === "wokwi-servo"
+                  ? [
+                      [`${board.id}:5V`, `${actId}:V+`, "#c45b4a", []],
+                      [`${board.id}:GND.1`, `${actId}:GND`, "#242625", []],
+                      [`${board.id}:${pin}`, `${actId}:PWM`, "#4e8da6", []],
+                    ]
+                  : [
+                      [`${board.id}:${pin}`, `${actId}:+`, "#c45b4a", []],
+                      [`${board.id}:GND.1`, `${actId}:-`, "#242625", []],
+                    ];
+              p.arduino = defaultServoSweepSketch(pin);
+              p.artifact = null;
+            }
+          });
+          const mech = await ctx.physics({
+            action: "mechanism",
+            preset: a.preset || "crank-slider",
+            actuatorId: actId,
+            clear: a.clear !== false,
+            ...(a.addArena ? { addArena: true } : {}),
+            ...(a.params ? { params: a.params } : {}),
+          });
+          let noteId = null;
+          if (a.note) {
+            const noteText = typeof a.note === "string" ? a.note : mech.explanation || `## ${mech.name}\n\n${mech.tagline}`;
+            noteId = `note-${mech.mechanism}`;
+            await edit((p) => {
+              p.workbench.references = (p.workbench.references || []).filter((r) => r.id !== noteId);
+              p.workbench.references.push({
+                id: noteId,
+                kind: "note",
+                x: 20,
+                y: -155,
+                width: 340,
+                height: 150,
+                source: noteText,
+                format: "markdown",
+              });
+            });
+          }
+          let runtime = null;
+          if (a.run !== false) {
+            try {
+              runtime = await ctx.runtime?.("start");
+            } catch (err) {
+              runtime = { running: false, error: err.message };
+            }
+          }
+          return { ...mech, actuatorId: actId, pin, noteId, runtime };
+        }
+        return ctx.physics(a);
+      }
       if (op === "assistant") return ctx.assistant(a);
       if (op === "view") return ctx.view(a);
       if (op === "examples") {
