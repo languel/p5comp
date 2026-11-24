@@ -363,9 +363,11 @@ export function mountAssistantPanel(root, wb, { settingsHost = null, openSetting
       }
       customModelRow.hidden = true;
       settings.model = v;
+      settings.modelManual = true;
       customModelInput.value = v;
       saveAssistantSettings(settings);
       updateModelPill();
+      syncConfigVisibility();
     },
   });
 
@@ -887,6 +889,7 @@ export function mountAssistantPanel(root, wb, { settingsHost = null, openSetting
     settings.provider = spec.id;
     settings.baseUrl = spec.defaultUrl;
     settings.model = modelId || spec.defaultModel;
+    settings.modelManual = Boolean(modelId);
     providerSelect.value = spec.id;
     urlInput.value = settings.baseUrl;
     saveAssistantSettings(settings);
@@ -903,20 +906,20 @@ export function mountAssistantPanel(root, wb, { settingsHost = null, openSetting
       onclick: () => {
         showPopupMenu(modelPillBtn, [
           {
-            label: "LFM3-1.7B-pi (Browser WebGPU)",
-            meta: settings.provider === "lfm3" && settings.model === LFM3_PI_MODEL_ID ? "✓" : "Default",
-            hint: "Pi-tuned LFM3-1.7B downloaded from Hugging Face and cached in your browser",
-            onClick: () => switchProviderQuick("lfm3", LFM3_PI_MODEL_ID),
-          },
-          {
             label: "LFM3-VL-2B-pi Vision (Browser WebGPU)",
-            meta: settings.provider === "lfm3" && settings.model === LFM3_VL_PI_MODEL_ID ? "✓" : "Vision+Pi",
+            meta: settings.provider === "lfm3" && settings.model === LFM3_VL_PI_MODEL_ID ? "✓" : "Default",
             hint: "Multimodal Pi-tuned LFM3-VL-2B ONNX — inspects attached canvas PNGs and photos",
             onClick: () => switchProviderQuick("lfm3", LFM3_VL_PI_MODEL_ID),
           },
           {
+            label: "LFM3-1.7B-pi Text (Browser WebGPU)",
+            meta: settings.provider === "lfm3" && settings.model === LFM3_PI_MODEL_ID ? "✓" : "Fast",
+            hint: "Faster text-only Pi-tuned LFM3-1.7B GGUF (~1.1 GB)",
+            onClick: () => switchProviderQuick("lfm3", LFM3_PI_MODEL_ID),
+          },
+          {
             label: "LFM3-VL-2B Base Vision (Browser WebGPU)",
-            meta: settings.provider === "lfm3" && settings.model === LFM3_VL_BASE_MODEL_ID ? "✓" : "Vision",
+            meta: settings.provider === "lfm3" && settings.model === LFM3_VL_BASE_MODEL_ID ? "✓" : "Base VL",
             hint: "Base LFM3-VL-2B ONNX on WebGPU",
             onClick: () => switchProviderQuick("lfm3", LFM3_VL_BASE_MODEL_ID),
           },
@@ -1159,17 +1162,29 @@ export function mountAssistantPanel(root, wb, { settingsHost = null, openSetting
           ),
         );
       }
-      if (msg.thinking?.trim()) {
-        node.append(
-          el(
-            "details",
-            { class: "assist-think" },
-            el("summary", {}, "Thought"),
-            el("div", { class: "assist-think-body" }, msg.thinking.trim()),
-          ),
+      if (msg.thinking?.trim() || msg.thinkingLive) {
+        const cleanThought = (msg.thinking || "").trim();
+        const liveTail = cleanThought.replace(/\s+/g, " ").slice(-110).trim();
+        const summaryLabel = msg.thinkingLive
+          ? liveTail
+            ? `Thinking: ${liveTail}`
+            : "Thinking…"
+          : "Thought";
+        const details = el(
+          "details",
+          {
+            class: `assist-think${msg.thinkingLive ? " is-live" : ""}`,
+            open: Boolean(msg.thinkOpen),
+            ontoggle: () => {
+              msg.thinkOpen = details.open;
+            },
+          },
+          el("summary", { class: "assist-think-summary" }, summaryLabel),
+          el("div", { class: "assist-think-body" }, cleanThought || "…"),
         );
+        node.append(details);
       }
-      if (msg.content) {
+      if (msg.content && !(msg.pending && msg.thinkingLive && msg.content === "Thinking…")) {
         if (msg.role === "assistant" && !msg.pending && !msg.error) {
           const md = el("div", { class: "assist-md" });
           md.innerHTML = lessonHTML(msg.content, "markdown");
@@ -1425,7 +1440,7 @@ export function mountAssistantPanel(root, wb, { settingsHost = null, openSetting
 
     abortCtrl = new AbortController();
     setRunningUI(true);
-    setChatStatus(`Running ${settings.model || settings.provider}…`);
+    setChatStatus("");
 
     try {
       if (settings.toolsEnabled && settings.agentMode !== "json") {
@@ -1441,23 +1456,27 @@ export function mountAssistantPanel(root, wb, { settingsHost = null, openSetting
           (ev) => {
             if (ev.type === "turn_start") {
               thoughts = "";
-              setChatStatus(`Pi round ${ev.round} · ${settings.model || settings.provider}…`);
+              pendingMsg.thinkingLive = true;
+              renderChat();
             } else if (ev.type === "activity") {
               if (ev.activity.kind === "reading") {
-                setChatStatus(`Reading context (${Math.round(ev.activity.fraction * 100)}%)…`);
+                pendingMsg.thinkingLive = true;
+                if (!thoughts) pendingMsg.thinking = `Reading context (${Math.round(ev.activity.fraction * 100)}%)…`;
+                renderChat();
               } else if (ev.activity.kind === "thinking") {
                 thoughts += ev.activity.delta;
                 pendingMsg.thinking = thoughts;
-                const tail = thoughts.slice(-160).replace(/\s+/g, " ").trim().split(" ").slice(-8).join(" ");
-                setChatStatus(tail ? `Thinking: ${tail}` : "Thinking…");
+                pendingMsg.thinkingLive = true;
+                renderChat();
               }
             } else if (ev.type === "message_update") {
               streamed += ev.delta;
               pendingMsg.content = streamed;
               pendingMsg.pending = false;
-              setChatStatus("Writing…");
+              pendingMsg.thinkingLive = false;
               renderChat();
             } else if (ev.type === "message_end") {
+              pendingMsg.thinkingLive = false;
               if (ev.message.content?.trim()) {
                 streamed = ev.message.content;
                 pendingMsg.content = streamed;
@@ -1465,7 +1484,9 @@ export function mountAssistantPanel(root, wb, { settingsHost = null, openSetting
                 renderChat();
               }
             } else if (ev.type === "tool_execution_start") {
-              setChatStatus(`Running ${ev.label}…`);
+              pendingMsg.thinkingLive = true;
+              pendingMsg.thinking = `${thoughts ? `${thoughts}\n` : ""}Running ${ev.label}…`;
+              renderChat();
             } else if (ev.type === "tool_execution_end") {
               pendingMsg.steps.push({
                 tool: ev.label,
@@ -1476,6 +1497,7 @@ export function mountAssistantPanel(root, wb, { settingsHost = null, openSetting
               renderChat();
             } else if (ev.type === "agent_end") {
               pendingMsg.pending = false;
+              pendingMsg.thinkingLive = false;
               if (ev.reason === "error") {
                 pendingMsg.content = ev.error || "Pi agent error";
                 pendingMsg.error = true;
@@ -1556,22 +1578,25 @@ export function mountAssistantPanel(root, wb, { settingsHost = null, openSetting
             streamed += delta;
             pendingMsg.content = streamed;
             pendingMsg.pending = false;
-            setChatStatus("Writing…");
+            pendingMsg.thinkingLive = false;
             renderChat();
           },
           onActivity: (act) => {
             if (act.kind === "reading") {
-              setChatStatus(`Reading context (${Math.round(act.fraction * 100)}%)…`);
+              pendingMsg.thinkingLive = true;
+              if (!thoughts) pendingMsg.thinking = `Reading context (${Math.round(act.fraction * 100)}%)…`;
+              renderChat();
             } else if (act.kind === "thinking") {
               thoughts += act.delta;
               pendingMsg.thinking = thoughts;
-              const tail = thoughts.slice(-160).replace(/\s+/g, " ").trim().split(" ").slice(-8).join(" ");
-              setChatStatus(tail ? `Thinking: ${tail}` : "Thinking…");
+              pendingMsg.thinkingLive = true;
+              renderChat();
             }
           },
         });
         pendingMsg.content = reply || streamed;
         pendingMsg.pending = false;
+        pendingMsg.thinkingLive = false;
         setChatStatus("");
       }
     } catch (err) {

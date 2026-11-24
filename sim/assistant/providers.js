@@ -13,10 +13,10 @@ export { LFM3_VL_PI_MODEL_ID, LFM3_VL_BASE_MODEL_ID, isOnnxVlModelId };
 export const LFM3_PI_MODEL_ID = "languel/LFM3-1.7B-pi-GGUF::LFM3-1.7B-pi-Q4_K_M.gguf";
 export const LFM3_BASE_MODEL_ID = "LiquidAI/LFM3-1.7B-GGUF";
 export const LFM3_QAD_MODEL_ID = "LiquidAI/LFM3-1.7B-GGUF::LFM3-1.7B-QAD-Q4_0.gguf";
-export const LFM3_DEFAULT_MODEL_ID = LFM3_PI_MODEL_ID;
+export const LFM3_DEFAULT_MODEL_ID = LFM3_VL_PI_MODEL_ID;
 export const LFM3_MODELS = [
-  { id: LFM3_PI_MODEL_ID, label: "LFM3-1.7B-pi · Q4_K_M (HF WebGPU · Recommended)" },
-  { id: LFM3_VL_PI_MODEL_ID, label: "LFM3-VL-2B-pi · Vision (HF WebGPU ONNX)" },
+  { id: LFM3_VL_PI_MODEL_ID, label: "LFM3-VL-2B-pi · Vision (HF WebGPU · Recommended)" },
+  { id: LFM3_PI_MODEL_ID, label: "LFM3-1.7B-pi · Fast Text (HF WebGPU)" },
   { id: LFM3_VL_BASE_MODEL_ID, label: "LFM3-VL-2B · Base Vision (HF WebGPU ONNX)" },
   { id: LFM3_BASE_MODEL_ID, label: "LFM3-1.7B · Q4_K_M (HF WebGPU)" },
   { id: LFM3_QAD_MODEL_ID, label: "LFM3-1.7B · QAD Q4_0 (HF WebGPU)" },
@@ -55,11 +55,12 @@ export function loadAssistantSettings() {
       provider = "lfm3";
     }
     const spec = ASSISTANT_PROVIDERS.find((p) => p.id === provider);
-    // Migrate any stale LFM2.5, text-only ONNX, LoRA-only, or local-only /models/... id to the HF-hosted fused Pi GGUF.
+    // Migrate any stale LFM2.5, text-only ONNX, LoRA-only, local-only /models/..., or non-manual default to LFM3-VL-2B-pi.
     let model = raw.model || spec.defaultModel;
     if (
       provider === "lfm3" &&
       (!model ||
+        !raw.modelManual ||
         model.includes("LFM2.5") ||
         (model.includes("ONNX") && !isOnnxVlModelId(model)) ||
         model.includes("harness-hub/LFM3-1.7B-pi") ||
@@ -71,6 +72,7 @@ export function loadAssistantSettings() {
       provider,
       baseUrl: provider === "lfm3" ? "" : (raw.baseUrl ?? spec.defaultUrl),
       model,
+      modelManual: Boolean(raw.modelManual),
       apiKey: raw.apiKey || "",
       toolsEnabled: raw.toolsEnabled !== false,
       showSteps: raw.showSteps !== false,

@@ -106,12 +106,13 @@ test("canonical MCP/WebMCP TOOLS include physics, rewind, and assistant view, an
   assert.ok(runtime.inputSchema.properties.action.enum.includes("rewind"));
   const view = TOOLS.find((t) => t.name === "p5comp_view");
   assert.ok(view.inputSchema.properties.inspector.enum.includes("assistant"));
-  assert.equal(LFM3_DEFAULT_MODEL_ID, LFM3_PI_MODEL_ID);
-  assert.equal(LFM3_DEFAULT_MODEL_ID, "languel/LFM3-1.7B-pi-GGUF::LFM3-1.7B-pi-Q4_K_M.gguf");
+  assert.equal(LFM3_DEFAULT_MODEL_ID, LFM3_VL_PI_MODEL_ID);
+  assert.equal(LFM3_DEFAULT_MODEL_ID, "languel/LFM3-VL-2B-pi-ONNX");
   assert.ok(LFM3_MODELS.some((m) => m.id === LFM3_DEFAULT_MODEL_ID));
+  assert.ok(LFM3_MODELS.some((m) => m.id === LFM3_PI_MODEL_ID));
   assert.ok(LFM3_MODELS.some((m) => m.id === LFM3_BASE_MODEL_ID));
   assert.ok(LFM3_MODELS.some((m) => m.id === LFM3_QAD_MODEL_ID));
-  assert.deepEqual(parseLfm3ModelSpec(LFM3_DEFAULT_MODEL_ID), {
+  assert.deepEqual(parseLfm3ModelSpec(LFM3_PI_MODEL_ID), {
     repo: "languel/LFM3-1.7B-pi-GGUF",
     file: "LFM3-1.7B-pi-Q4_K_M.gguf",
   });

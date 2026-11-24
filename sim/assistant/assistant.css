@@ -289,25 +289,26 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 0;
+  border: 1px solid var(--ui-line, rgba(128, 136, 134, 0.35));
   border-radius: 50%;
-  background: var(--ui-text, #e6e8e6);
-  color: var(--ui-page, #1c1d1c);
+  background: var(--ui-hover, rgba(128, 136, 134, 0.14));
+  color: var(--ui-text, inherit);
   cursor: pointer;
   flex: none;
   padding: 0;
+  transition: background 0.12s ease, border-color 0.12s ease;
 }
 
 .assist-compose-send:hover {
-  background: var(--ui-text, #e6e8e6);
-  color: var(--ui-page, #1c1d1c);
-  opacity: 0.85;
+  background: var(--ui-line, rgba(128, 136, 134, 0.28));
+  color: var(--ui-text, inherit);
 }
 
 .assist-compose-send.stop,
 .assist-compose-send.stop:hover {
-  background: #c45b4a;
-  color: #fff;
+  background: rgba(196, 91, 74, 0.2);
+  border-color: rgba(196, 91, 74, 0.48);
+  color: #d67666;
 }
 
 /* Floating attach / more popup menu */
@@ -522,41 +523,51 @@
 }
 .assist-webgpu-btn {
   font-size: 11px;
-  padding: 3px 9px;
+  padding: 3px 10px;
   border-radius: 999px;
-  border: 0;
-  background: var(--ui-text, #e6e8e6);
-  color: var(--ui-page, #1c1d1c);
+  border: 1px solid var(--ui-line, rgba(128, 136, 134, 0.35));
+  background: var(--ui-hover, rgba(128, 136, 134, 0.14));
+  color: var(--ui-text, inherit);
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
+  transition: background 0.12s ease, border-color 0.12s ease;
 }
 .assist-webgpu-btn:hover:not(:disabled) {
-  background: var(--ui-text, #e6e8e6);
-  color: var(--ui-page, #1c1d1c);
-  opacity: 0.85;
+  background: var(--ui-line, rgba(128, 136, 134, 0.28));
+  color: var(--ui-text, inherit);
 }
 .assist-webgpu-btn:disabled,
 .assist-webgpu-btn:disabled:hover {
-  background: var(--ui-text, #e6e8e6);
-  color: var(--ui-page, #1c1d1c);
-  opacity: 0.5;
+  background: var(--ui-hover, rgba(128, 136, 134, 0.1));
+  color: var(--ui-muted, #8e9693);
+  border-color: var(--ui-line, rgba(128, 136, 134, 0.22));
   cursor: default;
 }
 
-/* Collapsible reasoning trace */
+/* Collapsible reasoning trace — single running line when minimized */
 .assist-think {
   margin-bottom: 5px;
   border-left: 2px solid var(--ui-line, rgba(128, 136, 134, 0.35));
   padding-left: 8px;
   font-size: 11px;
   color: var(--ui-muted, #8e9693);
+  max-width: 100%;
+  min-width: 0;
 }
 .assist-think > summary {
   cursor: pointer;
   user-select: none;
-  font-size: 10.5px;
-  letter-spacing: 0.02em;
+  font-size: 11px;
+  letter-spacing: 0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+.assist-think.is-live > summary {
+  color: var(--ui-text, inherit);
+  opacity: 0.78;
 }
 .assist-think-body {
   margin-top: 4px;
