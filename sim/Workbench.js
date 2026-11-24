@@ -6,6 +6,7 @@ import {fetchJSON} from "../shared/loadJSON.js";
 import communicationsGuide from "../docs/arduino-p5-communications.md?raw";
 import foundationGuide from "../docs/electronics-foundations.md?raw";
 import diyGuide from "../docs/diy-elements.md?raw";
+import assistantGuide from "../docs/assistant.md?raw";
 import {releaseReferenceStream} from "./selectionDeletion.js";
 import { installSceneMedia, decorateMedia } from "./sceneMedia.js";
 import { installSketchLibraries } from "./SketchLibrary.js";
@@ -258,37 +259,76 @@ export class Workbench {
     this.editorPanel
       .querySelector('[data-pane="help"]')
       .append(document.querySelector(".part-docs"));
-    const guide = node("details", "diy-guide");
-    guide.innerHTML = '<summary>Make your own element</summary>';
-    const guideBody = node("div", "lesson-note");
-    guideBody.innerHTML = lessonHTML(diyGuide, "markdown");
-    const openPresets=node("button", "", "Open component preset editor");
-    openPresets.type="button";
-    openPresets.onclick=()=>this.editComponents();
-    guide.append(openPresets,guideBody);
-    const electronicsGuide=node("details","diy-guide");
-    electronicsGuide.innerHTML='<summary>Electronics foundations and audio</summary>';
-    const electronicsBody=node("div","lesson-note");
-    electronicsBody.innerHTML=lessonHTML(foundationGuide,"markdown");
-    electronicsGuide.append(electronicsBody);
-    const commsGuide = node("details", "diy-guide");
-    commsGuide.append(node("summary", "", "Arduino ↔ p5 communications"));
-    const commsBody = node("div", "lesson-note");
-    commsBody.innerHTML = lessonHTML(communicationsGuide, "markdown");
-    for (const link of commsBody.querySelectorAll('a[href^="../public/"]')) {
-      link.href = basePath(link.getAttribute("href").slice("../public/".length));
-      link.setAttribute("download", "");
-    }
-    commsGuide.append(commsBody);
-    const gettingStarted = node("details", "diy-guide");
-    gettingStarted.append(node("summary", "", "Getting started · signals to feedback"));
-    const gettingStartedBody = node("div", "lesson-note");
-    gettingStartedBody.innerHTML = lessonHTML(gettingStartedGuide, "markdown");
+    const helpHome = this.editorPanel.querySelector("#helpHome");
+    helpHome.innerHTML = `
+      <div class="help-hero">
+        <div class="help-hero-title">Help &amp; Guides</div>
+        <p class="help-hero-sub">Select any component and press <kbd>?</kbd> to view its datasheet and pinout.</p>
+      </div>
+      <section class="help-shortcuts" aria-label="Keyboard shortcuts">
+        <div class="help-section-label">Shortcuts</div>
+        <div class="help-kbd-grid">
+          <div class="help-kbd-row"><span><kbd>⌘/Ctrl</kbd> <kbd>Enter</kbd></span><span>Run Arduino</span></div>
+          <div class="help-kbd-row"><span><kbd>⌘/Ctrl</kbd> <kbd>.</kbd></span><span>Stop / rewind</span></div>
+          <div class="help-kbd-row"><span><kbd>A</kbd></span><span>Add component</span></div>
+          <div class="help-kbd-row"><span><kbd>W</kbd></span><span>Connect pins</span></div>
+          <div class="help-kbd-row"><span><kbd>M</kbd> / <kbd>⇧M</kbd></span><span>Physics brush / cycle</span></div>
+          <div class="help-kbd-row"><span><kbd>J</kbd> / <kbd>⇧J</kbd></span><span>Constraint / cycle</span></div>
+          <div class="help-kbd-row"><span><kbd>+</kbd> / <kbd>⇧=</kbd></span><span>Mechanism / cycle</span></div>
+          <div class="help-kbd-row"><span><kbd>D</kbd></span><span>Draw &amp; Physics layer</span></div>
+          <div class="help-kbd-row"><span><kbd>Space</kbd> + drag</span><span>Pan canvas</span></div>
+          <div class="help-kbd-row"><span><kbd>⇧</kbd> + click wire</span><span>Add wire bend</span></div>
+        </div>
+      </section>
+      <div class="help-section-label">Guides</div>
+    `;
+
+    const makeGuideCard = (title, tag, markdown, actionBtn = null) => {
+      const card = node("details", "diy-guide help-guide");
+      const summary = node("summary", "help-guide-summary");
+      summary.append(
+        node("span", "help-guide-title", title),
+        tag ? node("span", "help-guide-tag", tag) : "",
+      );
+      const bodyWrap = node("div", "help-guide-body");
+      if (actionBtn) {
+        actionBtn.classList.add("help-action-btn");
+        bodyWrap.append(actionBtn);
+      }
+      const body = node("div", "lesson-note");
+      body.innerHTML = lessonHTML(markdown, "markdown");
+      for (const link of body.querySelectorAll('a[href^="../public/"]')) {
+        link.href = basePath(link.getAttribute("href").slice("../public/".length));
+        link.setAttribute("download", "");
+      }
+      bodyWrap.append(body);
+      card.append(summary, bodyWrap);
+      return card;
+    };
+
+    const openAssistantBtn = node("button", "", "Open Chat Assistant");
+    openAssistantBtn.type = "button";
+    openAssistantBtn.onclick = () => this.tab("assistant");
+    const assistantHelp = makeGuideCard("AI Assistant & WebGPU Pi Agent", "Vision · Local", assistantGuide, openAssistantBtn);
+
     const loadLesson = node("button", "", "Load guided replay");
+    loadLesson.type = "button";
     loadLesson.title = "Load the lesson's starting project; save your current work first";
     loadLesson.onclick = () => document.dispatchEvent(new Event("p5comp:load-getting-started"));
-    gettingStarted.append(loadLesson, gettingStartedBody);
-    this.editorPanel.querySelector("#helpHome").append(gettingStarted,commsGuide,guide,electronicsGuide);
+    const gettingStarted = makeGuideCard("Getting started · signals to feedback", "Lesson", gettingStartedGuide, loadLesson);
+
+    const commsGuide = makeGuideCard("Arduino ↔ p5 communications", "Serial", communicationsGuide);
+
+    const openPresets = node("button", "", "Open component preset editor");
+    openPresets.type = "button";
+    openPresets.onclick = () => this.editComponents();
+    const guide = makeGuideCard("Make your own element", "Custom", diyGuide, openPresets);
+
+    const electronicsGuide = makeGuideCard("Electronics foundations & audio", "Analog", foundationGuide);
+
+    const guidesList = node("div", "help-guides");
+    guidesList.append(assistantHelp, gettingStarted, commsGuide, guide, electronicsGuide);
+    helpHome.append(guidesList);
     $("code").hidden = true;
     main.append(this.editorPanel);
     const settingsButton = this.editorPanel.querySelector(
