@@ -7,13 +7,17 @@ import { physicsCommand } from "../sim/automation/physics.js";
 import { createEmptyPhysicsScene } from "../sim/physics/model.js";
 import {
   LFM3_PI_MODEL_ID,
+  LFM3_VL_PI_MODEL_ID,
+  LFM3_VL_BASE_MODEL_ID,
   LFM3_BASE_MODEL_ID,
   LFM3_DEFAULT_MODEL_ID,
   LFM3_QAD_MODEL_ID,
   LFM3_MODELS,
+  isOnnxVlModelId,
   parseLfm3ModelSpec,
   loadAssistantSettings,
 } from "../sim/assistant/providers.js";
+import { parseLfm3ToolOutput, formatVlMessages } from "../sim/assistant/lfm3VlClient.js";
 
 test("parseReply handles clean JSON, markdown fences, thinking tags, and truncated small-model JSON", () => {
   const clean = parseReply('{"say":"Added LED.","actions":[{"tool":"add_part","args":{"type":"wokwi-led"}}],"done":true}');
@@ -122,6 +126,30 @@ test("canonical MCP/WebMCP TOOLS include physics, rewind, and assistant view, an
   assert.equal(defaults.model, LFM3_DEFAULT_MODEL_ID);
   assert.equal(defaults.agentMode, "pi");
   assert.equal(defaults.toolsEnabled, true);
+  assert.ok(LFM3_MODELS.some((m) => m.id === LFM3_VL_PI_MODEL_ID));
+  assert.ok(LFM3_MODELS.some((m) => m.id === LFM3_VL_BASE_MODEL_ID));
+  assert.equal(isOnnxVlModelId(LFM3_VL_PI_MODEL_ID), true);
+  assert.equal(isOnnxVlModelId(LFM3_VL_BASE_MODEL_ID), true);
+  assert.equal(isOnnxVlModelId(LFM3_PI_MODEL_ID), false);
+});
+
+test("Lfm3VlClient parses LFM3-VL XML tool calls, reasoning, and multimodal image messages", () => {
+  const parsed = parseLfm3ToolOutput(
+    'Plan circuit first</think>\nAdding an LED now.\n<tool_call>\n<function=p5comp_build>\n<parameter=clear>\ntrue\n</parameter>\n<parameter=parts>\n[{"type":"wokwi-led","id":"led1"}]\n</parameter>\n</function>\n</tool_call><|im_end|>',
+    { startedInThink: true },
+  );
+  assert.equal(parsed.thinking, "Plan circuit first");
+  assert.equal(parsed.content, "Adding an LED now.");
+  assert.equal(parsed.tool_calls.length, 1);
+  assert.equal(parsed.tool_calls[0].function.name, "p5comp_build");
+  assert.equal(parsed.tool_calls[0].function.arguments.clear, true);
+  assert.deepEqual(parsed.tool_calls[0].function.arguments.parts, [{ type: "wokwi-led", id: "led1" }]);
+
+  const { messages, imageUrls } = formatVlMessages([
+    { role: "user", content: "What is wired to pin 13?", images: [{ dataUrl: "data:image/png;base64,AAA", label: "canvas.png" }] },
+  ]);
+  assert.deepEqual(imageUrls, ["data:image/png;base64,AAA"]);
+  assert.deepEqual(messages[0].content, [{ type: "image" }, { type: "text", text: "What is wired to pin 13?" }]);
 });
 
 test("physicsCommand creates bodies, joints, mechanisms, and reads physics state", async () => {

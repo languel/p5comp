@@ -7,13 +7,17 @@
  */
 
 import { basePath } from "../../shared/basePath.js";
+import { Lfm3VlClient, LFM3_VL_PI_MODEL_ID, LFM3_VL_BASE_MODEL_ID, isOnnxVlModelId } from "./lfm3VlClient.js";
 
+export { LFM3_VL_PI_MODEL_ID, LFM3_VL_BASE_MODEL_ID, isOnnxVlModelId };
 export const LFM3_PI_MODEL_ID = "languel/LFM3-1.7B-pi-GGUF::LFM3-1.7B-pi-Q4_K_M.gguf";
 export const LFM3_BASE_MODEL_ID = "LiquidAI/LFM3-1.7B-GGUF";
 export const LFM3_QAD_MODEL_ID = "LiquidAI/LFM3-1.7B-GGUF::LFM3-1.7B-QAD-Q4_0.gguf";
 export const LFM3_DEFAULT_MODEL_ID = LFM3_PI_MODEL_ID;
 export const LFM3_MODELS = [
   { id: LFM3_PI_MODEL_ID, label: "LFM3-1.7B-pi · Q4_K_M (HF WebGPU · Recommended)" },
+  { id: LFM3_VL_PI_MODEL_ID, label: "LFM3-VL-2B-pi · Vision (HF WebGPU ONNX)" },
+  { id: LFM3_VL_BASE_MODEL_ID, label: "LFM3-VL-2B · Base Vision (HF WebGPU ONNX)" },
   { id: LFM3_BASE_MODEL_ID, label: "LFM3-1.7B · Q4_K_M (HF WebGPU)" },
   { id: LFM3_QAD_MODEL_ID, label: "LFM3-1.7B · QAD Q4_0 (HF WebGPU)" },
 ];
@@ -51,13 +55,13 @@ export function loadAssistantSettings() {
       provider = "lfm3";
     }
     const spec = ASSISTANT_PROVIDERS.find((p) => p.id === provider);
-    // Migrate any stale ONNX, LoRA-only, or local-only /models/... id to the HF-hosted fused Pi GGUF.
+    // Migrate any stale LFM2.5, text-only ONNX, LoRA-only, or local-only /models/... id to the HF-hosted fused Pi GGUF.
     let model = raw.model || spec.defaultModel;
     if (
       provider === "lfm3" &&
       (!model ||
         model.includes("LFM2.5") ||
-        model.includes("ONNX") ||
+        (model.includes("ONNX") && !isOnnxVlModelId(model)) ||
         model.includes("harness-hub/LFM3-1.7B-pi") ||
         model.startsWith("/models/"))
     ) {
@@ -238,11 +242,24 @@ export class Lfm3Client {
     this.onStatus = onStatus;
     this.model = null;
     this.session = null;
+    this.vl = new Lfm3VlClient(onStatus);
     this.readyModel = "";
     this.loading = null;
   }
 
   async load(modelId = LFM3_DEFAULT_MODEL_ID) {
+    if (isOnnxVlModelId(modelId)) {
+      if (this.session?.dispose) await Promise.resolve(this.session.dispose()).catch(() => {});
+      if (this.model?.dispose) await Promise.resolve(this.model.dispose()).catch(() => {});
+      this.session = null;
+      this.model = null;
+      this.loading = this.vl.load(modelId).then(() => {
+        this.readyModel = modelId;
+      }).finally(() => {
+        this.loading = null;
+      });
+      return this.loading;
+    }
     if (this.session && this.readyModel === modelId) {
       this.onStatus({ status: "ready", fraction: 1, message: "LFM3-1.7B ready on WebGPU" });
       return;
@@ -308,19 +325,23 @@ export class Lfm3Client {
   }
 
   get ready() {
-    return Boolean(this.session);
+    return Boolean(this.session || this.vl.ready);
   }
 
   resetSession() {
     if (this.session?.dispose) void Promise.resolve(this.session.dispose()).catch(() => {});
     this.session = this.model ? this.model.create_session() : null;
+    this.vl.resetSession();
   }
 
   async generate(messages, { modelId = LFM3_DEFAULT_MODEL_ID, onChunk, onActivity, signal } = {}) {
+    if (isOnnxVlModelId(modelId)) {
+      return this.vl.generate(messages, { modelId, onChunk, onActivity, signal });
+    }
     if (!this.session || this.readyModel !== modelId) {
       await this.load(modelId);
     }
-    const gen = this.session.generate(messages, {
+    const gen = this.session.generate(sanitizeTextOnlyMessages(messages), {
       max_new_tokens: 4096,
       do_sample: false,
       signal,
@@ -336,8 +357,11 @@ export class Lfm3Client {
     return res?.message?.content || "";
   }
 
-  /** Native Pi tool-calling turn on WebGPU (LiquidAI/LFM3-1.7B-GGUF Q4_K_M or QAD-Q4_0). */
+  /** Native Pi tool-calling turn on WebGPU (GGUF via Lfm3ForCausalLM or Vision ONNX via Transformers.js v4). */
   async completeWithTools(messages, tools = [], { modelId = LFM3_DEFAULT_MODEL_ID, onText, onActivity, signal } = {}) {
+    if (isOnnxVlModelId(modelId)) {
+      return this.vl.completeWithTools(messages, tools, { modelId, onText, onActivity, signal });
+    }
     if (!this.session || this.readyModel !== modelId) {
       await this.load(modelId);
     }
@@ -415,7 +439,7 @@ function splitDataUrl(dataUrl, fallbackMime = "image/png") {
 export async function completeChat(settings, messages, { lfm3, onChunk, onActivity, signal } = {}) {
   const { provider, baseUrl, model, apiKey } = settings;
   if (provider === "lfm3") {
-    return lfm3.generate(sanitizeTextOnlyMessages(messages), { modelId: model || LFM3_DEFAULT_MODEL_ID, onChunk, onActivity, signal });
+    return lfm3.generate(messages, { modelId: model || LFM3_DEFAULT_MODEL_ID, onChunk, onActivity, signal });
   }
 
   if (!model) throw new Error("No model selected. Click ↻ to load available models.");

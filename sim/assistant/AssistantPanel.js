@@ -13,10 +13,13 @@ import { lessonHTML, renderDiagramSVG } from "../lessonContent.js";
 import {
   ASSISTANT_PROVIDERS,
   LFM3_PI_MODEL_ID,
+  LFM3_VL_PI_MODEL_ID,
+  LFM3_VL_BASE_MODEL_ID,
   LFM3_BASE_MODEL_ID,
   LFM3_DEFAULT_MODEL_ID,
   LFM3_QAD_MODEL_ID,
   LFM3_MODELS,
+  isOnnxVlModelId,
   loadAssistantSettings,
   saveAssistantSettings,
   probeModels,
@@ -243,10 +246,18 @@ export function mountAssistantPanel(root, wb, { settingsHost = null, openSetting
     const targetId = settings.model || LFM3_DEFAULT_MODEL_ID;
     const loaded = lfm3.ready && lfm3.readyModel === targetId;
     chatWebgpuBanner.hidden = !isLfm || loaded;
-    const shortName = targetId === LFM3_PI_MODEL_ID ? "LFM3-1.7B-pi" : "LFM3-1.7B";
+    const isVl = isOnnxVlModelId(targetId);
+    const shortName = isVl
+      ? /pi/i.test(targetId)
+        ? "LFM3-VL-2B-pi"
+        : "LFM3-VL-2B (Vision)"
+      : targetId === LFM3_PI_MODEL_ID
+        ? "LFM3-1.7B-pi"
+        : "LFM3-1.7B";
+    const sizeLabel = isVl ? "~1.5 GB" : "~1.1 GB";
     if (!lfm3.loading) {
       chatWebgpuLoadBtn.disabled = false;
-      chatWebgpuLoadBtn.textContent = "Load (~1.1 GB)";
+      chatWebgpuLoadBtn.textContent = `Load (${sizeLabel})`;
       chatWebgpuNote.textContent = `${shortName} · downloads once & stays cached`;
       chatWebgpuProgress.hidden = true;
     }
@@ -324,11 +335,15 @@ export function mountAssistantPanel(root, wb, { settingsHost = null, openSetting
     const raw = settings.model || "";
     const short =
       settings.provider === "lfm3"
-        ? raw === LFM3_PI_MODEL_ID
-          ? "Pi · WebGPU"
-          : raw === LFM3_QAD_MODEL_ID
-            ? "QAD · WebGPU"
-            : "Base · WebGPU"
+        ? isOnnxVlModelId(raw)
+          ? /pi/i.test(raw)
+            ? "VL-Pi · WebGPU"
+            : "VL · Vision"
+          : raw === LFM3_PI_MODEL_ID
+            ? "Pi · WebGPU"
+            : raw === LFM3_QAD_MODEL_ID
+              ? "QAD · WebGPU"
+              : "Base · WebGPU"
         : raw.includes("/")
           ? raw.split("/").pop()
           : raw;
@@ -892,6 +907,18 @@ export function mountAssistantPanel(root, wb, { settingsHost = null, openSetting
             meta: settings.provider === "lfm3" && settings.model === LFM3_PI_MODEL_ID ? "✓" : "Default",
             hint: "Pi-tuned LFM3-1.7B downloaded from Hugging Face and cached in your browser",
             onClick: () => switchProviderQuick("lfm3", LFM3_PI_MODEL_ID),
+          },
+          {
+            label: "LFM3-VL-2B-pi Vision (Browser WebGPU)",
+            meta: settings.provider === "lfm3" && settings.model === LFM3_VL_PI_MODEL_ID ? "✓" : "Vision+Pi",
+            hint: "Multimodal Pi-tuned LFM3-VL-2B ONNX — inspects attached canvas PNGs and photos",
+            onClick: () => switchProviderQuick("lfm3", LFM3_VL_PI_MODEL_ID),
+          },
+          {
+            label: "LFM3-VL-2B Base Vision (Browser WebGPU)",
+            meta: settings.provider === "lfm3" && settings.model === LFM3_VL_BASE_MODEL_ID ? "✓" : "Vision",
+            hint: "Base LFM3-VL-2B ONNX on WebGPU",
+            onClick: () => switchProviderQuick("lfm3", LFM3_VL_BASE_MODEL_ID),
           },
           {
             label: "LFM3-1.7B Base (Browser WebGPU)",
