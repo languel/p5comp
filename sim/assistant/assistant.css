@@ -292,17 +292,20 @@
   border: 0;
   border-radius: 50%;
   background: var(--ui-text, #e6e8e6);
-  color: var(--ui-bg, #1c1d1c);
+  color: var(--ui-page, #1c1d1c);
   cursor: pointer;
   flex: none;
   padding: 0;
 }
 
 .assist-compose-send:hover {
+  background: var(--ui-text, #e6e8e6);
+  color: var(--ui-page, #1c1d1c);
   opacity: 0.85;
 }
 
-.assist-compose-send.stop {
+.assist-compose-send.stop,
+.assist-compose-send.stop:hover {
   background: #c45b4a;
   color: #fff;
 }
@@ -523,15 +526,20 @@
   border-radius: 999px;
   border: 0;
   background: var(--ui-text, #e6e8e6);
-  color: var(--ui-bg, #1c1d1c);
+  color: var(--ui-page, #1c1d1c);
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
 }
 .assist-webgpu-btn:hover:not(:disabled) {
+  background: var(--ui-text, #e6e8e6);
+  color: var(--ui-page, #1c1d1c);
   opacity: 0.85;
 }
-.assist-webgpu-btn:disabled {
+.assist-webgpu-btn:disabled,
+.assist-webgpu-btn:disabled:hover {
+  background: var(--ui-text, #e6e8e6);
+  color: var(--ui-page, #1c1d1c);
   opacity: 0.5;
   cursor: default;
 }
